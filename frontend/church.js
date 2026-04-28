@@ -1,9 +1,25 @@
 (function() {
   // ─── CONFIGURATION ───
   // Update this URL with your Render backend URL once deployed
-  const API_URL = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' 
+  const API_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
     ? 'http://localhost:3000' 
-    : 'https://citadel-mgt4.onrender.com'; 
+    : 'https://citadel-newdb.onrender.com'; 
+
+  // ─── PRELOADER ───
+  const preloader = document.getElementById('preloader');
+  const hidePreloader = () => {
+    if (preloader) {
+      preloader.classList.add('hidden');
+      setTimeout(() => { preloader.style.display = 'none'; }, 650);
+    }
+  };
+  // Hide after page fully loads, minimum 800ms for elegance
+  const preloaderStart = Date.now();
+  window.addEventListener('load', () => {
+    const elapsed = Date.now() - preloaderStart;
+    const delay = Math.max(0, 800 - elapsed);
+    setTimeout(hidePreloader, delay);
+  });
 
   // ─── NAV SCROLL EFFECT ───
   const nav = document.getElementById('mainNav');

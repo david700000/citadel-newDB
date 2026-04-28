@@ -1,192 +1,324 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Citadel of Truth - Admin Panel</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <title>Citadel of Truth — Command Centre</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="admin.css">
 </head>
-
 <body>
 
-  <!-- Login Overlay -->
-  <div class="login-overlay" id="login-overlay">
-    <div class="login-card">
-      <div class="login-logo">
-        <svg viewBox="0 0 24 24">
-          <path d="M12 2L4 6v6c0 5.25 3.5 10.15 8 11.35C16.5 22.15 20 17.25 20 12V6L12 2z" />
-        </svg>
-      </div>
-      <h2>Admin Login</h2>
-      <p>Secure panel for Citadel of Truth</p>
-      <form id="login-form">
-        <input type="email" id="admin-email" placeholder="Email Address" required>
-        <input type="password" id="admin-password" placeholder="Password" required>
-        <button type="submit">Access Dashboard &rarr;</button>
-        <div class="login-error" id="login-error"></div>
-      </form>
-    </div>
-  </div>
-
-  <!-- Mobile Navigation Header -->
-  <header class="mobile-header">
-    <div class="nav-logo-icon">
+<!-- ─── LOGIN ─── -->
+<div class="login-overlay" id="login-overlay">
+  <div class="login-bg-grid"></div>
+  <div class="login-card">
+    <div class="login-emblem">
       <svg viewBox="0 0 24 24"><path d="M12 2L4 6v6c0 5.25 3.5 10.15 8 11.35C16.5 22.15 20 17.25 20 12V6L12 2z"/></svg>
     </div>
-    <button class="hamburger" id="mobile-toggle">
-      <span></span>
-      <span></span>
-      <span></span>
-    </button>
-  </header>
-
-  <!-- Main Dashboard -->
-  <div class="dashboard" id="dashboard" style="display: none;">
-    <aside class="sidebar" id="sidebar">
-      <div class="sidebar-header">
-        <div class="nav-logo-icon">
-          <svg viewBox="0 0 24 24"><path d="M12 2L4 6v6c0 5.25 3.5 10.15 8 11.35C16.5 22.15 20 17.25 20 12V6L12 2z" /></svg>
-        </div>
-        <h3>Citadel Panel</h3>
+    <h1>Command Centre</h1>
+    <p>Citadel of Truth and Mercy Assembly</p>
+    <div class="login-fields">
+      <div class="field-wrap">
+        <span class="field-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><rect width="20" height="16" x="2" y="4" rx="2"></rect><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path></svg>
+        </span>
+        <input type="email" id="admin-email" placeholder="Email address" autocomplete="email">
       </div>
-      <nav class="sidebar-nav">
-        <a href="#" class="active" data-target="hero-section">Hero Canvas</a>
-        <a href="#" data-target="events-section">Event Stream</a>
-        <a href="#" data-target="sermons-section">Sermon Vault</a>
-        <a href="#" data-target="gallery-section">Visual Gallery</a>
-        <a href="#" data-target="users-section" id="nav-users" style="display:none;">Access Control</a>
-        <a href="#" data-target="global-section">Asset Library</a>
-      </nav>
-      <div class="sidebar-footer">
-        <button id="logout-btn">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
-          Logout
+      <div class="field-wrap">
+        <span class="field-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+        </span>
+        <input type="password" id="admin-password" placeholder="Password" autocomplete="current-password">
+        <button class="field-eye" id="toggle-pw" type="button" aria-label="Show password">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18" id="eye-icon-svg"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"></path><circle cx="12" cy="12" r="3"></circle></svg>
         </button>
       </div>
-    </aside>
-
-    <main class="main-content">
-      <header class="topbar">
-        <div class="topbar-left">
-          <h2>Dashboard Overview</h2>
-          <p style="color: var(--text-muted); font-size: 0.85rem;">Manage your website content in real-time</p>
+      <div class="login-error" id="login-error"></div>
+      <button class="login-btn" id="login-btn">
+        <span id="login-btn-text">Enter Dashboard</span>
+        <span class="login-btn-icon">→</span>
+      </button>
+      
+      <!-- Verify Code Step (Hidden by default) -->
+      <div id="verify-code-fields" style="display: none; flex-direction: column; gap: 14px; margin-top: 10px;">
+        <div class="field-wrap">
+          <span class="field-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"></path></svg>
+          </span>
+          <input type="text" id="reset-code" placeholder="6-digit Recovery Code">
         </div>
-        <button id="save-all-btn" class="btn-primary">Deploy All Changes</button>
-      </header>
+        <button class="login-btn" id="verify-code-btn" type="button" style="background: linear-gradient(135deg, var(--warn) 0%, #d97706 100%);">
+          <span>Verify Code</span>
+        </button>
+      </div>
 
-      <div class="content-body">
+      <!-- New Password Step (Hidden by default) -->
+      <div id="new-pw-fields" style="display: none; flex-direction: column; gap: 14px; margin-top: 10px;">
+        <div class="field-wrap">
+          <span class="field-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+          </span>
+          <input type="password" id="reset-new-password" placeholder="New Password">
+        </div>
+        <button class="login-btn" id="submit-reset-btn" type="button" style="background: linear-gradient(135deg, var(--success) 0%, #16a34a 100%);">
+          <span>Set New Password</span>
+        </button>
+      </div>
 
-        <!-- Hero Section -->
-        <section id="hero-section" class="admin-section active">
-          <div class="section-head">
+      <div style="text-align: center; margin-top: 16px;">
+        <button id="forgot-pw-btn" type="button" style="background: none; border: none; color: #5a6278; font-size: 13px; cursor: pointer; text-decoration: underline; font-family: inherit;">Forgot Password?</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ─── TOAST CONTAINER ─── -->
+<div id="toast-container"></div>
+
+<!-- ─── MOBILE HEADER ─── -->
+<header class="mob-bar" id="mob-bar">
+  <button class="mob-burger" id="mob-burger" aria-label="Menu">
+    <span></span><span></span><span></span>
+  </button>
+  <span class="mob-title">Citadel Panel</span>
+  <button class="mob-save" id="mob-save-btn">Save</button>
+</header>
+
+<div class="sidebar-backdrop" id="sidebar-backdrop"></div>
+
+<!-- ─── MAIN APP ─── -->
+<div class="app" id="dashboard" style="display:none;">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon">
+        <svg viewBox="0 0 24 24"><path d="M12 2L4 6v6c0 5.25 3.5 10.15 8 11.35C16.5 22.15 20 17.25 20 12V6L12 2z"/></svg>
+      </div>
+      <div class="brand-text">
+        <strong>Citadel</strong>
+        <span>Command Centre</span>
+      </div>
+    </div>
+
+    <div class="sidebar-section-label">Content</div>
+    <nav class="sidebar-nav">
+      <a href="#" class="nav-item active" data-target="hero-section">
+        <span class="nav-icon">◈</span> Hero Slides
+      </a>
+      <a href="#" class="nav-item" data-target="events-section">
+        <span class="nav-icon">◉</span> Events
+      </a>
+      <a href="#" class="nav-item" data-target="sermons-section">
+        <span class="nav-icon">◎</span> Sermons
+      </a>
+      <a href="#" class="nav-item" data-target="gallery-section">
+        <span class="nav-icon">◫</span> Gallery
+      </a>
+    </nav>
+
+    <div class="sidebar-section-label">Site</div>
+    <nav class="sidebar-nav">
+      <a href="#" class="nav-item" data-target="global-section">
+        <span class="nav-icon"></span> Global Assets
+      </a>
+      <a href="#" class="nav-item" data-target="users-section" id="nav-users" style="display:none;">
+        <span class="nav-icon"></span> Access Control
+      </a>
+    </nav>
+
+    <div class="sidebar-bottom">
+      <a href="/" class="sidebar-link" target="_blank">← View Website</a>
+      <button id="logout-btn" class="logout-btn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        Sign Out
+      </button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main class="main">
+    <header class="topbar">
+      <div class="topbar-info">
+        <h2 id="topbar-title">Hero Slides</h2>
+        <div class="topbar-status" id="topbar-status">
+          <span class="status-dot"></span> Live on citadeloftruth.netlify.app
+        </div>
+      </div>
+      <button class="save-btn" id="save-all-btn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+        Deploy Changes
+      </button>
+    </header>
+
+    <div class="content">
+
+      <!-- HERO -->
+      <section id="hero-section" class="panel active">
+        <div class="panel-head">
+          <div>
             <h3>Hero Banner Slides</h3>
-            <button class="btn-secondary" onclick="addHeroSlide()">+ Add Slide</button>
+            <p>Slides appear in rotation on the homepage hero area</p>
           </div>
-          <div class="cards-grid" id="admin-hero-grid"></div>
-        </section>
+          <button class="btn-add" onclick="addHeroSlide()">+ Add Slide</button>
+        </div>
+        <div class="cards-grid" id="admin-hero-grid"></div>
+      </section>
 
-        <!-- Events Section -->
-        <section id="events-section" class="admin-section">
-          <div class="section-head">
+      <!-- EVENTS -->
+      <section id="events-section" class="panel">
+        <div class="panel-head">
+          <div>
             <h3>Upcoming Events</h3>
-            <button class="btn-secondary" onclick="addEvent()">+ Add Event</button>
+            <p>Manage events shown on the main website</p>
           </div>
-          <div class="cards-grid" id="admin-events-grid"></div>
-        </section>
+          <button class="btn-add" onclick="addEvent()">+ Add Event</button>
+        </div>
+        <div class="cards-grid" id="admin-events-grid"></div>
+      </section>
 
-        <!-- Sermons Section -->
-        <section id="sermons-section" class="admin-section">
-          <div class="section-head">
-            <h3>Recent Sermons</h3>
-            <button class="btn-secondary" onclick="addSermon()">+ Add Sermon</button>
+      <!-- SERMONS -->
+      <section id="sermons-section" class="panel">
+        <div class="panel-head">
+          <div>
+            <h3>Sermon Vault</h3>
+            <p>Add sermon recordings, titles and descriptions</p>
           </div>
-          <div class="cards-grid" id="admin-sermons-grid"></div>
-        </section>
+          <button class="btn-add" onclick="addSermon()">+ Add Sermon</button>
+        </div>
+        <div class="cards-grid" id="admin-sermons-grid"></div>
+      </section>
 
-        <!-- Gallery Section -->
-        <section id="gallery-section" class="admin-section">
-          <div class="section-head">
-            <h3>Community Gallery ('Life at Citadel')</h3>
-            <button class="btn-secondary" onclick="addGalleryImage()">+ Add Photo</button>
+      <!-- GALLERY -->
+      <section id="gallery-section" class="panel">
+        <div class="panel-head">
+          <div>
+            <h3>Community Gallery</h3>
+            <p>Photos shown in the "Life at Citadel" scroll strip</p>
           </div>
-          <div class="cards-grid" id="admin-gallery-grid"></div>
-        </section>
+          <button class="btn-add" onclick="addGalleryImage()">+ Add Photo</button>
+        </div>
+        <div class="cards-grid" id="admin-gallery-grid"></div>
+      </section>
 
-        <!-- Users Management Section -->
-        <section id="users-section" class="admin-section">
-          <div class="section-head">
-            <h3>CMS Accounts & Permissions</h3>
-            <button class="btn-secondary" onclick="document.getElementById('new-user-form').style.display='block'">+ Add
-              New User</button>
+      <!-- GLOBAL ASSETS -->
+      <section id="global-section" class="panel">
+        <div class="panel-head">
+          <div>
+            <h3>Global Site Assets</h3>
+            <p>Images used across the entire website</p>
           </div>
-
-          <div class="admin-card" id="new-user-form"
-            style="display:none; margin-bottom: 24px; border: 2px solid var(--blue);">
-            <h4>Grant Access</h4>
-            <div style="display:flex; gap:12px; align-items:center; flex-wrap:wrap; margin-top:12px;">
-              <input type="email" id="new-user-email" placeholder="Email Address"
-                style="padding:10px; border:1px solid #ccc; border-radius:4px; flex:1; min-width:200px;">
-              <input type="text" id="new-user-password" placeholder="Temporary Password"
-                style="padding:10px; border:1px solid #ccc; border-radius:4px; flex:1; min-width:200px;">
-              <select id="new-user-role" style="padding:10px; border:1px solid #ccc; border-radius:4px;">
-                <option value="admin">Editor Admin (Manage Content Only)</option>
-                <option value="superadmin">Super Admin (Can add users)</option>
-              </select>
-              <button class="btn-primary" onclick="createUser()">Create Account</button>
-              <button class="btn-outline" style="color:var(--text); border-color:var(--text);"
-                onclick="document.getElementById('new-user-form').style.display='none'">Cancel</button>
+        </div>
+        <div class="global-grid">
+          <div class="global-asset-card">
+            <div class="asset-preview" id="preview-logo">
+              <span>No logo set</span>
             </div>
-            <div id="new-user-error" style="color:red; font-size:13px; margin-top:10px;"></div>
+            <div class="asset-info">
+              <label>Church Logo</label>
+              <p>Appears in header and footer on every page</p>
+              <div class="asset-actions">
+                <label class="upload-label" for="upload-logo">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                  Upload Logo
+                </label>
+                <input type="file" id="upload-logo" accept="image/*" onchange="uploadGlobalImage(event,'logoImage')" style="display:none">
+                <input type="text" id="global-logo" placeholder="or paste URL" oninput="globalUrlInput(this,'logoImage','preview-logo')">
+              </div>
+            </div>
           </div>
+          <div class="global-asset-card">
+            <div class="asset-preview" id="preview-about">
+              <span>No image set</span>
+            </div>
+            <div class="asset-info">
+              <label>About Us Image</label>
+              <p>Shown in the About section on the homepage</p>
+              <div class="asset-actions">
+                <label class="upload-label" for="upload-about">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                  Upload Image
+                </label>
+                <input type="file" id="upload-about" accept="image/*" onchange="uploadGlobalImage(event,'aboutImage')" style="display:none">
+                <input type="text" id="global-about" placeholder="or paste URL" oninput="globalUrlInput(this,'aboutImage','preview-about')">
+              </div>
+            </div>
+          </div>
+          <div class="global-asset-card">
+            <div class="asset-preview" id="preview-pastor">
+              <span>No image set</span>
+            </div>
+            <div class="asset-info">
+              <label>Pastor Image</label>
+              <p>Shown in the pastoral leadership section</p>
+              <div class="asset-actions">
+                <label class="upload-label" for="upload-pastor">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                  Upload Image
+                </label>
+                <input type="file" id="upload-pastor" accept="image/*" onchange="uploadGlobalImage(event,'pastorImage')" style="display:none">
+                <input type="text" id="global-pastor" placeholder="or paste URL" oninput="globalUrlInput(this,'pastorImage','preview-pastor')">
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
-          <table
-            style="width:100%; border-collapse:collapse; background:rgb(6, 1, 68); border-radius:8px; overflow:hidden; box-shadow:var(--shadow);">
-            <thead style="background:var(--blue-ultra); text-align:left;">
+      <!-- USERS -->
+      <section id="users-section" class="panel">
+        <div class="panel-head">
+          <div>
+            <h3>Access Control</h3>
+            <p>Manage who can log in to this dashboard</p>
+          </div>
+          <button class="btn-add" onclick="toggleNewUserForm()">+ Add User</button>
+        </div>
+
+        <div class="new-user-form" id="new-user-form" style="display:none;">
+          <h4>Grant Dashboard Access</h4>
+          <div class="new-user-fields">
+            <div class="field-group">
+              <label>Email Address</label>
+              <input type="email" id="new-user-email" placeholder="user@example.com">
+            </div>
+            <div class="field-group">
+              <label>Temporary Password</label>
+              <input type="text" id="new-user-password" placeholder="Set a password">
+            </div>
+            <div class="field-group">
+              <label>Role</label>
+              <select id="new-user-role">
+                <option value="admin">Admin — Manage Content</option>
+                <option value="superadmin">Super Admin — Full Access</option>
+              </select>
+            </div>
+          </div>
+          <div class="new-user-actions">
+            <button class="btn-primary" onclick="createUser()">Create Account</button>
+            <button class="btn-ghost" onclick="toggleNewUserForm()">Cancel</button>
+          </div>
+        </div>
+
+        <div class="users-table-wrap">
+          <table class="users-table">
+            <thead>
               <tr>
-                <th style="padding:16px;">Email</th>
-                <th style="padding:16px;">Role</th>
-                <th style="padding:16px; text-align:right;">Actions</th>
+                <th>User</th>
+                <th>Role</th>
+                <th>Status</th>
+                <th></th>
               </tr>
             </thead>
-            <tbody id="users-table-body">
-              <!-- Injected via JS -->
-            </tbody>
+            <tbody id="users-table-body"></tbody>
           </table>
-        </section>
+        </div>
+      </section>
 
-        <!-- Global Images Section -->
-        <section id="global-section" class="admin-section">
-          <div class="section-head">
-            <h3>Global Site Images</h3>
-          </div>
-          <div class="cards-grid" id="admin-global-grid">
-            <div class="admin-card">
-              <div class="input-group">
-                <label>Main Website Logo</label>
-                <input type="file" accept="image/*" onchange="uploadGlobalImage(event, 'logoImage')">
-                <input type="text" id="global-logo" placeholder="Logo URL" readonly>
-              </div>
-              <div class="input-group">
-                <label>About Us Section Image</label>
-                <input type="file" accept="image/*" onchange="uploadGlobalImage(event, 'aboutImage')">
-                <input type="text" id="global-about" placeholder="Image URL" readonly>
-              </div>
-              <div class="input-group">
-                <label>Pastor Section Image</label>
-                <input type="file" accept="image/*" onchange="uploadGlobalImage(event, 'pastorImage')">
-                <input type="text" id="global-pastor" placeholder="Image URL" readonly>
-              </div>
-            </div>
-          </div>
-        </section>
+    </div>
+  </main>
+</div>
 
-      </div>
-    </main>
-  </div>
-
-  <script src="admin.js"></script>
+<script src="admin.js"></script>
 </body>
-
 </html>
