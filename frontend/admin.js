@@ -128,6 +128,7 @@
   const verifyCodeBtn = document.getElementById('verify-code-btn');
   const newPwFields = document.getElementById('new-pw-fields');
   const submitResetBtn = document.getElementById('submit-reset-btn');
+  const adminPasswordWrap = document.getElementById('admin-password-wrap');
   
   if (forgotPwBtn) {
     forgotPwBtn.addEventListener('click', async () => {
@@ -154,6 +155,12 @@
           
           verifyCodeFields.style.display = 'flex';
           forgotPwBtn.style.display = 'none';
+          if (adminPasswordWrap) adminPasswordWrap.style.display = 'none';
+          if (loginBtn) loginBtn.style.display = 'none';
+          
+          // Make email read-only so they don't change it during the process
+          document.getElementById('admin-email').readOnly = true;
+          document.getElementById('admin-email').style.opacity = '0.7';
         } else {
           loginError.textContent = data.error || 'Failed to send recovery code.';
           loginError.style.color = '#e74c3c';
@@ -233,7 +240,14 @@
           loginError.textContent = '';
           newPwFields.style.display = 'none';
           forgotPwBtn.style.display = 'inline-block';
+          if (adminPasswordWrap) adminPasswordWrap.style.display = 'flex';
+          if (loginBtn) loginBtn.style.display = 'flex';
+          
+          document.getElementById('admin-email').readOnly = false;
+          document.getElementById('admin-email').style.opacity = '1';
           document.getElementById('admin-password').value = newPassword;
+          document.getElementById('reset-code').value = '';
+          document.getElementById('reset-new-password').value = '';
         } else {
           loginError.textContent = data.error || 'Failed to reset password.';
           loginError.style.color = '#e74c3c';
