@@ -17,8 +17,8 @@ mongoose.connect(process.env.MONGODB_URI, {
     serverSelectionTimeoutMS: 5000,
     socketTimeoutMS: 45000,
 })
-.then(() => console.log('Connected to MongoDB Atlas'))
-.catch(err => console.error('MongoDB Connection Error:', err));
+    .then(() => console.log('Connected to MongoDB Atlas'))
+    .catch(err => console.error('MongoDB Connection Error:', err));
 
 // ─── MODELS ───
 const UserSchema = new mongoose.Schema({
@@ -40,7 +40,7 @@ const SiteData = mongoose.model('SiteData', SiteDataSchema);
 // We use the SMTP_USER address as the sender and set replyTo to EMAIL_FROM.
 // ─── BREVO HTTP API EMAIL (replaces SMTP - works on Render free tier) ───
 async function sendMail({ to, subject, html, text }) {
-    const apiKey   = process.env.BREVO_API_KEY;
+    const apiKey = process.env.BREVO_API_KEY;
     const fromAddr = process.env.EMAIL_FROM;
     const fromName = process.env.EMAIL_FROM_NAME || 'Citadel of Truth';
 
@@ -54,18 +54,18 @@ async function sendMail({ to, subject, html, text }) {
     }
 
     const body = {
-        sender:   { name: fromName, email: fromAddr },
-        to:       [{ email: to }],
+        sender: { name: fromName, email: fromAddr },
+        to: [{ email: to }],
         subject,
         htmlContent: html || `<p>${text}</p>`,
         textContent: text || (html ? html.replace(/<[^>]+>/g, '') : '')
     };
 
     const res = await fetch('https://api.brevo.com/v3/smtp/email', {
-        method:  'POST',
+        method: 'POST',
         headers: {
-            'accept':       'application/json',
-            'api-key':      apiKey,
+            'accept': 'application/json',
+            'api-key': apiKey,
             'content-type': 'application/json'
         },
         body: JSON.stringify(body)
@@ -271,24 +271,21 @@ app.get('/api/data', async (req, res) => {
 // ─── SITE DATA: SAVE (with audit email to superadmin) ───
 app.post('/api/data', authenticateToken, async (req, res) => {
     try {
-        const prevData = await SiteData.findOne();
-        let data = prevData;
-        if (!data) {
-            data = new SiteData(req.body);
-        } else {
-            // Explicitly set each field to ensure arrays are replaced not merged
-            if (req.body.hero    !== undefined) data.hero    = req.body.hero;
-            if (req.body.events  !== undefined) data.events  = req.body.events;
-            if (req.body.sermons !== undefined) data.sermons = req.body.sermons;
-            if (req.body.gallery !== undefined) data.gallery = req.body.gallery;
-            if (req.body.global  !== undefined) data.global  = req.body.global;
-            data.markModified('hero');
-            data.markModified('events');
-            data.markModified('sermons');
-            data.markModified('gallery');
-            data.markModified('global');
-        }
-        await data.save();
+        // Use findOneAndUpdate with upsert - avoids Mongoose VersionError entirely
+        const prevData = await SiteData.findOne().lean();
+        await SiteData.findOneAndUpdate(
+            {},
+            {
+                $set: {
+                    hero: req.body.hero ?? prevData?.hero ?? [],
+                    events: req.body.events ?? prevData?.events ?? [],
+                    sermons: req.body.sermons ?? prevData?.sermons ?? [],
+                    gallery: req.body.gallery ?? prevData?.gallery ?? [],
+                    global: req.body.global ?? prevData?.global ?? {}
+                }
+            },
+            { upsert: true, new: true }
+        );
 
         res.json({ success: true });
 
@@ -301,11 +298,11 @@ app.post('/api/data', authenticateToken, async (req, res) => {
             const prev = prevData || {};
             const next = req.body;
             const changes = [];
-            if (JSON.stringify(prev.hero)    !== JSON.stringify(next.hero))    changes.push('Hero Slides');
-            if (JSON.stringify(prev.events)  !== JSON.stringify(next.events))  changes.push('Events');
+            if (JSON.stringify(prev.hero) !== JSON.stringify(next.hero)) changes.push('Hero Slides');
+            if (JSON.stringify(prev.events) !== JSON.stringify(next.events)) changes.push('Events');
             if (JSON.stringify(prev.sermons) !== JSON.stringify(next.sermons)) changes.push('Sermons');
             if (JSON.stringify(prev.gallery) !== JSON.stringify(next.gallery)) changes.push('Gallery');
-            if (JSON.stringify(prev.global)  !== JSON.stringify(next.global))  changes.push('Global Assets');
+            if (JSON.stringify(prev.global) !== JSON.stringify(next.global)) changes.push('Global Assets');
 
             const changedSections = changes.length > 0 ? changes.join(', ') : 'Minor updates';
             const timestamp = new Date().toLocaleString('en-GB', { timeZone: 'Africa/Lagos' });
@@ -404,11 +401,11 @@ app.post('/api/users', authenticateToken, async (req, res) => {
               <div style="background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:20px;margin-bottom:24px;">
                 <table style="width:100%;border-collapse:collapse;font-size:0.9rem;">
                   <tr style="border-bottom:1px solid rgba(255,255,255,0.06);">
-                    <td style="padding:10px 0;color:#64748b;width:40%;">Email</td>
+                    <td style="padding:10px 0;color:#64748b;width:40%;">Email: </td>
                     <td style="padding:10px 0;font-weight:600;">${user.email}</td>
                   </tr>
                   <tr style="border-bottom:1px solid rgba(255,255,255,0.06);">
-                    <td style="padding:10px 0;color:#64748b;">Password</td>
+                    <td style="padding:10px 0;color:#64748b;">Password: </td>
                     <td style="padding:10px 0;font-family:monospace;font-size:1rem;color:#4f8ef7;">${password}</td>
                   </tr>
                   <tr>
@@ -420,7 +417,7 @@ app.post('/api/users', authenticateToken, async (req, res) => {
               <div style="text-align:center;margin-bottom:24px;">
                 <a href="${dashboardUrl}" style="display:inline-block;background:linear-gradient(135deg,#4f8ef7,#2563eb);color:#fff;text-decoration:none;padding:13px 28px;border-radius:12px;font-weight:700;font-size:0.95rem;">Access Dashboard →</a>
               </div>
-              <p style="color:#64748b;font-size:0.8rem;text-align:center;">We recommend changing your password after first login using the "Forgot Password" feature.</p>
+              <p style="color:#64748b;font-size:0.8rem;text-align:center;">We recommend changing your password after first login using the "My Account" feature.</p>
             </div>`
         }).catch(err => console.error('[WELCOME MAIL] Failed:', err.message));
 
