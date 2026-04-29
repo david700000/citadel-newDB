@@ -37,7 +37,7 @@ const SiteData = mongoose.model('SiteData', SiteDataSchema);
 
 // ─── CORS ───
 function isAllowedOrigin(origin) {
-    if (!origin || origin === 'null') return true;
+    if (!origin) return true;
     // Allow localhost for development
     if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) return true;
     // Allow any netlify.app subdomain
@@ -68,8 +68,15 @@ const authenticateToken = (req, res, next) => {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
     if (!token) return res.sendStatus(401);
+    
     jwt.verify(token, SECRET_KEY, (err, user) => {
         if (err) return res.sendStatus(403);
+        
+        // Immediate check for revoked access
+        if (revokedTokens.has('user:' + user.id)) {
+            return res.status(401).json({ error: 'Access revoked' });
+        }
+        
         req.user = user;
         next();
     });
@@ -175,6 +182,21 @@ app.post('/api/users', authenticateToken, async (req, res) => {
         const existing = await User.findOne({ email: email.toLowerCase() });
         if (existing) return res.status(409).json({ error: 'User already exists' });
         const user = await User.create({ email: email.toLowerCase(), password, role: role || 'admin' });
+        
+        // Notify new user via email
+        try {
+            const mailOptions = {
+                from: '"' + (process.env.EMAIL_FROM_NAME || 'Citadel of Truth') + '" <' + (process.env.EMAIL_FROM || 'noreply@citadeloftruth.com') + '>',
+                to: user.email,
+                subject: 'Welcome to Citadel Command Centre',
+                text: 'Your account has been created.\n\nLogin Details:\nEmail: ' + user.email + '\nPassword: ' + password + '\nRole: ' + user.role + '\n\nYou can access the dashboard at: ' + (process.env.FRONTEND_URL || 'https://citadeloftruth.netlify.app') + '/admin.html'
+            };
+            await transporter.sendMail(mailOptions);
+        } catch (mailErr) {
+            console.error('Failed to send welcome email:', mailErr);
+            // We still return success since the user was created
+        }
+
         res.json({ success: true, id: user._id, email: user.email, role: user.role });
     } catch (err) {
         console.error('Create user error:', err);
@@ -187,8 +209,24 @@ app.delete('/api/users/:id', authenticateToken, async (req, res) => {
         if (req.params.id === req.user.id) {
             return res.status(400).json({ error: 'Cannot revoke your own access' });
         }
+        // Find user to get email for notification
+        const userToDelete = await User.findById(req.params.id);
+        if (userToDelete) {
+            // Notify user via email
+            try {
+                const mailOptions = {
+                    from: '"' + (process.env.EMAIL_FROM_NAME || 'Citadel of Truth') + '" <' + (process.env.EMAIL_FROM || 'noreply@citadeloftruth.com') + '>',
+                    to: userToDelete.email,
+                    subject: 'Access Revoked - Citadel Command Centre',
+                    text: 'This is to inform you that your administrative access to the Citadel Command Centre has been revoked. You have been signed out and will no longer be able to log in.'
+                };
+                await transporter.sendMail(mailOptions);
+            } catch (mailErr) {
+                console.error('Failed to send revocation email:', mailErr);
+            }
+        }
+
         // Store revoked user ID so their heartbeat returns 401 immediately
-        // The verify endpoint checks revokedTokens; we store the userId as well
         revokedTokens.add('user:' + req.params.id);
         await User.findByIdAndDelete(req.params.id);
         res.json({ success: true });
@@ -227,6 +265,9 @@ app.post('/api/contact', async (req, res) => {
     }
 });
 
+// ─── PASSWORD RECOVERY ───
+
+// 1. Request Code
 app.post('/api/forgot-password', async (req, res) => {
     try {
         const { email } = req.body;
@@ -234,7 +275,7 @@ app.post('/api/forgot-password', async (req, res) => {
         
         const user = await User.findOne({ email: email.toLowerCase() });
         if (!user) {
-            // Return success even if not found to prevent email enumeration
+            // Success response even if not found to prevent email enumeration
             return res.json({ success: true, message: 'If the email exists, a recovery code has been sent.' });
         }
         
@@ -244,7 +285,7 @@ app.post('/api/forgot-password', async (req, res) => {
         await user.save();
         
         const mailOptions = {
-            from: '"' + (process.env.EMAIL_FROM_NAME || 'Citadel of Truth') + '" <' + process.env.EMAIL_FROM + '>',
+            from: '"' + (process.env.EMAIL_FROM_NAME || 'Citadel of Truth') + '" <' + (process.env.EMAIL_FROM || 'noreply@citadeloftruth.com') + '>',
             to: user.email,
             subject: 'Citadel Command Centre - Recovery Code',
             text: 'You requested a password reset.\n\nYour 6-digit recovery code is: ' + recoveryCode + '\n\nPlease enter this code on the Command Centre to set your new password.'
@@ -254,10 +295,14 @@ app.post('/api/forgot-password', async (req, res) => {
         res.json({ success: true, message: 'Recovery code sent to your email.' });
     } catch (err) {
         console.error('Forgot password error:', err);
-        res.status(500).json({ error: 'Failed to process password reset. Please try again later.' });
+        if (err.name && (err.name.includes('Mongo') || err.name.includes('Mongoose'))) {
+            return res.status(500).json({ error: 'Database error. Please try again later.' });
+        }
+        res.status(500).json({ error: 'Failed to send recovery email. Check SMTP settings.' });
     }
 });
 
+// 2. Verify Code
 app.post('/api/verify-code', async (req, res) => {
     try {
         const { email, code } = req.body;
@@ -275,6 +320,7 @@ app.post('/api/verify-code', async (req, res) => {
     }
 });
 
+// 3. Reset Password
 app.post('/api/reset-password', async (req, res) => {
     try {
         const { email, code, newPassword } = req.body;
@@ -294,7 +340,7 @@ app.post('/api/reset-password', async (req, res) => {
         res.json({ success: true, message: 'Password has been reset successfully.' });
     } catch (err) {
         console.error('Reset password error:', err);
-        res.status(500).json({ error: 'Failed to reset password.' });
+        res.status(500).json({ error: 'Failed to update password in database.' });
     }
 });
 
