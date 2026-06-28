@@ -1,10 +1,10 @@
 # ─── Admin Dashboard (200 Rewrite Mask) ───
 /admin    https://citadel-newdb.onrender.com/admin/    200
 
-# ─── Public Registration Forms (200 Rewrite Masks) ───
-/first-timer    https://citadel-newdb.onrender.com/admin/#/register/first-timer    200
-/member         https://citadel-newdb.onrender.com/admin/#/register/member-worker  200
-/reviews        https://citadel-newdb.onrender.com/admin/#/service-review          200
+# ─── Public Registration Forms (302 Redirects to Hash Routes) ───
+/first-timer    /admin/#/register/first-timer    302
+/member         /admin/#/register/member-worker  302
+/reviews        /admin/#/service-review          302
 
 # ─── Netlify SPA fallback ───
 /*    /index.html    200
