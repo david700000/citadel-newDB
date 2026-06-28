@@ -28,6 +28,8 @@
   const eventTitle = urlParams.get('title');
 
   // ─── DYNAMIC FIELD RENDERER ───
+  const slugify = s => s.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+  const toEventSlug = title => `event_${slugify(title)}`;
   function renderDynamicFields(fields) {
     const container = document.getElementById('reg-dynamic-fields');
     if (!container) return;
@@ -91,10 +93,13 @@
   // ─── LOAD EVENT DATA + CUSTOM FORM FIELDS ───
   async function loadEventData() {
     try {
-      const [dataRes, fieldsRes] = await Promise.all([
-        fetch(`${API_URL}/api/data`),
-        fetch(`${API_URL}/api/form-fields?form_type=event_registration`)
-      ]);
+      // Derive per-event form_type slug from URL param (same logic as CMS)
+      const eventFormType = eventTitle ? toEventSlug(eventTitle) : null;
+      const fetchCalls = [fetch(`${API_URL}/api/data`)];
+      if (eventFormType) {
+        fetchCalls.push(fetch(`${API_URL}/api/form-fields?form_type=${encodeURIComponent(eventFormType)}`));
+      }
+      const [dataRes, fieldsRes] = await Promise.all(fetchCalls);
 
       if (!dataRes.ok) throw new Error('Data fetch failed');
       const data = await dataRes.json();

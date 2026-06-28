@@ -15,7 +15,6 @@ const INITIAL_STATE = {
   formFields: {
     first_timer: [],
     member_worker: [],
-    event_registration: [],
   },
 };
 
@@ -3044,11 +3043,19 @@ const CMSUsers = ({ state, dispatch, toast }) => {
 };
 
 const CMSForms = ({ state, dispatch, toast }) => {
-  const [formType, setFormType] = useState("first_timer");
   const [showAdd, setShowAdd] = useState(false);
   const [newField, setNewField] = useState({ label: "", field_key: "", type: "text", required: false, worker_only: false, options: "" });
 
-  // Website data state for Event Design tab
+  // Per-event form fields: "event_fields" tab uses a 2-step picker → editor
+  const [activeTab, setActiveTab] = useState("first_timer"); // UI tab key
+  const slugify = s => s.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+  const toEventSlug = title => `event_${slugify(title)}`;
+
+  // formType is either a real form type (first_timer, member_worker, event_<slug>) or "event_design"
+  // When activeTab === "event_fields", formType is set to the selected event's slug
+  const [formType, setFormType] = useState("first_timer");
+
+  // Website data state for Event Design + Event Fields tabs
   const [webData, setWebData] = useState({ events: [] });
   const [loadingWeb, setLoadingWeb] = useState(false);
   const [savingWeb, setSavingWeb] = useState(false);
@@ -3072,10 +3079,21 @@ const CMSForms = ({ state, dispatch, toast }) => {
   };
 
   useEffect(() => {
-    if (formType === "event_design") {
+    if (activeTab === "event_design" || activeTab === "event_fields") {
       fetchWebData();
     }
-  }, [formType]);
+  }, [activeTab]);
+
+  const switchTab = (tab) => {
+    setActiveTab(tab);
+    if (tab === "first_timer" || tab === "member_worker") {
+      setFormType(tab);
+    } else if (tab === "event_design") {
+      setFormType("event_design");
+    } else if (tab === "event_fields") {
+      setFormType("event_fields"); // picker mode — no field list shown yet
+    }
+  };
 
   const handleAssetUpload = async (file, eventTitle, fieldKey) => {
     if (!file) return;
@@ -3232,22 +3250,108 @@ const CMSForms = ({ state, dispatch, toast }) => {
     } catch (err) { toast("Server connection failed", "error"); }
   };
 
+  const isEventFieldsActive = activeTab === "event_fields";
+  const canAddField = formType !== "event_design" && formType !== "event_fields";
+
   return (
     <Page title="Form Builder" subtitle="Manage dynamic registration fields and pages"
-      actions={formType !== "event_design" ? <Btn onClick={() => setShowAdd(true)} variant="accent"><Icon name="plus" size={16} /> Add Field</Btn> : null}
+      actions={canAddField ? <Btn onClick={() => setShowAdd(true)} variant="accent"><Icon name="plus" size={16} /> Add Field</Btn> : null}
     >
+      {/* ── TAB BAR ── */}
       <div style={{ display: "flex", gap: 10, marginBottom: 20, flexWrap: "wrap" }}>
-        {["first_timer", "member_worker", "event_registration", "event_design"].map(f => (
-          <button key={f} onClick={() => setFormType(f)} style={{
-            background: formType === f ? "#0B1F3B" : "#fff", color: formType === f ? "#fff" : "#6b7280",
-            border: "1.5px solid", borderColor: formType === f ? "#0B1F3B" : "#e5e7eb",
+        {["first_timer", "member_worker", "event_fields", "event_design"].map(tab => (
+          <button key={tab} onClick={() => switchTab(tab)} style={{
+            background: activeTab === tab ? "#0B1F3B" : "#fff",
+            color: activeTab === tab ? "#fff" : "#6b7280",
+            border: "1.5px solid", borderColor: activeTab === tab ? "#0B1F3B" : "#e5e7eb",
             borderRadius: 10, padding: "8px 18px", cursor: "pointer",
             fontSize: 14, fontFamily: "'DM Sans', sans-serif", fontWeight: 600,
           }}>
-            {f === "first_timer" ? "First-Timer Form" : f === "member_worker" ? "Member / Worker Form" : f === "event_registration" ? "Event Form Fields" : "Event Page Design"}
+            {tab === "first_timer" ? "First-Timer Form" : tab === "member_worker" ? "Member / Worker Form" : tab === "event_fields" ? "Event Form Fields" : "Event Page Design"}
           </button>
         ))}
       </div>
+
+      {/* ── EVENT FIELDS: PICKER ── */}
+      {isEventFieldsActive && formType === "event_fields" && (
+        <div>
+          <div style={{ marginBottom: 16, fontFamily: "'DM Sans', sans-serif", color: "#374151", fontSize: 14 }}>
+            Select an event to configure its registration form fields:
+          </div>
+          {loadingWeb ? (
+            <div style={{ padding: 40, textAlign: "center", color: "#4b5563" }}>Loading events...</div>
+          ) : webData.events.length === 0 ? (
+            <div style={{ padding: 40, textAlign: "center", color: "#9ca3af", fontFamily: "'DM Sans', sans-serif" }}>No events found. Add events in Website Content tab first.</div>
+          ) : (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 16 }}>
+              {webData.events.map((e, idx) => {
+                const slug = toEventSlug(e.title);
+                const fieldCount = (state.formFields[slug] || []).length;
+                return (
+                  <div key={idx} onClick={() => setFormType(slug)}
+                    style={{ background: "#fff", border: "1.5px solid #e5e7eb", borderRadius: 14, padding: 20, cursor: "pointer",
+                      boxShadow: "0 2px 10px rgba(0,0,0,0.05)", transition: "all 0.2s",
+                    }}
+                    onMouseEnter={el => el.currentTarget.style.borderColor = "#0B1F3B"}
+                    onMouseLeave={el => el.currentTarget.style.borderColor = "#e5e7eb"}
+                  >
+                    {e.imageUrl && <img src={e.imageUrl} alt={e.title} style={{ width: "100%", height: 80, objectFit: "cover", borderRadius: 8, marginBottom: 12 }} />}
+                    <div style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 700, fontSize: 15, color: "#0B1F3B", marginBottom: 6 }}>{e.title}</div>
+                    <div style={{ fontSize: 12, color: "#6b7280", fontFamily: "'DM Sans', sans-serif", marginBottom: 10 }}>📅 {e.date}</div>
+                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span style={{ fontSize: 12, color: fieldCount > 0 ? "#1e40af" : "#9ca3af", fontFamily: "'DM Sans', sans-serif", fontWeight: 600 }}>
+                        {fieldCount > 0 ? `${fieldCount} custom field${fieldCount > 1 ? 's' : ''}` : 'No custom fields yet'}
+                      </span>
+                      <span style={{ fontSize: 12, color: "#0B1F3B", fontFamily: "'DM Sans', sans-serif", fontWeight: 700 }}>Configure →</span>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* ── EVENT FIELDS: EDITOR (after event selected) ── */}
+      {isEventFieldsActive && formType !== "event_fields" && formType !== "event_design" && (
+        <div>
+          {/* Breadcrumb / back */}
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
+            <Btn onClick={() => setFormType("event_fields")} variant="ghost" small>← Back to Events</Btn>
+            <div style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 700, fontSize: 15, color: "#0B1F3B" }}>
+              {webData.events.find(e => toEventSlug(e.title) === formType)?.title || formType} — Custom Fields
+            </div>
+            <Btn onClick={() => setShowAdd(true)} variant="accent" small><Icon name="plus" size={14} /> Add Field</Btn>
+          </div>
+          <div style={{ background: "#fff", borderRadius: 14, boxShadow: "0 2px 12px rgba(0,0,0,0.06)", overflow: "hidden" }}>
+            {fields.length === 0 ? (
+              <div style={{ padding: 40, textAlign: "center", color: "#9ca3af", fontFamily: "'DM Sans', sans-serif" }}>
+                No custom fields yet for this event.<br />Click <strong>Add Field</strong> above to get started.
+              </div>
+            ) : fields.map((f, i) => (
+              <div key={f.id} style={{
+                display: "flex", alignItems: "center", padding: "14px 20px",
+                borderBottom: i < fields.length - 1 ? "1px solid #f3f4f6" : "none", gap: 12,
+              }}>
+                <div style={{ width: 36, height: 36, background: f.active ? "#dbeafe" : "#f3f4f6", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", color: f.active ? "#1e40af" : "#9ca3af", flexShrink: 0 }}>
+                  <Icon name="forms" size={16} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 600, fontSize: 14, color: "#111827" }}>{f.label}</div>
+                  <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 12, color: "#6b7280" }}>key: {f.field_key} · type: {f.type}{f.required ? " · required" : ""}</div>
+                </div>
+                <Badge label={f.active ? "active" : "disabled"} />
+                <div style={{ display: "flex", gap: 6 }}>
+                  <Btn onClick={() => handleMove(i, "up")} variant="ghost" small disabled={i === 0} style={{ padding: "4px 8px" }}>↑</Btn>
+                  <Btn onClick={() => handleMove(i, "down")} variant="ghost" small disabled={i === fields.length - 1} style={{ padding: "4px 8px" }}>↓</Btn>
+                  <Btn onClick={() => handleToggle(f.id)} variant="ghost" small>{f.active ? "Disable" : "Enable"}</Btn>
+                  <Btn onClick={() => handleDelete(f.id)} variant="danger" small><Icon name="trash" size={14} /></Btn>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {formType === "event_design" ? (
         <div>
@@ -3321,34 +3425,37 @@ const CMSForms = ({ state, dispatch, toast }) => {
           )}
         </div>
       ) : (
-        <div style={{ background: "#fff", borderRadius: 14, boxShadow: "0 2px 12px rgba(0,0,0,0.06)", overflow: "hidden" }}>
-          {fields.map((f, i) => (
-            <div key={f.id} style={{
-              display: "flex", alignItems: "center", padding: "14px 20px",
-              borderBottom: i < fields.length - 1 ? "1px solid #f3f4f6" : "none",
-              gap: 12,
-            }}>
-              <div style={{
-                width: 36, height: 36, background: f.active ? "#dbeafe" : "#f3f4f6",
-                borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center",
-                color: f.active ? "#1e40af" : "#9ca3af", flexShrink: 0,
+        /* First-Timer and Member/Worker fields list */
+        !isEventFieldsActive && formType !== "event_design" && (
+          <div style={{ background: "#fff", borderRadius: 14, boxShadow: "0 2px 12px rgba(0,0,0,0.06)", overflow: "hidden" }}>
+            {fields.map((f, i) => (
+              <div key={f.id} style={{
+                display: "flex", alignItems: "center", padding: "14px 20px",
+                borderBottom: i < fields.length - 1 ? "1px solid #f3f4f6" : "none",
+                gap: 12,
               }}>
-                <Icon name="forms" size={16} />
+                <div style={{
+                  width: 36, height: 36, background: f.active ? "#dbeafe" : "#f3f4f6",
+                  borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center",
+                  color: f.active ? "#1e40af" : "#9ca3af", flexShrink: 0,
+                }}>
+                  <Icon name="forms" size={16} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <div style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 600, fontSize: 14, color: "#111827" }}>{f.label}</div>
+                  <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 12, color: "#6b7280" }}>key: {f.field_key} · type: {f.type} {f.required ? "· required" : ""}{f.worker_only ? " · worker only" : ""}</div>
+                </div>
+                <Badge label={f.active ? "active" : "disabled"} />
+                <div style={{ display: "flex", gap: 6 }}>
+                  <Btn onClick={() => handleMove(i, "up")} variant="ghost" small disabled={i === 0} style={{ padding: "4px 8px" }}>↑</Btn>
+                  <Btn onClick={() => handleMove(i, "down")} variant="ghost" small disabled={i === fields.length - 1} style={{ padding: "4px 8px" }}>↓</Btn>
+                  <Btn onClick={() => handleToggle(f.id)} variant="ghost" small>{f.active ? "Disable" : "Enable"}</Btn>
+                  <Btn onClick={() => handleDelete(f.id)} variant="danger" small><Icon name="trash" size={14} /></Btn>
+                </div>
               </div>
-              <div style={{ flex: 1 }}>
-                <div style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 600, fontSize: 14, color: "#111827" }}>{f.label}</div>
-                <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 12, color: "#6b7280" }}>key: {f.field_key} · type: {f.type} {f.required ? "· required" : ""}{f.worker_only ? " · worker only" : ""}</div>
-              </div>
-              <Badge label={f.active ? "active" : "disabled"} />
-              <div style={{ display: "flex", gap: 6 }}>
-                <Btn onClick={() => handleMove(i, "up")} variant="ghost" small disabled={i === 0} style={{ padding: "4px 8px" }}>↑</Btn>
-                <Btn onClick={() => handleMove(i, "down")} variant="ghost" small disabled={i === fields.length - 1} style={{ padding: "4px 8px" }}>↓</Btn>
-                <Btn onClick={() => handleToggle(f.id)} variant="ghost" small>{f.active ? "Disable" : "Enable"}</Btn>
-                <Btn onClick={() => handleDelete(f.id)} variant="danger" small><Icon name="trash" size={14} /></Btn>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )
       )}
       {showAdd && (
         <Modal title="Add Form Field" onClose={() => setShowAdd(false)}>
@@ -6503,10 +6610,15 @@ function reducer(state, action) {
     case "SYNC_DATA": {
       if (action.key === "formFields") {
         if (action.data && action.data.length > 0) {
-          const ft = action.data.filter(f => f.form_type === "first_timer").map(f => ({ ...f, id: f._id || f.id })).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
-          const mw = action.data.filter(f => f.form_type === "member_worker").map(f => ({ ...f, id: f._id || f.id })).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
-          const er = action.data.filter(f => f.form_type === "event_registration").map(f => ({ ...f, id: f._id || f.id })).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
-          return { ...state, formFields: { first_timer: ft, member_worker: mw, event_registration: er } };
+          // Dynamically group by any form_type (supports per-event slugs like event_easter_sunday)
+          const grouped = {};
+          action.data.forEach(f => {
+            const key = f.form_type;
+            if (!grouped[key]) grouped[key] = [];
+            grouped[key].push({ ...f, id: f._id || f.id });
+          });
+          Object.keys(grouped).forEach(k => { grouped[k].sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0)); });
+          return { ...state, formFields: { ...state.formFields, ...grouped } };
         }
         return state;
       }
@@ -6572,10 +6684,15 @@ function reducer(state, action) {
         if (!Array.isArray(data)) continue;
         if (key === "formFields") {
           if (data.length > 0) {
-            const ft = data.filter(f => f.form_type === "first_timer").map(f => ({ ...f, id: f._id || f.id })).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
-            const mw = data.filter(f => f.form_type === "member_worker").map(f => ({ ...f, id: f._id || f.id })).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
-            const er = data.filter(f => f.form_type === "event_registration").map(f => ({ ...f, id: f._id || f.id })).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
-            next.formFields = { first_timer: ft, member_worker: mw, event_registration: er };
+            // Dynamically group by any form_type (supports per-event slugs)
+            const grouped = {};
+            data.forEach(f => {
+              const k = f.form_type;
+              if (!grouped[k]) grouped[k] = [];
+              grouped[k].push({ ...f, id: f._id || f.id });
+            });
+            Object.keys(grouped).forEach(k => { grouped[k].sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0)); });
+            next.formFields = { ...next.formFields, ...grouped };
           }
         } else {
           next[key] = data.map(item => {
