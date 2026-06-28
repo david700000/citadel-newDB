@@ -92,7 +92,7 @@ function buildEmailHtml({ name, message }) {
 }
 
 // ─── SEND EMAIL VIA BREVO HTTP API (works on Render free tier) ───────────────
-async function sendViaBrevoAPI({ to, name, subject, message }) {
+async function sendViaBrevoAPI({ to, name, subject, message, htmlContent }) {
   const churchName = process.env.CHURCH_NAME || "Our Church";
   const senderEmail = process.env.EMAIL_FROM || process.env.SMTP_USER;
   const senderName  = process.env.EMAIL_FROM_NAME || churchName;
@@ -109,7 +109,7 @@ async function sendViaBrevoAPI({ to, name, subject, message }) {
       to: [{ email: to, name: name || "" }],
       subject: subject || `Message from ${churchName}`,
       textContent: message,
-      htmlContent: buildEmailHtml({ name, message }),
+      htmlContent: htmlContent || buildEmailHtml({ name, message }),
     }),
   });
 
@@ -124,11 +124,11 @@ async function sendViaBrevoAPI({ to, name, subject, message }) {
 }
 
 // ─── SEND EMAIL (primary: Brevo API | fallback: SMTP) ────────────────────────
-async function sendEmail({ to, name, subject, message }) {
+async function sendEmail({ to, name, subject, message, htmlContent }) {
   // ── Path 1: Brevo HTTP API (preferred — always works on Render free tier)
   if (process.env.BREVO_API_KEY) {
     try {
-      return await sendViaBrevoAPI({ to, name, subject, message });
+      return await sendViaBrevoAPI({ to, name, subject, message, htmlContent });
     } catch (err) {
       console.error(`[Email] ❌ Brevo API failed for ${to}:`, err.message);
       throw err;
@@ -147,7 +147,7 @@ async function sendEmail({ to, name, subject, message }) {
       to,
       subject: subject || `Message from ${churchName}`,
       text: message,
-      html: buildEmailHtml({ name, message }),
+      html: htmlContent || buildEmailHtml({ name, message }),
     });
     console.log(`[Email] ✅ Sent via SMTP to ${to} — MessageID: ${result.messageId}`);
     return result;

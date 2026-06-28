@@ -124,11 +124,62 @@ router.post("/invite", requireCMS, async (req, res) => {
     const loginUrl = (process.env.FRONTEND_URL || "https://citadeloftruthandmercyassembly.netlify.app").replace(/\/$/, '') + '/admin';
     
     try {
+      const roleLabel = role.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());
       await sendEmail({
         to: email,
         name: adminName,
-        subject: `Admin Invitation - ${churchName}`,
-        message: `Hi ${adminName},\n\nYou have been invited as a ${role.replace(/_/g, " ")} at ${churchName}.\n\nYour temporary login credentials are:\nEmail: ${email}\nPassword: ${tempPassword}\n\nPlease click this link to log in: ${loginUrl}\n\nMake sure to change your password immediately after logging in.\n\nIf you did not expect this invitation, please ignore this email.`
+        subject: `You've been invited to ${churchName} — Admin Access`,
+        message: `Hi ${adminName}, you have been invited as ${roleLabel} at ${churchName}. Email: ${email} | Temp Password: ${tempPassword} | Login: ${loginUrl}`,
+        htmlContent: `<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"></head>
+<body style="margin:0;padding:0;background:#f1f5f9;font-family:'Segoe UI',Arial,sans-serif;">
+  <div style="max-width:560px;margin:32px auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
+    <!-- Header -->
+    <div style="background:#0B1F3B;padding:28px 32px;text-align:center;">
+      <div style="display:inline-block;background:rgba(244,196,48,0.15);border:1px solid rgba(244,196,48,0.3);border-radius:12px;padding:10px 16px;margin-bottom:12px;">
+        <span style="font-size:26px;">🛡️</span>
+      </div>
+      <h1 style="color:#F4C430;margin:0 0 4px;font-size:20px;font-weight:800;">${churchName}</h1>
+      <p style="color:rgba(255,255,255,0.5);margin:0;font-size:13px;">Admin Invitation</p>
+    </div>
+    <!-- Body -->
+    <div style="padding:32px;">
+      <p style="margin:0 0 8px;color:#111827;font-size:16px;font-weight:700;">Hi ${adminName},</p>
+      <p style="margin:0 0 24px;color:#4b5563;font-size:14px;line-height:1.7;">
+        You have been invited as <strong style="color:#0B1F3B;">${roleLabel}</strong> on the Citadel Command Centre. Use the temporary credentials below to log in.
+      </p>
+      <!-- Credentials Card -->
+      <div style="background:#f8fafc;border:1px solid #e5e7eb;border-radius:12px;padding:20px;margin-bottom:24px;">
+        <p style="margin:0 0 4px;font-size:11px;font-weight:700;color:#9ca3af;text-transform:uppercase;letter-spacing:0.05em;">Your Login Credentials</p>
+        <table style="width:100%;border-collapse:collapse;margin-top:12px;">
+          <tr>
+            <td style="padding:10px 0;color:#6b7280;font-size:13px;width:40%;border-bottom:1px solid #f3f4f6;">Email</td>
+            <td style="padding:10px 0;font-weight:700;font-size:13px;color:#111827;border-bottom:1px solid #f3f4f6;">${email}</td>
+          </tr>
+          <tr>
+            <td style="padding:10px 0;color:#6b7280;font-size:13px;">Temp Password</td>
+            <td style="padding:10px 0;font-family:monospace;font-size:15px;font-weight:800;color:#0B1F3B;letter-spacing:0.08em;">${tempPassword}</td>
+          </tr>
+        </table>
+        <p style="margin:14px 0 0;font-size:12px;color:#f59e0b;">⚠️ Copy your password before clicking the button below. Change it immediately after logging in.</p>
+      </div>
+      <!-- CTA Button -->
+      <div style="text-align:center;margin-bottom:24px;">
+        <a href="${loginUrl}" style="display:inline-block;background:linear-gradient(135deg,#0B1F3B,#1e3a5f);color:#F4C430;text-decoration:none;padding:14px 32px;border-radius:12px;font-weight:800;font-size:15px;letter-spacing:0.02em;">
+          Access Dashboard →
+        </a>
+        <p style="margin:10px 0 0;font-size:12px;color:#9ca3af;">Or copy this link: <a href="${loginUrl}" style="color:#0B1F3B;">${loginUrl}</a></p>
+      </div>
+      <hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0;">
+      <p style="margin:0;color:#9ca3af;font-size:12px;text-align:center;">
+        ${churchName}<br>
+        If you did not expect this invitation, please ignore this email.
+      </p>
+    </div>
+  </div>
+</body>
+</html>`
       });
       console.log(`[Invite] ✅ Email sent successfully to ${email}`);
     } catch (mailErr) {
