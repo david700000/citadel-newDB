@@ -474,19 +474,25 @@ app.post('/api/contact', async (req, res) => {
 
 // ─── EVENT REGISTRATION: CREATE ───
 app.post('/api/register-event', async (req, res) => {
-    const { name, email, phone, eventTitle } = req.body;
+    const { name, email, phone, eventTitle, customFields } = req.body;
     if (!name || !email || !eventTitle) {
         return res.status(400).json({ error: 'Name, email, and event title are required' });
     }
     try {
-        // Save to database
-        const reg = await EventRegistration.create({ name, email, phone, eventTitle });
+        // Save to database (including any dynamic form fields from CMS)
+        const reg = await EventRegistration.create({ name, email, phone, eventTitle, customFields: customFields || {} });
+
+        // Build custom fields text for notification email
+        let customFieldsText = '';
+        if (customFields && Object.keys(customFields).length > 0) {
+            customFieldsText = '\n\nAdditional Details:\n' + Object.entries(customFields).map(([k, v]) => `${k}: ${v}`).join('\n');
+        }
 
         // Send notification email
         await sendMail({
             to: process.env.ADMIN_NOTIFY_EMAIL || process.env.EMAIL_FROM,
             subject: `New Registration: ${eventTitle}`,
-            text: `A new registration has been received for the event: ${eventTitle}\n\nName: ${name}\nEmail: ${email}\nPhone: ${phone || 'N/A'}`
+            text: `A new registration has been received for the event: ${eventTitle}\n\nName: ${name}\nEmail: ${email}\nPhone: ${phone || 'N/A'}${customFieldsText}`
         });
 
         res.json({ success: true, message: 'Successfully registered for the event!', data: reg });

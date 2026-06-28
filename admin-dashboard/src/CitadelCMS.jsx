@@ -15,6 +15,7 @@ const INITIAL_STATE = {
   formFields: {
     first_timer: [],
     member_worker: [],
+    event_registration: [],
   },
 };
 
@@ -3147,10 +3148,12 @@ const CMSForms = ({ state, dispatch, toast }) => {
     list[index] = target;
     list[targetIndex] = current;
 
-    const otherFormType = formType === "first_timer" ? "member_worker" : "first_timer";
-    const otherFields = state.formFields[otherFormType] || [];
+    // Collect all fields from the other form types to preserve them during reorder sync
+    const allOtherFields = Object.entries(state.formFields)
+      .filter(([k]) => k !== formType)
+      .flatMap(([, v]) => v || []);
 
-    dispatch({ type: "SYNC_DATA", key: "formFields", data: [...otherFields, ...list] });
+    dispatch({ type: "SYNC_DATA", key: "formFields", data: [...allOtherFields, ...list] });
 
     try {
       await Promise.all([
@@ -3233,15 +3236,15 @@ const CMSForms = ({ state, dispatch, toast }) => {
     <Page title="Form Builder" subtitle="Manage dynamic registration fields and pages"
       actions={formType !== "event_design" ? <Btn onClick={() => setShowAdd(true)} variant="accent"><Icon name="plus" size={16} /> Add Field</Btn> : null}
     >
-      <div style={{ display: "flex", gap: 10, marginBottom: 20 }}>
-        {["first_timer", "member_worker", "event_design"].map(f => (
+      <div style={{ display: "flex", gap: 10, marginBottom: 20, flexWrap: "wrap" }}>
+        {["first_timer", "member_worker", "event_registration", "event_design"].map(f => (
           <button key={f} onClick={() => setFormType(f)} style={{
             background: formType === f ? "#0B1F3B" : "#fff", color: formType === f ? "#fff" : "#6b7280",
             border: "1.5px solid", borderColor: formType === f ? "#0B1F3B" : "#e5e7eb",
             borderRadius: 10, padding: "8px 18px", cursor: "pointer",
             fontSize: 14, fontFamily: "'DM Sans', sans-serif", fontWeight: 600,
           }}>
-            {f === "first_timer" ? "First-Timer Form" : f === "member_worker" ? "Member / Worker Form" : "Event Registration Design"}
+            {f === "first_timer" ? "First-Timer Form" : f === "member_worker" ? "Member / Worker Form" : f === "event_registration" ? "Event Form Fields" : "Event Page Design"}
           </button>
         ))}
       </div>
@@ -6502,7 +6505,8 @@ function reducer(state, action) {
         if (action.data && action.data.length > 0) {
           const ft = action.data.filter(f => f.form_type === "first_timer").map(f => ({ ...f, id: f._id || f.id })).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
           const mw = action.data.filter(f => f.form_type === "member_worker").map(f => ({ ...f, id: f._id || f.id })).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
-          return { ...state, formFields: { first_timer: ft, member_worker: mw } };
+          const er = action.data.filter(f => f.form_type === "event_registration").map(f => ({ ...f, id: f._id || f.id })).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+          return { ...state, formFields: { first_timer: ft, member_worker: mw, event_registration: er } };
         }
         return state;
       }
@@ -6570,7 +6574,8 @@ function reducer(state, action) {
           if (data.length > 0) {
             const ft = data.filter(f => f.form_type === "first_timer").map(f => ({ ...f, id: f._id || f.id })).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
             const mw = data.filter(f => f.form_type === "member_worker").map(f => ({ ...f, id: f._id || f.id })).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
-            next.formFields = { first_timer: ft, member_worker: mw };
+            const er = data.filter(f => f.form_type === "event_registration").map(f => ({ ...f, id: f._id || f.id })).sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+            next.formFields = { first_timer: ft, member_worker: mw, event_registration: er };
           }
         } else {
           next[key] = data.map(item => {

@@ -27,11 +27,84 @@
   const urlParams = new URLSearchParams(window.location.search);
   const eventTitle = urlParams.get('title');
 
+  // ─── DYNAMIC FIELD RENDERER ───
+  function renderDynamicFields(fields) {
+    const container = document.getElementById('reg-dynamic-fields');
+    if (!container) return;
+    container.innerHTML = '';
+
+    const active = (fields || []).filter(f => f.active !== false);
+    active.forEach(f => {
+      const wrapper = document.createElement('div');
+      wrapper.className = 'form-field';
+
+      const label = document.createElement('label');
+      label.setAttribute('for', `dyn-${f.field_key}`);
+      label.textContent = f.label + (f.required ? ' *' : '');
+      wrapper.appendChild(label);
+
+      let input;
+      if (f.type === 'dropdown' && Array.isArray(f.options) && f.options.length > 0) {
+        input = document.createElement('select');
+        input.id = `dyn-${f.field_key}`;
+        input.name = f.field_key;
+        if (f.required) input.required = true;
+        const placeholder = document.createElement('option');
+        placeholder.value = '';
+        placeholder.textContent = `Select ${f.label}`;
+        input.appendChild(placeholder);
+        f.options.forEach(opt => {
+          const o = document.createElement('option');
+          o.value = opt;
+          o.textContent = opt;
+          input.appendChild(o);
+        });
+        // Match existing select styling
+        input.style.cssText = 'width:100%;padding:12px 16px;border:1.5px solid #e2e8f0;border-radius:10px;font-size:14px;color:#1e293b;background:#f8fafc;outline:none;box-sizing:border-box;font-family:inherit;';
+      } else if (f.type === 'date') {
+        input = document.createElement('input');
+        input.type = 'date';
+        input.id = `dyn-${f.field_key}`;
+        input.name = f.field_key;
+        if (f.required) input.required = true;
+      } else if (f.type === 'number') {
+        input = document.createElement('input');
+        input.type = 'number';
+        input.id = `dyn-${f.field_key}`;
+        input.name = f.field_key;
+        input.placeholder = f.label;
+        if (f.required) input.required = true;
+      } else {
+        input = document.createElement('input');
+        input.type = 'text';
+        input.id = `dyn-${f.field_key}`;
+        input.name = f.field_key;
+        input.placeholder = f.label;
+        if (f.required) input.required = true;
+      }
+
+      wrapper.appendChild(input);
+      container.appendChild(wrapper);
+    });
+  }
+
+  // ─── LOAD EVENT DATA + CUSTOM FORM FIELDS ───
   async function loadEventData() {
     try {
-      const response = await fetch(`${API_URL}/api/data`);
-      if (!response.ok) throw new Error('Data fetch failed');
-      const data = await response.json();
+      const [dataRes, fieldsRes] = await Promise.all([
+        fetch(`${API_URL}/api/data`),
+        fetch(`${API_URL}/api/form-fields?form_type=event_registration`)
+      ]);
+
+      if (!dataRes.ok) throw new Error('Data fetch failed');
+      const data = await dataRes.json();
+
+      // Render custom registration fields
+      if (fieldsRes.ok) {
+        const fieldsData = await fieldsRes.json();
+        const fields = Array.isArray(fieldsData) ? fieldsData : (fieldsData.fields || []);
+        renderDynamicFields(fields);
+      }
 
       if (data.global && data.global.logoImage) {
         const headerLogo = document.getElementById('header-logo');
@@ -100,11 +173,20 @@
       e.preventDefault();
       
       const submitBtn = document.getElementById('reg-submit-btn');
-      const fname = document.getElementById('reg-fname').value;
-      const lname = document.getElementById('reg-lname').value;
-      const email = document.getElementById('reg-email').value;
-      const phone = document.getElementById('reg-phone').value;
+      const fname = document.getElementById('reg-fname').value.trim();
+      const lname = document.getElementById('reg-lname').value.trim();
+      const email = document.getElementById('reg-email').value.trim();
+      const phone = document.getElementById('reg-phone').value.trim();
       const title = document.getElementById('reg-event-title').value;
+
+      // Collect dynamic custom field values
+      const customFields = {};
+      const dynContainer = document.getElementById('reg-dynamic-fields');
+      if (dynContainer) {
+        dynContainer.querySelectorAll('input, select, textarea').forEach(el => {
+          if (el.name) customFields[el.name] = el.value;
+        });
+      }
 
       submitBtn.textContent = 'Registering...';
       submitBtn.disabled = true;
@@ -113,7 +195,7 @@
         const res = await fetch(`${API_URL}/api/register-event`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name: `${fname} ${lname}`, email, phone, eventTitle: title })
+          body: JSON.stringify({ name: `${fname} ${lname}`, email, phone, eventTitle: title, customFields })
         });
         const data = await res.json();
         
@@ -122,6 +204,8 @@
           submitBtn.style.background = '#22c55e';
           alert(data.message || 'Successfully registered for the event!');
           registerForm.reset();
+          // Re-render dynamic fields after reset to clear dropdowns properly
+          setTimeout(loadEventData, 100);
         } else {
           throw new Error(data.error || 'Failed to register');
         }

@@ -5,9 +5,11 @@ const EventRegistrationSchema = new mongoose.Schema({
     email: { type: String, required: true },
     phone: { type: String },
     eventTitle: { type: String, required: true },
-    attended: { type: Boolean, default: false }
+    attended: { type: Boolean, default: false },
+    customFields: { type: mongoose.Schema.Types.Mixed, default: {} }
 }, { 
     timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } 
 });
 
 module.exports = mongoose.model('EventRegistration', EventRegistrationSchema);
+

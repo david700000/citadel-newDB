@@ -4,7 +4,7 @@ const FormFieldSchema = new mongoose.Schema({
     form_type: { 
         type: String, 
         required: true, 
-        enum: ['first_timer', 'member_worker'] 
+        enum: ['first_timer', 'member_worker', 'event_registration'] 
     },
     field_key: { type: String, required: true },
     label: { type: String, required: true },
