@@ -1,6 +1,6 @@
-# ─── Admin Dashboard (200 Rewrite Mask) ───
-/admin    https://citadel-newdb.onrender.com/admin/    200
-/admin/*  https://citadel-newdb.onrender.com/admin/:splat  200
+# ─── Admin Dashboard (200 Force Rewrite Mask) ───
+/admin    https://citadel-newdb.onrender.com/admin/    200!
+/admin/*  https://citadel-newdb.onrender.com/admin/:splat  200!
 
 # ─── Public Registration Forms (302 Redirects to Hash Routes) ───
 /first-timer    /admin/#/register/first-timer    302
