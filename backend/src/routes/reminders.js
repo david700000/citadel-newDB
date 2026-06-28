@@ -26,7 +26,7 @@ router.post("/", requireRole("media_admin"), async (req, res) => {
 
     if (!name || !day || !time || !message) return res.status(400).json({ error: "name, day, time, message required" });
     if (!VALID_DAYS.includes(day)) return res.status(400).json({ error: "Invalid day" });
-    if (!targets?.length || !targets.every(t => VALID_TARGETS.includes(t))) return res.status(400).json({ error: "Invalid targets" });
+    if (!targets?.length) return res.status(400).json({ error: "Invalid targets" });
     if (!channels?.length || !channels.every(c => VALID_CHANNELS.includes(c))) return res.status(400).json({ error: "Invalid channels" });
 
     const reminder = await Reminder.create({

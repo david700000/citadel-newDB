@@ -15,14 +15,28 @@ router.post("/bulk", requireRole("media_admin"), async (req, res) => {
     if (!channels?.length) return res.status(400).json({ error: "Select at least one channel" });
     if (!target_group) return res.status(400).json({ error: "target_group is required" });
 
-    let query = {};
-    if (target_group !== 'all') {
-      query.tag = target_group;
+    let users = [];
+    const isSystemRole = ['all', 'first_timer', 'member', 'worker'].includes(target_group);
+
+    if (isSystemRole) {
+      let query = {};
+      if (target_group !== 'all') {
+        query.tag = target_group;
+      }
+      users = await User.find(query).select('id full_name email phone fcm_tokens');
+    } else {
+      // Fetch registrations for the specified event
+      const EventRegistration = require("../models/EventRegistration");
+      const regs = await EventRegistration.find({ eventTitle: target_group }).select('name email phone');
+      users = regs.map(r => ({
+        full_name: r.name,
+        email: r.email,
+        phone: r.phone,
+        fcm_tokens: []
+      }));
     }
 
-    const users = await User.find(query).select('id full_name email phone fcm_tokens');
-
-    if (users.length === 0) return res.json({ sent: 0, message: `No users found for target group: ${target_group}` });
+    if (users.length === 0) return res.json({ sent: 0, message: `No recipients found for target group: ${target_group}` });
 
     const sendResults = await sendBulk({
       users,

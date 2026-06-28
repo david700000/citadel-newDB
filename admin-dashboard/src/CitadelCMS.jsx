@@ -2015,11 +2015,20 @@ const CMSEventRegistrations = ({ state, toast }) => {
 
         {/* Table */}
         <Table
-          headers={["Name", "Email", "Phone", "Reg. Date", "Attended", "Actions"]}
+          headers={["Name", "Email", "Phone", "Custom Fields", "Reg. Date", "Attended", "Actions"]}
           rows={tabList.map(r => [
             <div style={{ fontWeight: 700, color: "#0B1F3B" }}>{r.name}</div>,
             r.email,
             r.phone || "—",
+            r.customFields && Object.keys(r.customFields).length > 0 ? (
+              <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                {Object.entries(r.customFields).map(([k, v]) => (
+                  <span key={k} style={{ fontSize: 11, color: "#475569" }}>
+                    <strong>{k.replace(/_/g, ' ')}:</strong> {String(v)}
+                  </span>
+                ))}
+              </div>
+            ) : <span style={{ color: "#94a3b8", fontSize: 11 }}>—</span>,
             r.created_at ? new Date(r.created_at).toLocaleDateString() : "—",
             <button
               onClick={() => handleToggleAttendance(r._id)}
@@ -3710,6 +3719,24 @@ const MediaDashboard = ({ state, dispatch, toast, admin }) => {
   const [newReminder, setNewReminder] = useState({ name: "", day: "sunday", time: "09:00", message: "" });
   const [reminderTargets, setReminderTargets] = useState({ first_timer: true, member: false, worker: false });
   const [reminderChannels, setReminderChannels] = useState({ push: true, email: false, sms: false });
+  
+  const [churchEvents, setChurchEvents] = useState([]);
+
+  const fetchEvents = async () => {
+    try {
+      const res = await fetch('/api/data');
+      if (res.ok) {
+        const data = await res.json();
+        setChurchEvents(data.events || []);
+      }
+    } catch (e) {
+      console.error("Failed to load events in MediaDashboard", e);
+    }
+  };
+
+  useEffect(() => {
+    fetchEvents();
+  }, []);
 
   const nav = [
     { key: "compose", label: "Compose Message", icon: "messages" },
@@ -3831,10 +3858,19 @@ const MediaDashboard = ({ state, dispatch, toast, admin }) => {
                 <div style={{ flex: 1 }}>
                   <label style={{ display: "block", fontFamily: "'DM Sans', sans-serif", fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 8 }}>Target Audience</label>
                   <select value={targetGroup} onChange={e => setTargetGroup(e.target.value)} style={{ width: "100%", padding: "10px", borderRadius: 8, border: "1px solid #e5e7eb", outline: "none", fontFamily: "'DM Sans', sans-serif" }}>
-                    <option value="first_timer">First Timers</option>
-                    <option value="member">Members</option>
-                    <option value="worker">Workers</option>
-                    <option value="all">All Users</option>
+                    <optgroup label="System Roles">
+                      <option value="first_timer">First Timers</option>
+                      <option value="member">Members</option>
+                      <option value="worker">Workers</option>
+                      <option value="all">All Users</option>
+                    </optgroup>
+                    {churchEvents.length > 0 && (
+                      <optgroup label="Event Attendees">
+                        {churchEvents.map(e => (
+                          <option key={e.title} value={e.title}>{e.title}</option>
+                        ))}
+                      </optgroup>
+                    )}
                   </select>
                 </div>
               </div>
@@ -3935,11 +3971,24 @@ const MediaDashboard = ({ state, dispatch, toast, admin }) => {
                 </div>
                 <div style={{ marginBottom: 16 }}>
                   <label style={{ display: "block", fontFamily: "'DM Sans', sans-serif", fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 8 }}>Targets</label>
-                  {["first_timer", "member", "worker"].map(t => (
-                    <label key={t} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontFamily: "'DM Sans', sans-serif", marginBottom: 4 }}>
-                      <input type="checkbox" checked={reminderTargets[t]} onChange={e => setReminderTargets(prev => ({ ...prev, [t]: e.target.checked }))} /> {t.replace("_", " ")}
-                    </label>
-                  ))}
+                  <div style={{ display: "flex", flexDirection: "column", gap: 4, maxHeight: 150, overflowY: "auto", border: "1px solid #e5e7eb", borderRadius: 8, padding: 8 }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "#6b7280", borderBottom: "1px solid #f3f4f6", paddingBottom: 2, marginBottom: 4 }}>System Roles</div>
+                    {["first_timer", "member", "worker"].map(t => (
+                      <label key={t} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontFamily: "'DM Sans', sans-serif" }}>
+                        <input type="checkbox" checked={!!reminderTargets[t]} onChange={e => setReminderTargets(prev => ({ ...prev, [t]: e.target.checked }))} /> {t.replace("_", " ")}
+                      </label>
+                    ))}
+                    {churchEvents.length > 0 && (
+                      <>
+                        <div style={{ fontSize: 11, fontWeight: 700, color: "#6b7280", borderBottom: "1px solid #f3f4f6", paddingBottom: 2, marginTop: 8, marginBottom: 4 }}>Event Attendees</div>
+                        {churchEvents.map(e => (
+                          <label key={e.title} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 13, fontFamily: "'DM Sans', sans-serif" }}>
+                            <input type="checkbox" checked={!!reminderTargets[e.title]} onChange={el => setReminderTargets(prev => ({ ...prev, [e.title]: el.target.checked }))} /> {e.title}
+                          </label>
+                        ))}
+                      </>
+                    )}
+                  </div>
                 </div>
                 <div style={{ marginBottom: 16 }}>
                   <label style={{ display: "block", fontFamily: "'DM Sans', sans-serif", fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 8 }}>Channels</label>

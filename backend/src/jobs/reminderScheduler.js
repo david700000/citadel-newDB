@@ -18,11 +18,31 @@ async function fireReminder(reminder) {
   try {
     console.log(`[Reminder] Firing: "${reminder.name}"`);
 
-    // Fetch users for target groups
-    const users = await User.find({ tag: { $in: reminder.targets } }).select('full_name email phone fcm_tokens');
+    // Fetch users for target groups (roles + events)
+    let users = [];
+    const systemRoles = reminder.targets.filter(t => ['first_timer', 'member', 'worker', 'all'].includes(t));
+    const eventTitles = reminder.targets.filter(t => !['first_timer', 'member', 'worker', 'all'].includes(t));
+
+    if (systemRoles.length > 0) {
+      const roleQuery = systemRoles.includes('all') ? {} : { tag: { $in: systemRoles } };
+      const systemUsers = await User.find(roleQuery).select('full_name email phone fcm_tokens');
+      users.push(...systemUsers);
+    }
+
+    if (eventTitles.length > 0) {
+      const EventRegistration = require("../models/EventRegistration");
+      const eventRegs = await EventRegistration.find({ eventTitle: { $in: eventTitles } }).select('name email phone');
+      const eventUsers = eventRegs.map(r => ({
+        full_name: r.name,
+        email: r.email,
+        phone: r.phone,
+        fcm_tokens: []
+      }));
+      users.push(...eventUsers);
+    }
 
     if (users.length === 0) {
-      console.log(`[Reminder] No users found for targets: ${reminder.targets.join(", ")}`);
+      console.log(`[Reminder] No recipients found for targets: ${reminder.targets.join(", ")}`);
       return;
     }
 
