@@ -1,14 +1,49 @@
 {
+  "hero": [
+    {
+      "id": "h1715898032733",
+      "eyebrow": "Welcome to Citadel of Truth Mercy Assembly",
+      "headingHtml": "The Place of <em>True,</em><br>Worship",
+      "description": "Where we worship God in spirit and in truth. Growing together in faith, love, and community.",
+      "imageUrl": "https://res.cloudinary.com/dfq5ip4xt/image/upload/v1715898096/citadel/d6xwq90623s8w8j4nblu.jpg",
+      "btn1Text": "Join Us This Sunday",
+      "btn1Link": "#location",
+      "btn2Text": "Watch Live",
+      "btn2Link": "#sermons"
+    },
+    {
+      "id": "h2",
+      "eyebrow": "Sunday Worship",
+      "headingHtml": "Come As You<br>Are. Leave <em>Changed.</em>",
+      "description": "Experience the power of worship, the depth of the Word, and the warmth of a community that truly care",
+      "imageUrl": "https://res.cloudinary.com/dfq5ip4xt/image/upload/v1780943477/citadel/oedzqjshrgytabecbbto.jpg",
+      "btn1Text": "",
+      "btn1Link": "",
+      "btn2Text": "",
+      "btn2Link": ""
+    },
+    {
+      "id": "h3",
+      "eyebrow": "Community & Outreach",
+      "headingHtml": "Rooted in Faith,<br>Reaching the <em>World</em>",
+      "description": "Through outreach, compassion, and tireless service, we carry the light of Christ to every corner of our community.",
+      "imageUrl": "https://images.unsplash.com/photo-1504052434569-70ad5836ab65?w=1600&q=80",
+      "btn1Text": "",
+      "btn1Link": "",
+      "btn2Text": "",
+      "btn2Link": ""
+    }
+  ],
   "events": [
     {
       "id": "e1",
-      "badge": "Worship Night",
-      "date": "Saturday, May 10, 2025 • 6:00 PM",
-      "title": "Encounter Night of Worship",
-      "description": "A powerful evening of deep, uninterrupted worship, prayer, and seeking the face of God together as a community.",
-      "linkRef": "Register Now",
+      "badge": "Celebration service ",
+      "date": "3rd, May 2026   8:00 AM",
+      "title": "Thanksgiving Service",
+      "description": "A powerful service of deep, uninterrupted worship, prayer, and seeking the face of God together as a community.",
+      "linkRef": "Click for more info",
       "iconPath": "M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z",
-      "imageUrl": ""
+      "imageUrl": "https://res.cloudinary.com/dfq5ip4xt/image/upload/v1777458825/citadel/lefgl3s599u6nsp6qtxf.png"
     },
     {
       "id": "e2",
@@ -33,6 +68,16 @@
   ],
   "sermons": [
     {
+      "id": "s2",
+      "meta": "Pastor Opeyemi Olapade   April 19, 2026",
+      "title": "Dunamis",
+      "description": "God's explosive power at work in you enabling you to do beyond your natural ability and produce supernatural results.",
+      "iconPath": "M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5L12 1z",
+      "imageUrl": "https://res.cloudinary.com/dfq5ip4xt/image/upload/v1777466372/citadel/vudjfc2f1ojqdb2k378j.jpg",
+      "videoUrl": "https://www.youtube.com/live/d8CNdgwbUD4?si=CY2cS6-6zYPLVcXq",
+      "audioUrl": ""
+    },
+    {
       "id": "s1",
       "meta": "Pastor Opeyemi Olapade • April 20, 2025",
       "title": "When God Answers With Silence",
@@ -41,15 +86,6 @@
       "imageUrl": "/uploads/1777285206338-406248204.png",
       "videoUrl": "",
       "audioUrl": "/uploads/1777285181491-631427955.mp3"
-    },
-    {
-      "id": "s2",
-      "meta": "Pastor Opeyemi Olapade • April 13, 2025",
-      "title": "The Mercy That Follows You",
-      "description": "Exploring Psalm 23 and the relentless, pursuing goodness of a God who never lets go.",
-      "iconPath": "M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5L12 1z",
-      "imageUrl": "",
-      "videoUrl": ""
     },
     {
       "id": "s3",
@@ -70,54 +106,71 @@
       "videoUrl": ""
     }
   ],
-  "hero": [
-    {
-      "id": "h1",
-      "eyebrow": "Welcome Home",
-      "headingHtml": "The Place of <em>True,</em><br>Worship",
-      "description": "Join our family of believers as we seek God together, grow in faith, and make His love known across our community and the world.",
-      "imageUrl": "https://images.unsplash.com/photo-1529070538774-1843cb3265df?w=1600&q=80",
-      "btn1Text": "",
-      "btn1Link": "",
-      "btn2Text": "",
-      "btn2Link": ""
-    },
-    {
-      "id": "h2",
-      "eyebrow": "Sunday Worship",
-      "headingHtml": "Come As You<br>Are. Leave <em>Changed.</em>",
-      "description": "Experience the power of worship, the depth of the Word, and the warmth of a community that truly cares.",
-      "imageUrl": "https://images.unsplash.com/photo-1517457373958-b7bdd4587205?w=1600&q=80",
-      "btn1Text": "",
-      "btn1Link": "",
-      "btn2Text": "",
-      "btn2Link": ""
-    },
-    {
-      "id": "h3",
-      "eyebrow": "Community & Outreach",
-      "headingHtml": "Rooted in Faith,<br>Reaching the <em>World</em>",
-      "description": "Through outreach, compassion, and tireless service, we carry the light of Christ to every corner of our community.",
-      "imageUrl": "https://images.unsplash.com/photo-1504052434569-70ad5836ab65?w=1600&q=80",
-      "btn1Text": "",
-      "btn1Link": "",
-      "btn2Text": "",
-      "btn2Link": ""
-    }
-  ],
-  "global": {
-    "aboutImage": "/uploads/1777284702571-158464675.jpg",
-    "pastorImage": "/uploads/1777239735744-424427559.PNG",
-    "logoImage": "/uploads/1777282799036-552301799.jpg"
-  },
   "gallery": [
     {
+      "id": 1777461434728,
+      "imageUrl": "https://res.cloudinary.com/dfq5ip4xt/image/upload/v1777461481/citadel/sw7il4afdgn1r8smrmd1.jpg"
+    },
+    {
+      "id": 1777461375160,
+      "imageUrl": "https://res.cloudinary.com/dfq5ip4xt/image/upload/v1777461429/citadel/jpbugyuwkeeijt4pycge.jpg"
+    },
+    {
+      "id": 1777461333248,
+      "imageUrl": "https://res.cloudinary.com/dfq5ip4xt/image/upload/v1777461369/citadel/kbgiz7dxrjhbuw2w4ze9.jpg"
+    },
+    {
+      "id": 1777461257975,
+      "imageUrl": "https://res.cloudinary.com/dfq5ip4xt/image/upload/v1777461326/citadel/csuqttcws8smxzhlendu.jpg"
+    },
+    {
+      "id": 1777461231755,
+      "imageUrl": "https://res.cloudinary.com/dfq5ip4xt/image/upload/v1777461255/citadel/rpsi6qcneskywhhbtsfl.jpg"
+    },
+    {
+      "id": 1777461187260,
+      "imageUrl": "https://res.cloudinary.com/dfq5ip4xt/image/upload/v1777461222/citadel/gdzpmrsadouzwnmjl66z.jpg"
+    },
+    {
+      "id": 1777461101172,
+      "imageUrl": "https://res.cloudinary.com/dfq5ip4xt/image/upload/v1777461141/citadel/cx48jl1rbyjhbzrn2fcw.jpg"
+    },
+    {
+      "id": 1777461063049,
+      "imageUrl": "https://res.cloudinary.com/dfq5ip4xt/image/upload/v1777461181/citadel/bljiugrjzsakyfb2xlag.jpg"
+    },
+    {
+      "id": 1777461022585,
+      "imageUrl": "https://res.cloudinary.com/dfq5ip4xt/image/upload/v1777461059/citadel/bhbpvlxjayzdmws2bxip.jpg"
+    },
+    {
+      "id": 1777430272008,
+      "imageUrl": "https://res.cloudinary.com/dfq5ip4xt/image/upload/v1777430282/citadel/dgwcxx8hznzmmylcx98k.jpg"
+    },
+    {
+      "id": 1777430259360,
+      "imageUrl": "https://res.cloudinary.com/dfq5ip4xt/image/upload/v1777430269/citadel/qiallyvcvbkfcx9oc7wj.jpg"
+    },
+    {
+      "id": 1777430238617,
+      "imageUrl": "https://res.cloudinary.com/dfq5ip4xt/image/upload/v1777430248/citadel/agz4jcfac1v5vzwkfsxy.jpg"
+    },
+    {
+      "id": 1777336999251,
+      "imageUrl": "https://res.cloudinary.com/dfq5ip4xt/image/upload/v1777426113/citadel/jjp7l3zq1iwlcu8vb2ea.jpg"
+    },
+    {
       "id": "g1777284394747",
-      "imageUrl": "/uploads/1777284406267-119480334.png"
+      "imageUrl": "https://res.cloudinary.com/dfq5ip4xt/image/upload/v1777337004/citadel/amflohrftxbcr8uihlzf.jpg"
     },
     {
       "id": "g1777284356714",
-      "imageUrl": "/uploads/1777284364319-239025181.PNG"
+      "imageUrl": "https://res.cloudinary.com/dfq5ip4xt/image/upload/v1777337257/citadel/tiphezdz7bdus5k8poup.jpg"
     }
-  ]
+  ],
+  "global": {
+    "aboutImage": "https://res.cloudinary.com/dfq5ip4xt/image/upload/v1777553877/citadel/kmwncydujnf464enjxuu.jpg",
+    "pastorImage": "https://res.cloudinary.com/dfq5ip4xt/image/upload/v1777551292/citadel/wndxe9vyhlpuvecbqr4x.jpg",
+    "logoImage": "https://res.cloudinary.com/dfq5ip4xt/image/upload/v1777336892/citadel/ies0dqhanbkyzihthbbb.jpg"
+  }
 }

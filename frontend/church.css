@@ -6,7 +6,8 @@
    box-sizing: border-box;
  }
 
- :root { /* updated */
+ :root {
+   /* updated */
    --white: #ffffff;
    --off-white: #f7f8fc;
    --light: #eef1f8;
@@ -45,11 +46,13 @@
    justify-content: center;
    transition: opacity 0.6s ease, visibility 0.6s ease;
  }
+
  #preloader.hidden {
    opacity: 0;
    visibility: hidden;
    pointer-events: none;
  }
+
  .preloader-inner {
    display: flex;
    flex-direction: column;
@@ -57,24 +60,27 @@
    gap: 20px;
    position: relative;
  }
+
  .preloader-logo {
    width: 64px;
    height: 64px;
-   background: rgba(255,255,255,0.12);
+   background: rgba(255, 255, 255, 0.12);
    border-radius: 16px;
    display: flex;
    align-items: center;
    justify-content: center;
    animation: preloaderPulse 1.6s ease-in-out infinite;
  }
+
  .preloader-logo img {
    width: 85px;
    fill: white;
  }
+
  .preloader-ring {
    width: 100px;
    height: 100px;
-   border: 3px solid rgba(255,255,255,0.15);
+   border: 3px solid rgba(255, 255, 255, 0.15);
    border-top-color: var(--gold);
    border-radius: 50%;
    position: absolute;
@@ -83,6 +89,7 @@
    transform: translateX(-50%);
    animation: preloaderSpin 1s linear infinite;
  }
+
  .preloader-text {
    font-family: 'Cormorant Garamond', serif;
    font-size: 14px;
@@ -92,12 +99,23 @@
    color: rgba(0, 8, 78, 0.829);
    margin-top: 28px;
  }
+
  @keyframes preloaderSpin {
-   to { transform: translateX(-50%) rotate(360deg); }
+   to {
+     transform: translateX(-50%) rotate(360deg);
+   }
  }
+
  @keyframes preloaderPulse {
-   0%, 100% { transform: scale(1); }
-   50% { transform: scale(1.08); }
+
+   0%,
+   100% {
+     transform: scale(1);
+   }
+
+   50% {
+     transform: scale(1.08);
+   }
  }
 
  /* ─── SCROLLBAR ─── */
@@ -380,13 +398,8 @@
    margin-bottom: 20px;
  }
 
- .slide-eyebrow::before {
-   content: '';
-   display: inline-block;
-   width: 32px;
-   height: 1.5px;
-   background: var(--gold);
- }
+
+
 
  .slide-content h1 {
    font-family: 'Cormorant Garamond', serif;
@@ -398,10 +411,7 @@
    letter-spacing: -0.01em;
  }
 
- .slide-content h1 em {
-   font-style: italic;
-   color: var(--gold);
- }
+
 
  .slide-content p {
    font-size: 16px;
@@ -517,42 +527,6 @@
    right: 3%;
  }
 
- /* scroll cue */
- .scroll-cue {
-   position: absolute;
-   bottom: 36px;
-   right: 8%;
-   z-index: 10;
-   display: flex;
-   flex-direction: column;
-   align-items: center;
-   gap: 6px;
-   color: rgba(255, 255, 255, 0.55);
-   font-size: 10px;
-   letter-spacing: 0.15em;
-   text-transform: uppercase;
- }
-
- .scroll-cue-line {
-   width: 1px;
-   height: 48px;
-   background: rgba(255, 255, 255, 0.35);
-   animation: scrollLine 2s ease-in-out infinite;
- }
-
- @keyframes scrollLine {
-
-   0%,
-   100% {
-     transform: scaleY(1);
-     opacity: 1;
-   }
-
-   50% {
-     transform: scaleY(0.4);
-     opacity: 0.4;
-   }
- }
 
  /* ─── SECTION UTILITIES ─── */
  section {
@@ -577,13 +551,6 @@
    margin-bottom: 14px;
  }
 
- .section-label::before {
-   content: '';
-   display: inline-block;
-   width: 24px;
-   height: 1.5px;
-   background: var(--blue-light);
- }
 
  .section-title {
    font-family: 'Cormorant Garamond', serif;
@@ -594,10 +561,7 @@
    margin-bottom: 18px;
  }
 
- .section-title em {
-   font-style: italic;
-   color: var(--blue);
- }
+
 
  .section-sub {
    font-size: 15.5px;
@@ -708,10 +672,17 @@
 
  .about-img {
    width: 100%;
-   height: auto;
-   max-height: 550px;
+   height: 100%;
    object-fit: contain;
+   object-position: center top;
    display: block;
+ }
+
+ .about-img-wrap {
+   aspect-ratio: 4/5;
+   display: flex;
+   align-items: flex-start;
+   justify-content: center;
    background: transparent;
  }
 
@@ -796,7 +767,7 @@
 
  .beliefs-grid {
    display: grid;
-    grid-template-columns: repeat(2, 1fr);
+   grid-template-columns: repeat(2, 1fr);
    gap: 30px;
    justify-content: center;
    max-width: 1100px;
@@ -804,13 +775,13 @@
  }
 
  .belief-card:nth-child(3) {
-  grid-column: span 2;
-  max-width: 500px;
-  margin: 0 auto;
-  width: 100%;
-}
+   grid-column: span 2;
+   max-width: 500px;
+   margin: 0 auto;
+   width: 100%;
+ }
 
-.belief-card {
+ .belief-card {
    background: rgba(255, 255, 255, 0.05);
    border: 1px solid rgba(255, 255, 255, 0.1);
    border-radius: 16px;
@@ -1339,20 +1310,21 @@
 
  .pastor-img-box {
    width: 100%;
-   height: auto;
-   max-height: 500px;
+   aspect-ratio: 3/4;
    border-radius: 12px;
    overflow: hidden;
    background: transparent;
    display: flex;
-   align-items: center;
+   align-items: flex-start;
    justify-content: center;
  }
 
  .pastor-img-box img {
    width: 100%;
-   height: auto;
+   height: 100%;
    object-fit: contain;
+   object-position: center top;
+   border-radius: 12px;
  }
 
  .pastor-img-box svg {
@@ -1730,14 +1702,16 @@
      width: 220px;
      height: 150px;
    }
-    .beliefs-grid {
-        grid-template-columns: 1fr;
-    }
-    .belief-card:nth-child(3) {
-        grid-column: auto;
-        max-width: 100%;
-    }
-  }
+
+   .beliefs-grid {
+     grid-template-columns: 1fr;
+   }
+
+   .belief-card:nth-child(3) {
+     grid-column: auto;
+     max-width: 100%;
+   }
+ }
 
  @media (max-width: 600px) {
    .hero {

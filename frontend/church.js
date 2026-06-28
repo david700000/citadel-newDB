@@ -13,13 +13,8 @@
       setTimeout(() => { preloader.style.display = 'none'; }, 650);
     }
   };
-  // Hide after page fully loads, minimum 800ms for elegance
+  // Preloader is now hidden by loadData() after all dynamic images are loaded
   const preloaderStart = Date.now();
-  window.addEventListener('load', () => {
-    const elapsed = Date.now() - preloaderStart;
-    const delay = Math.max(0, 800 - elapsed);
-    setTimeout(hidePreloader, delay);
-  });
 
   // ─── NAV SCROLL EFFECT ───
   const nav = document.getElementById('mainNav');
@@ -190,7 +185,7 @@
               <div class="event-date">📅 ${e.date}</div>
               <h3>${e.title}</h3>
               <p>${e.description}</p>
-              <a href="#" class="event-link">${e.linkRef || 'View Details'} <svg viewBox="0 0 24 24" style="width:13px;fill:var(--blue)"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/></svg></a>
+              <a href="event.html?title=${encodeURIComponent(e.title)}" class="event-link">${e.linkRef || 'View Details'} <svg viewBox="0 0 24 24" style="width:13px;fill:var(--blue)"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/></svg></a>
             </div>
           </div>
         `}).join('');
@@ -222,16 +217,115 @@
       const gal1 = document.getElementById('dynamic-gallery-1');
       const gal2 = document.getElementById('dynamic-gallery-2');
       if (gal1 && gal2 && data.gallery && data.gallery.length > 0) {
-        const galHTML = data.gallery.map(g => `<div class="gallery-item"><div class="gallery-item-inner"><img src="${g.imageUrl}" style="width:100%;height:100%;object-fit:cover;"></div></div>`).join('');
-        const loopHTML = galHTML + galHTML + galHTML;
-        gal1.innerHTML = loopHTML;
-        gal2.innerHTML = loopHTML;
+
+        // Fisher-Yates shuffle
+        function shuffle(arr) {
+          const a = [...arr];
+          for (let i = a.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [a[i], a[j]] = [a[j], a[i]];
+          }
+          return a;
+        }
+
+        const imgs = data.gallery.filter(g => g.imageUrl);
+        if (!imgs.length) return;
+
+        // Shuffle all images randomly
+        const all = shuffle(imgs);
+
+        // Split into two non-overlapping pools
+        // Row 1 gets first half, Row 2 gets second half
+        // This guarantees no image appears in both rows simultaneously
+        const mid  = Math.ceil(all.length / 2);
+        const pool1 = all.slice(0, mid);       // e.g. images 1-8
+        const pool2 = shuffle(all.slice(mid)); // e.g. images 9-15, reshuffled
+
+        function buildItems(arr) {
+          // Need enough copies to fill at least 2× screen width for seamless loop
+          const itemW    = 300; // 280px wide + 20px gap
+          const copies   = Math.max(2, Math.ceil((window.innerWidth * 2.5) / (arr.length * itemW)));
+          let html = '';
+          for (let c = 0; c < copies; c++) {
+            html += arr.map(g =>
+              `<div class="gallery-item">
+                <div class="gallery-item-inner">
+                  <img src="${g.imageUrl}" alt="Citadel gallery" loading="eager" style="width:100%;height:100%;object-fit:cover;">
+                </div>
+              </div>`
+            ).join('');
+          }
+          return { html, copies };
+        }
+
+        const b1 = buildItems(pool1);
+        const b2 = buildItems(pool2);
+
+        gal1.innerHTML = b1.html;
+        gal2.innerHTML = b2.html;
+
+        // ── requestAnimationFrame infinite scroll — no CSS animation, no jump ──
+        function startInfiniteScroll(track, speed, oneSetW) {
+          let paused = false;
+          let pos    = speed < 0 ? -oneSetW : 0;
+
+          track.addEventListener('mouseenter', () => { paused = true; });
+          track.addEventListener('mouseleave', () => { paused = false; });
+          track.addEventListener('touchstart', () => { paused = true; }, { passive: true });
+          track.addEventListener('touchend',   () => { setTimeout(() => { paused = false; }, 1200); }, { passive: true });
+
+          track.style.transform = `translateX(${pos}px)`;
+
+          function tick() {
+            if (!paused) {
+              pos -= speed;
+              // Seamless reset: shift by exactly one set width — content is identical so no jump
+              if (pos <= -oneSetW) pos += oneSetW;
+              if (pos >= 0)        pos -= oneSetW;
+              track.style.transform = `translateX(${pos}px)`;
+            }
+            requestAnimationFrame(tick);
+          }
+
+          requestAnimationFrame(tick);
+        }
+
+        gal1.style.animation = 'none';
+        gal2.style.animation = 'none';
+
+        // oneSetW = width of exactly one pool's images (total / copies)
+        setTimeout(() => {
+          const oneSet1 = gal1.scrollWidth / b1.copies;
+          const oneSet2 = gal2.scrollWidth / b2.copies;
+          startInfiniteScroll(gal1,  0.5, oneSet1);
+          startInfiniteScroll(gal2, -0.4, oneSet2);
+        }, 250);
       }
       
       document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
-      
+
+      // ── Wait for ALL dynamic images to load before hiding preloader ──
+      const allImgs = document.querySelectorAll('img');
+      const imagePromises = Array.from(allImgs).map(img => {
+        if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+        return new Promise(resolve => {
+          img.addEventListener('load',  resolve, { once: true });
+          img.addEventListener('error', resolve, { once: true }); // don't block on broken images
+        });
+      });
+
+      await Promise.all(imagePromises);
+
+      // Minimum 1000ms so preloader doesn't flash away instantly
+      const elapsed = Date.now() - preloaderStart;
+      const delay   = Math.max(0, 1000 - elapsed);
+      setTimeout(hidePreloader, delay);
+
     } catch (err) {
       console.error(err);
+      // Hide preloader even on error so site doesn't stay stuck
+      const elapsed = Date.now() - preloaderStart;
+      setTimeout(hidePreloader, Math.max(0, 800 - elapsed));
     }
   }
 

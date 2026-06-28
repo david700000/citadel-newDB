@@ -2,6 +2,8 @@ require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
+const cookieParser = require('cookie-parser');
+const fs = require('fs');
 const jwt = require('jsonwebtoken');
 const multer = require('multer');
 const cloudinary = require('cloudinary').v2;
@@ -35,12 +37,14 @@ const SiteDataSchema = new mongoose.Schema({
 }, { minimize: false });
 const SiteData = mongoose.model('SiteData', SiteDataSchema);
 
+const EventRegistration = require('./src/models/EventRegistration');
+
 // ─── SMTP ───
 // Brevo SMTP requires the FROM address to be a verified sender in your Brevo account.
 // We use the SMTP_USER address as the sender and set replyTo to EMAIL_FROM.
 // ─── BREVO HTTP API EMAIL (replaces SMTP - works on Render free tier) ───
 async function sendMail({ to, subject, html, text }) {
-    const apiKey = process.env.BREVO_API_KEY;
+    const apiKey = process.env.BREVO_API_KEY || process.env.SMTP_PASS;
     const fromAddr = process.env.EMAIL_FROM;
     const fromName = process.env.EMAIL_FROM_NAME || 'Citadel of Truth';
 
@@ -86,6 +90,7 @@ console.log('[MAIL] Using Brevo HTTP API for email delivery');
 function isAllowedOrigin(origin) {
     if (!origin) return true;
     if (/^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/.test(origin)) return true;
+    if (/^https?:\/\/([a-z0-9-]+\.)?citadel\.local(:\d+)?$/.test(origin)) return true;
     if (/^https:\/\/[a-z0-9-]+\.netlify\.app$/.test(origin)) return true;
     if (/^https:\/\/[a-z0-9-]+\.onrender\.com$/.test(origin)) return true;
     if (process.env.FRONTEND_URL) {
@@ -102,6 +107,7 @@ app.use(cors({
     },
     credentials: true
 }));
+app.use(cookieParser());
 app.use(express.json({ limit: '50mb' }));
 
 // ─── TOKEN BLACKLIST ───
@@ -120,8 +126,19 @@ const authenticateToken = (req, res, next) => {
     });
 };
 
+const path = require('path');
+
+// ─── SERVE CitadelCMS ADMIN DASHBOARD at /admin ───
+const adminDistPath = path.join(__dirname, '../admin-dashboard/dist');
+app.use('/admin', express.static(adminDistPath));
+// Catch-all so React Router works inside /admin/* (Express 5 requires named wildcard)
+app.get('/admin/*path', (req, res) => {
+    res.sendFile(path.join(adminDistPath, 'index.html'));
+});
+
 // ─── HEALTH ───
 app.get('/', (req, res) => res.json({ status: 'ok', message: 'Citadel API is running' }));
+
 
 // ─── AUTH: VERIFY (heartbeat) ───
 app.get('/api/auth/verify', (req, res) => {
@@ -259,91 +276,62 @@ app.post('/api/auth/change-password', authenticateToken, async (req, res) => {
 });
 
 // ─── SITE DATA: GET ───
-app.get('/api/data', async (req, res) => {
+app.get('/api/data', (req, res) => {
     try {
-        const data = await SiteData.findOne() || { hero: [], events: [], sermons: [], gallery: [], global: {} };
-        res.json(data);
+        const dataPath = path.join(__dirname, 'data.json');
+        if (fs.existsSync(dataPath)) {
+            const raw = fs.readFileSync(dataPath, 'utf8');
+            return res.json(JSON.parse(raw));
+        }
+        res.json({ hero: [], events: [], sermons: [], gallery: [], global: {} });
     } catch (err) {
+        console.error('[data] Failed to read data.json:', err.message);
         res.status(500).json({ error: 'Failed to fetch data' });
     }
 });
 
-// ─── SITE DATA: SAVE (with audit email to superadmin) ───
+// ─── SITE DATA: SAVE ───
 app.post('/api/data', authenticateToken, async (req, res) => {
     try {
-        // Use findOneAndUpdate with upsert - avoids Mongoose VersionError entirely
-        const prevData = await SiteData.findOne().lean();
-        await SiteData.findOneAndUpdate(
-            {},
-            {
-                $set: {
-                    hero: req.body.hero ?? prevData?.hero ?? [],
-                    events: req.body.events ?? prevData?.events ?? [],
-                    sermons: req.body.sermons ?? prevData?.sermons ?? [],
-                    gallery: req.body.gallery ?? prevData?.gallery ?? [],
-                    global: req.body.global ?? prevData?.global ?? {}
-                }
-            },
-            { upsert: true, new: true }
-        );
-
+        const dataPath = path.join(__dirname, 'data.json');
+        const prevRaw = fs.existsSync(dataPath) ? JSON.parse(fs.readFileSync(dataPath, 'utf8')) : {};
+        const newData = {
+            hero:    req.body.hero    ?? prevRaw.hero    ?? [],
+            events:  req.body.events  ?? prevRaw.events  ?? [],
+            sermons: req.body.sermons ?? prevRaw.sermons ?? [],
+            gallery: req.body.gallery ?? prevRaw.gallery ?? [],
+            global:  req.body.global  ?? prevRaw.global  ?? {}
+        };
+        fs.writeFileSync(dataPath, JSON.stringify(newData, null, 2));
         res.json({ success: true });
 
-        // If saved by non-superadmin, email superadmin with audit info
+        // Audit email to superadmin (only for non-superadmin saves)
         if (req.user.role !== 'superadmin') {
-            const superadmin = await User.findOne({ role: 'superadmin' });
-            if (!superadmin) return;
-
-            // Build simple diff summary
-            const prev = prevData || {};
-            const next = req.body;
-            const changes = [];
-            if (JSON.stringify(prev.hero) !== JSON.stringify(next.hero)) changes.push('Hero Slides');
-            if (JSON.stringify(prev.events) !== JSON.stringify(next.events)) changes.push('Events');
-            if (JSON.stringify(prev.sermons) !== JSON.stringify(next.sermons)) changes.push('Sermons');
-            if (JSON.stringify(prev.gallery) !== JSON.stringify(next.gallery)) changes.push('Gallery');
-            if (JSON.stringify(prev.global) !== JSON.stringify(next.global)) changes.push('Global Assets');
-
-            const changedSections = changes.length > 0 ? changes.join(', ') : 'Minor updates';
-            const timestamp = new Date().toLocaleString('en-GB', { timeZone: 'Africa/Lagos' });
-
-            sendMail({
-                to: superadmin.email,
-                subject: `⚡ Site Update Deployed — ${req.user.email}`,
-                html: `
-                <div style="font-family:sans-serif;max-width:540px;margin:0 auto;padding:32px;background:#0d1424;color:#f0f4ff;border-radius:16px;">
-                  <div style="display:flex;align-items:center;gap:12px;margin-bottom:24px;padding-bottom:20px;border-bottom:1px solid rgba(255,255,255,0.08);">
-                    <div style="background:rgba(245,158,11,0.15);border:1px solid rgba(245,158,11,0.3);border-radius:10px;padding:10px 14px;">
-                      <span style="font-size:20px;">⚡</span>
-                    </div>
-                    <div>
-                      <h2 style="margin:0;font-size:1.1rem;">Website Update Deployed</h2>
-                      <p style="margin:4px 0 0;color:#64748b;font-size:0.8rem;">${timestamp} (WAT)</p>
-                    </div>
-                  </div>
-                  <table style="width:100%;border-collapse:collapse;font-size:0.9rem;">
-                    <tr style="border-bottom:1px solid rgba(255,255,255,0.06);">
-                      <td style="padding:10px 0;color:#64748b;width:40%;">User</td>
-                      <td style="padding:10px 0;font-weight:600;">${req.user.email}</td>
-                    </tr>
-                    <tr style="border-bottom:1px solid rgba(255,255,255,0.06);">
-                      <td style="padding:10px 0;color:#64748b;">User ID</td>
-                      <td style="padding:10px 0;font-family:monospace;font-size:0.8rem;color:#94a3b8;">${req.user.id}</td>
-                    </tr>
-                    <tr style="border-bottom:1px solid rgba(255,255,255,0.06);">
-                      <td style="padding:10px 0;color:#64748b;">Role</td>
-                      <td style="padding:10px 0;"><span style="background:rgba(79,142,247,0.15);color:#4f8ef7;padding:3px 10px;border-radius:20px;font-size:0.78rem;font-weight:700;text-transform:uppercase;">${req.user.role}</span></td>
-                    </tr>
-                    <tr>
-                      <td style="padding:10px 0;color:#64748b;">Changed</td>
-                      <td style="padding:10px 0;color:#22c55e;font-weight:600;">${changedSections}</td>
-                    </tr>
-                  </table>
-                  <div style="margin-top:24px;padding:14px;background:rgba(255,255,255,0.04);border-radius:10px;font-size:0.8rem;color:#64748b;">
-                    This is an automated audit notification from Citadel Command Centre.
-                  </div>
-                </div>`
-            }).catch(err => console.error('[AUDIT MAIL] Failed:', err.message));
+            try {
+                const superadmin = await User.findOne({ role: 'superadmin' });
+                if (superadmin) {
+                    const prev = prevRaw || {};
+                    const next = req.body;
+                    const changes = [];
+                    if (JSON.stringify(prev.hero) !== JSON.stringify(next.hero)) changes.push('Hero Slides');
+                    if (JSON.stringify(prev.events) !== JSON.stringify(next.events)) changes.push('Events');
+                    if (JSON.stringify(prev.sermons) !== JSON.stringify(next.sermons)) changes.push('Sermons');
+                    if (JSON.stringify(prev.gallery) !== JSON.stringify(next.gallery)) changes.push('Gallery');
+                    if (JSON.stringify(prev.global) !== JSON.stringify(next.global)) changes.push('Global Assets');
+                    const changedSections = changes.length > 0 ? changes.join(', ') : 'Minor updates';
+                    const timestamp = new Date().toLocaleString('en-GB', { timeZone: 'Africa/Lagos' });
+                    sendMail({
+                        to: superadmin.email,
+                        subject: `⚡ Site Update Deployed — ${req.user.email}`,
+                        html: `<div style="font-family:sans-serif;max-width:540px;margin:0 auto;padding:32px;background:#0d1424;color:#f0f4ff;border-radius:16px;">
+                          <h2>Website Update Deployed</h2><p>${timestamp} (WAT)</p>
+                          <p>User: ${req.user.email} | Changed: ${changedSections}</p>
+                        </div>`
+                    }).catch(err => console.error('[AUDIT MAIL] Failed:', err.message));
+                }
+            } catch (mailErr) {
+                console.error('[AUDIT] Could not send audit email:', mailErr.message);
+            }
         }
     } catch (err) {
         console.error('Data save error:', err);
@@ -484,5 +472,179 @@ app.post('/api/contact', async (req, res) => {
     }
 });
 
+// ─── EVENT REGISTRATION: CREATE ───
+app.post('/api/register-event', async (req, res) => {
+    const { name, email, phone, eventTitle } = req.body;
+    if (!name || !email || !eventTitle) {
+        return res.status(400).json({ error: 'Name, email, and event title are required' });
+    }
+    try {
+        // Save to database
+        const reg = await EventRegistration.create({ name, email, phone, eventTitle });
+
+        // Send notification email
+        await sendMail({
+            to: process.env.ADMIN_NOTIFY_EMAIL || process.env.EMAIL_FROM,
+            subject: `New Registration: ${eventTitle}`,
+            text: `A new registration has been received for the event: ${eventTitle}\n\nName: ${name}\nEmail: ${email}\nPhone: ${phone || 'N/A'}`
+        });
+
+        res.json({ success: true, message: 'Successfully registered for the event!', data: reg });
+    } catch (err) {
+        console.error('Event Registration error:', err);
+        res.status(500).json({ error: 'Failed to process registration. Please try again later.' });
+    }
+});
+
+// ─── EVENT REGISTRATIONS: LIST ───
+app.get('/api/event-registrations', authenticateToken, async (req, res) => {
+    try {
+        const registrations = await EventRegistration.find().sort({ created_at: -1 });
+        res.json(registrations);
+    } catch (err) {
+        console.error('Fetch registrations error:', err);
+        res.status(500).json({ error: 'Failed to fetch registrations' });
+    }
+});
+
+// ─── EVENT REGISTRATIONS: DELETE ───
+app.delete('/api/event-registrations/:id', authenticateToken, async (req, res) => {
+    try {
+        await EventRegistration.findByIdAndDelete(req.params.id);
+        res.json({ success: true, message: 'Registration deleted successfully' });
+    } catch (err) {
+        console.error('Delete registration error:', err);
+        res.status(500).json({ error: 'Failed to delete registration' });
+    }
+});
+
+// ─── EVENT REGISTRATIONS: TOGGLE ATTENDANCE ───
+app.patch('/api/event-registrations/:id/attendance', authenticateToken, async (req, res) => {
+    try {
+        const reg = await EventRegistration.findById(req.params.id);
+        if (!reg) return res.status(404).json({ error: 'Registration not found' });
+        reg.attended = !reg.attended;
+        await reg.save();
+        res.json({ success: true, attended: reg.attended, data: reg });
+    } catch (err) {
+        console.error('Toggle attendance error:', err);
+        res.status(500).json({ error: 'Failed to update attendance' });
+    }
+});
+
+// ─── EVENT REGISTRATIONS: STATS PER EVENT ───
+app.get('/api/event-registrations/stats', authenticateToken, async (req, res) => {
+    try {
+        const stats = await EventRegistration.aggregate([
+            {
+                $group: {
+                    _id: '$eventTitle',
+                    total: { $sum: 1 },
+                    attended: { $sum: { $cond: ['$attended', 1, 0] } }
+                }
+            },
+            { $sort: { total: -1 } }
+        ]);
+        res.json(stats);
+    } catch (err) {
+        console.error('Event stats error:', err);
+        res.status(500).json({ error: 'Failed to fetch event stats' });
+    }
+});
+
+
+// ─── CMS ROUTES ───
+const authRouter = require("./src/routes/auth");
+const usersRouter = require("./src/routes/users");
+const messagesRouter = require("./src/routes/messages");
+const remindersRouter = require("./src/routes/reminders");
+const attendanceRouter = require("./src/routes/attendance");
+const { adminsRouter, formFieldsRouter } = require("./src/routes/attendance");
+const settingsRouter = require("./src/routes/settings");
+const financialRouter = require("./src/routes/financial");
+const reportsRouter = require("./src/routes/reports");
+const databaseRouter = require("./src/routes/database");
+const serviceReviewsRouter = require("./src/routes/serviceReviews");
+
+app.use("/auth", authRouter);
+app.use("/users", usersRouter);
+app.use("/messages", messagesRouter);
+app.use("/reminders", remindersRouter);
+app.use("/attendance", attendanceRouter);
+app.use("/admins", adminsRouter);
+app.use("/form-fields", formFieldsRouter);
+app.use("/settings", settingsRouter);
+app.use("/financial", financialRouter);
+app.use("/reports", reportsRouter);
+app.use("/database", databaseRouter);
+app.use("/service-reviews", serviceReviewsRouter);
+
+// ─── CMS SCHEDULERS ───
+const { initScheduler } = require("./src/jobs/reminderScheduler");
+const { initNotificationQueue } = require("./src/jobs/notificationQueue");
+const { initBirthdayScheduler, fireBirthdayGreetings } = require("./src/jobs/birthdayScheduler");
+
+try { initScheduler(); console.log("⏰ Reminder scheduler started"); } catch (err) { console.warn("Scheduler error:", err.message); }
+try { initNotificationQueue(); console.log("⏰ Notification queue processor started"); } catch (err) { console.warn("Queue error:", err.message); }
+try { initBirthdayScheduler(); console.log("🎂 Birthday scheduler started"); } catch (err) { console.warn("Birthday scheduler error:", err.message); }
+
+// ─── BIRTHDAY: MANUAL TRIGGER ───
+// Allows CMS admin to manually fire birthday greetings (with 365-day grace to catch all ungreeted)
+app.post('/api/birthday/run-now', authenticateToken, async (req, res) => {
+    try {
+        const { graceDays = 365 } = req.body;
+        console.log(`[Birthday] Manual trigger by admin. graceDays=${graceDays}`);
+        const result = await fireBirthdayGreetings({ graceDays });
+        res.json({ success: true, ...result });
+    } catch (err) {
+        console.error('[Birthday] Manual trigger error:', err);
+        res.status(500).json({ error: 'Failed to run birthday greetings' });
+    }
+});
+
+
+// ─── HEALTH CHECK / PING ───
+// Used by the keep-alive self-ping to prevent Render free tier from sleeping
+app.get('/api/ping', (req, res) => {
+    res.json({ status: 'ok', ts: new Date().toISOString() });
+});
+
+// ─── ERROR HANDLER ───
+app.use((err, req, res, next) => {
+  console.error("Unhandled error:", err);
+  res.status(500).json({ error: err.message || "Internal server error" });
+});
+
 // ─── START ───
-app.listen(PORT, () => console.log('Server running on port ' + PORT));
+app.listen(PORT, () => {
+    console.log('Server running on port ' + PORT);
+    console.log('CMS backend integrated and listening');
+
+    // ── KEEP-ALIVE SELF-PING ────────────────────────────────────────────────
+    // Prevents Render free tier from sleeping, ensuring birthday cron always fires.
+    // RENDER_EXTERNAL_URL is automatically injected by Render in production.
+    // Set SELF_URL manually if deploying elsewhere.
+    const selfUrl = process.env.RENDER_EXTERNAL_URL || process.env.SELF_URL;
+
+    if (selfUrl) {
+        const pingUrl = `${selfUrl.replace(/\/$/, '')}/api/ping`;
+        const PING_INTERVAL_MS = 10 * 60 * 1000; // every 10 minutes
+
+        const ping = () => {
+            fetch(pingUrl)
+                .then(r => r.json())
+                .then(() => console.log(`[KeepAlive] ✅ Pinged ${pingUrl}`))
+                .catch(err => console.warn(`[KeepAlive] ❌ Ping failed: ${err.message}`));
+        };
+
+        // First ping after 1 minute, then every 10 minutes
+        setTimeout(() => {
+            ping();
+            setInterval(ping, PING_INTERVAL_MS);
+        }, 60 * 1000);
+
+        console.log(`[KeepAlive] Self-ping active → ${pingUrl} (every 10 min)`);
+    } else {
+        console.log('[KeepAlive] RENDER_EXTERNAL_URL / SELF_URL not set — keep-alive disabled (local dev).');
+    }
+});
