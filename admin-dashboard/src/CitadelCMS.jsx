@@ -3047,7 +3047,88 @@ const CMSForms = ({ state, dispatch, toast }) => {
   const [showAdd, setShowAdd] = useState(false);
   const [newField, setNewField] = useState({ label: "", field_key: "", type: "text", required: false, worker_only: false, options: "" });
 
+  // Website data state for Event Design tab
+  const [webData, setWebData] = useState({ events: [] });
+  const [loadingWeb, setLoadingWeb] = useState(false);
+  const [savingWeb, setSavingWeb] = useState(false);
+
+  const token = state.session?.token;
   const fields = state.formFields[formType] || [];
+
+  const fetchWebData = async () => {
+    setLoadingWeb(true);
+    try {
+      const res = await fetch('/api/data');
+      if (res.ok) {
+        const data = await res.json();
+        setWebData(data);
+      }
+    } catch (err) {
+      console.error("Failed to load website data in form builder", err);
+    } finally {
+      setLoadingWeb(false);
+    }
+  };
+
+  useEffect(() => {
+    if (formType === "event_design") {
+      fetchWebData();
+    }
+  }, [formType]);
+
+  const handleAssetUpload = async (file, eventTitle, fieldKey) => {
+    if (!file) return;
+    const formData = new FormData();
+    formData.append("image", file);
+    try {
+      toast("Uploading image...", "info");
+      const res = await fetch('/api/upload', {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData
+      });
+      if (res.ok) {
+        const result = await res.json();
+        toast("Upload success!", "success");
+        setWebData(prev => {
+          const updatedEvents = prev.events.map(e => {
+            if (e.title === eventTitle) {
+              return { ...e, [fieldKey]: result.url };
+            }
+            return e;
+          });
+          return { ...prev, events: updatedEvents };
+        });
+      } else {
+        toast("Upload failed", "error");
+      }
+    } catch (err) {
+      toast("Error uploading image", "error");
+    }
+  };
+
+  const handleSaveAssets = async () => {
+    setSavingWeb(true);
+    try {
+      const res = await fetch('/api/data', {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(webData)
+      });
+      if (res.ok) {
+        toast("Event page design settings saved successfully!", "success");
+      } else {
+        toast("Failed to save changes", "error");
+      }
+    } catch (err) {
+      toast("Network error saving changes", "error");
+    } finally {
+      setSavingWeb(false);
+    }
+  };
 
   const handleMove = async (index, direction) => {
     const targetIndex = direction === "up" ? index - 1 : index + 1;
@@ -3149,47 +3230,123 @@ const CMSForms = ({ state, dispatch, toast }) => {
   };
 
   return (
-    <Page title="Form Builder" subtitle="Manage dynamic registration form fields"
-      actions={<Btn onClick={() => setShowAdd(true)} variant="accent"><Icon name="plus" size={16} /> Add Field</Btn>}
+    <Page title="Form Builder" subtitle="Manage dynamic registration fields and pages"
+      actions={formType !== "event_design" ? <Btn onClick={() => setShowAdd(true)} variant="accent"><Icon name="plus" size={16} /> Add Field</Btn> : null}
     >
       <div style={{ display: "flex", gap: 10, marginBottom: 20 }}>
-        {["first_timer", "member_worker"].map(f => (
+        {["first_timer", "member_worker", "event_design"].map(f => (
           <button key={f} onClick={() => setFormType(f)} style={{
             background: formType === f ? "#0B1F3B" : "#fff", color: formType === f ? "#fff" : "#6b7280",
             border: "1.5px solid", borderColor: formType === f ? "#0B1F3B" : "#e5e7eb",
             borderRadius: 10, padding: "8px 18px", cursor: "pointer",
             fontSize: 14, fontFamily: "'DM Sans', sans-serif", fontWeight: 600,
-          }}>{f === "first_timer" ? "First-Timer Form" : "Member / Worker Form"}</button>
-        ))}
-      </div>
-      <div style={{ background: "#fff", borderRadius: 14, boxShadow: "0 2px 12px rgba(0,0,0,0.06)", overflow: "hidden" }}>
-        {fields.map((f, i) => (
-          <div key={f.id} style={{
-            display: "flex", alignItems: "center", padding: "14px 20px",
-            borderBottom: i < fields.length - 1 ? "1px solid #f3f4f6" : "none",
-            gap: 12,
           }}>
-            <div style={{
-              width: 36, height: 36, background: f.active ? "#dbeafe" : "#f3f4f6",
-              borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center",
-              color: f.active ? "#1e40af" : "#9ca3af", flexShrink: 0,
-            }}>
-              <Icon name="forms" size={16} />
-            </div>
-            <div style={{ flex: 1 }}>
-              <div style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 600, fontSize: 14, color: "#111827" }}>{f.label}</div>
-              <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 12, color: "#6b7280" }}>key: {f.field_key} · type: {f.type} {f.required ? "· required" : ""}{f.worker_only ? " · worker only" : ""}</div>
-            </div>
-            <Badge label={f.active ? "active" : "disabled"} />
-            <div style={{ display: "flex", gap: 6 }}>
-              <Btn onClick={() => handleMove(i, "up")} variant="ghost" small disabled={i === 0} style={{ padding: "4px 8px" }}>↑</Btn>
-              <Btn onClick={() => handleMove(i, "down")} variant="ghost" small disabled={i === fields.length - 1} style={{ padding: "4px 8px" }}>↓</Btn>
-              <Btn onClick={() => handleToggle(f.id)} variant="ghost" small>{f.active ? "Disable" : "Enable"}</Btn>
-              <Btn onClick={() => handleDelete(f.id)} variant="danger" small><Icon name="trash" size={14} /></Btn>
-            </div>
-          </div>
+            {f === "first_timer" ? "First-Timer Form" : f === "member_worker" ? "Member / Worker Form" : "Event Registration Design"}
+          </button>
         ))}
       </div>
+
+      {formType === "event_design" ? (
+        <div>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+            <h3 style={{ margin: 0, fontFamily: "'DM Sans', sans-serif", color: "#0B1F3B", fontSize: 16 }}>Event Logo & Banner Cover Configuration</h3>
+            <Btn onClick={handleSaveAssets} disabled={savingWeb} variant="accent">
+              {savingWeb ? "Saving..." : "Save All Changes"}
+            </Btn>
+          </div>
+          {loadingWeb ? (
+            <div style={{ padding: 40, textAlign: "center", color: "#4b5563" }}>Loading event info...</div>
+          ) : webData.events.length === 0 ? (
+            <div style={{ padding: 40, textAlign: "center", color: "#9ca3af" }}>No events found to configure. Add events in Website Content tab first.</div>
+          ) : (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: 20 }}>
+              {webData.events.map((e, idx) => (
+                <div key={idx} style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: 18 }}>
+                  <div style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 800, fontSize: 16, color: "#0B1F3B", marginBottom: 16 }}>{e.title}</div>
+                  
+                  {/* Banner Cover */}
+                  <div style={{ background: "#f8fafc", borderRadius: 10, padding: 12, marginBottom: 12, border: "1px solid #e5e7eb" }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "#374151", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.05em" }}>Banner Cover</div>
+                    {e.bannerImage && <img src={e.bannerImage} alt="Banner" style={{ width: "100%", height: 80, objectFit: "cover", borderRadius: 6, marginBottom: 8 }} />}
+                    <input type="file" accept="image/*" onChange={el => handleAssetUpload(el.target.files[0], e.title, "bannerImage")} style={{ fontSize: 11, marginBottom: 8, display: "block" }} />
+                    <Input
+                      label="Or Banner URL"
+                      value={e.bannerImage || ""}
+                      onChange={v => setWebData(prev => {
+                        const u = prev.events.map(ev => ev.title === e.title ? { ...ev, bannerImage: v } : ev);
+                        return { ...prev, events: u };
+                      })}
+                      small
+                    />
+                  </div>
+
+                  {/* Event Logo */}
+                  <div style={{ background: "#f8fafc", borderRadius: 10, padding: 12, marginBottom: 12, border: "1px solid #e5e7eb" }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "#374151", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.05em" }}>Event Logo</div>
+                    {e.logoImage && <img src={e.logoImage} alt="Logo" style={{ height: 40, objectFit: "contain", borderRadius: 4, marginBottom: 8, display: "block" }} />}
+                    <input type="file" accept="image/*" onChange={el => handleAssetUpload(el.target.files[0], e.title, "logoImage")} style={{ fontSize: 11, marginBottom: 8, display: "block" }} />
+                    <Input
+                      label="Or Logo URL"
+                      value={e.logoImage || ""}
+                      onChange={v => setWebData(prev => {
+                        const u = prev.events.map(ev => ev.title === e.title ? { ...ev, logoImage: v } : ev);
+                        return { ...prev, events: u };
+                      })}
+                      small
+                    />
+                  </div>
+
+                  {/* Card Thumbnail */}
+                  <div style={{ background: "#f8fafc", borderRadius: 10, padding: 12, border: "1px solid #e5e7eb" }}>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: "#374151", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.05em" }}>Card Thumbnail</div>
+                    {e.imageUrl && <img src={e.imageUrl} alt="Thumbnail" style={{ width: "100%", height: 80, objectFit: "cover", borderRadius: 6, marginBottom: 8 }} />}
+                    <input type="file" accept="image/*" onChange={el => handleAssetUpload(el.target.files[0], e.title, "imageUrl")} style={{ fontSize: 11, marginBottom: 8, display: "block" }} />
+                    <Input
+                      label="Or Thumbnail URL"
+                      value={e.imageUrl || ""}
+                      onChange={v => setWebData(prev => {
+                        const u = prev.events.map(ev => ev.title === e.title ? { ...ev, imageUrl: v } : ev);
+                        return { ...prev, events: u };
+                      })}
+                      small
+                    />
+                  </div>
+
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      ) : (
+        <div style={{ background: "#fff", borderRadius: 14, boxShadow: "0 2px 12px rgba(0,0,0,0.06)", overflow: "hidden" }}>
+          {fields.map((f, i) => (
+            <div key={f.id} style={{
+              display: "flex", alignItems: "center", padding: "14px 20px",
+              borderBottom: i < fields.length - 1 ? "1px solid #f3f4f6" : "none",
+              gap: 12,
+            }}>
+              <div style={{
+                width: 36, height: 36, background: f.active ? "#dbeafe" : "#f3f4f6",
+                borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center",
+                color: f.active ? "#1e40af" : "#9ca3af", flexShrink: 0,
+              }}>
+                <Icon name="forms" size={16} />
+              </div>
+              <div style={{ flex: 1 }}>
+                <div style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 600, fontSize: 14, color: "#111827" }}>{f.label}</div>
+                <div style={{ fontFamily: "'DM Sans', sans-serif", fontSize: 12, color: "#6b7280" }}>key: {f.field_key} · type: {f.type} {f.required ? "· required" : ""}{f.worker_only ? " · worker only" : ""}</div>
+              </div>
+              <Badge label={f.active ? "active" : "disabled"} />
+              <div style={{ display: "flex", gap: 6 }}>
+                <Btn onClick={() => handleMove(i, "up")} variant="ghost" small disabled={i === 0} style={{ padding: "4px 8px" }}>↑</Btn>
+                <Btn onClick={() => handleMove(i, "down")} variant="ghost" small disabled={i === fields.length - 1} style={{ padding: "4px 8px" }}>↓</Btn>
+                <Btn onClick={() => handleToggle(f.id)} variant="ghost" small>{f.active ? "Disable" : "Enable"}</Btn>
+                <Btn onClick={() => handleDelete(f.id)} variant="danger" small><Icon name="trash" size={14} /></Btn>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
       {showAdd && (
         <Modal title="Add Form Field" onClose={() => setShowAdd(false)}>
           <Input label="Field Label" value={newField.label} onChange={v => setNewField(p => ({ ...p, label: v }))} placeholder="e.g. Date of Birth" />
