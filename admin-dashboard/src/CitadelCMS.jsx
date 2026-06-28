@@ -3484,7 +3484,7 @@ const CMSAdmins = ({ state, dispatch, toast }) => {
         <Modal title="Invite Admin" onClose={() => setShowInvite(false)}>
           <Input label="Admin Name" value={invName} onChange={setInvName} placeholder="e.g. John Doe" />
           <Input label="Admin Email" value={invEmail} onChange={setInvEmail} type="email" placeholder="admin@church.org" />
-          <Input label="Assign Role" value={invRole} onChange={setInvRole} type="dropdown" options={["media_admin", "usher_admin", "leader", "finance_admin"]} />
+          <Input label="Assign Role" value={invRole} onChange={setInvRole} type="dropdown" options={["media_admin", "usher_admin", "leader", "finance_admin", "quality_control"]} />
           <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
             <Btn onClick={() => setShowInvite(false)} variant="ghost">Cancel</Btn>
             <Btn onClick={handleInvite} variant="primary" disabled={sending}>
