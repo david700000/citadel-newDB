@@ -58,13 +58,21 @@
         if (regEventTitleInput) regEventTitleInput.value = event.title;
 
         // Render event details
-        let imageMarkup = '';
-        if (event.imageUrl) {
-          imageMarkup = `<img src="${event.imageUrl}" alt="${event.title}">`;
+        let bannerMarkup = '';
+        if (event.bannerImage) {
+          bannerMarkup = `<img src="${event.bannerImage}" alt="Event Banner" style="width: 100%; max-height: 280px; object-fit: cover; border-radius: 12px; margin-bottom: 20px;">`;
+        } else if (event.imageUrl) {
+          bannerMarkup = `<img src="${event.imageUrl}" alt="${event.title}" style="width: 100%; max-height: 280px; object-fit: cover; border-radius: 12px; margin-bottom: 20px;">`;
+        }
+
+        let logoMarkup = '';
+        if (event.logoImage) {
+          logoMarkup = `<img src="${event.logoImage}" alt="Event Logo" style="height: 50px; object-fit: contain; margin-bottom: 12px; display: block;">`;
         }
         
         eventInfoContainer.innerHTML = `
-          ${imageMarkup}
+          ${bannerMarkup}
+          ${logoMarkup}
           <h2>${event.title}</h2>
           <div class="event-meta">
             <svg viewBox="0 0 24 24" style="width:20px;fill:currentColor;"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>
