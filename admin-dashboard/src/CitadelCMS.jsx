@@ -4827,6 +4827,8 @@ const LeaderDashboard = ({ state, dispatch, admin, toast }) => {
 // ════════════════════════════════════════════════════════════════════════════════
 const QualityControlDashboard = ({ state, dispatch, toast, admin }) => {
   const [active, setActive] = useState("overview");
+  const [overviewData, setOverviewData] = useState({ recent: [], top: [], low: [] });
+  const [overviewLoading, setOverviewLoading] = useState(true);
 
   const nav = [
     { key: "overview", label: "Overview", icon: "dashboard" },
@@ -4834,24 +4836,104 @@ const QualityControlDashboard = ({ state, dispatch, toast, admin }) => {
     { key: "submit_review", label: "Submit Review", icon: "plus" }
   ];
 
+  const fetchOverview = async () => {
+    setOverviewLoading(true);
+    try {
+      const res = await fetch(`${API_URLS.SERVICE_REVIEWS}?limit=50&page=1`);
+      if (res.ok) {
+        const data = await res.json();
+        const all = data.reviews || [];
+        const sorted = [...all].sort((a, b) => new Date(b.createdAt || b.date) - new Date(a.createdAt || a.date));
+        const byRating = [...all].sort((a, b) => (b.overall_rating || 0) - (a.overall_rating || 0));
+        setOverviewData({
+          recent: sorted.slice(0, 5),
+          top: byRating.slice(0, 5),
+          low: byRating.slice(-5).reverse(),
+        });
+      }
+    } catch (err) {
+      console.error("Failed to load overview reviews", err);
+    } finally {
+      setOverviewLoading(false);
+    }
+  };
+
+  useEffect(() => { if (active === "overview") fetchOverview(); }, [active]);
+
+  const starBar = (rating) => {
+    const r = Math.round(rating || 0);
+    const color = r >= 4 ? "#10b981" : r === 3 ? "#f59e0b" : "#ef4444";
+    return (
+      <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}>
+        <span style={{ fontWeight: 800, fontSize: 14, color }}>{(rating || 0).toFixed(1)}</span>
+        <span style={{ fontSize: 12, color: "#94a3b8" }}>/5</span>
+        <span style={{ display: "inline-block", width: 50, height: 6, background: "#e5e7eb", borderRadius: 99, overflow: "hidden", marginLeft: 4 }}>
+          <span style={{ display: "block", height: "100%", width: `${(rating / 5) * 100}%`, background: color, borderRadius: 99 }} />
+        </span>
+      </span>
+    );
+  };
+
+  const ReviewTable = ({ title, rows, accent }) => (
+    <div style={{ background: "#fff", borderRadius: 16, boxShadow: "0 2px 16px rgba(0,0,0,0.06)", overflow: "hidden", marginBottom: 20 }}>
+      <div style={{ padding: "16px 20px", borderBottom: "1px solid #f1f5f9", display: "flex", alignItems: "center", gap: 10 }}>
+        <span style={{ display: "inline-block", width: 10, height: 10, borderRadius: "50%", background: accent }} />
+        <span style={{ fontWeight: 700, fontSize: 15, color: "#0B1F3B" }}>{title}</span>
+        <span style={{ marginLeft: "auto", fontSize: 12, color: "#94a3b8" }}>{rows.length} reviews</span>
+      </div>
+      {overviewLoading ? (
+        <div style={{ padding: 32, textAlign: "center", color: "#94a3b8", fontSize: 13 }}>Loading...</div>
+      ) : rows.length === 0 ? (
+        <div style={{ padding: 32, textAlign: "center", color: "#94a3b8", fontSize: 13 }}>No reviews yet</div>
+      ) : (
+        <div style={{ overflowX: "auto" }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+            <thead>
+              <tr style={{ background: "#f8fafc" }}>
+                <th style={{ padding: "10px 16px", textAlign: "left", fontWeight: 700, color: "#64748b", whiteSpace: "nowrap" }}>Service</th>
+                <th style={{ padding: "10px 16px", textAlign: "left", fontWeight: 700, color: "#64748b", whiteSpace: "nowrap" }}>Reviewer</th>
+                <th style={{ padding: "10px 16px", textAlign: "left", fontWeight: 700, color: "#64748b", whiteSpace: "nowrap" }}>Rating</th>
+                <th style={{ padding: "10px 16px", textAlign: "left", fontWeight: 700, color: "#64748b", whiteSpace: "nowrap" }}>Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r, i) => (
+                <tr key={r._id || i} style={{ borderTop: "1px solid #f1f5f9", transition: "background .15s" }}
+                  onMouseEnter={e => e.currentTarget.style.background = "#f8fafc"}
+                  onMouseLeave={e => e.currentTarget.style.background = ""}>
+                  <td style={{ padding: "12px 16px", fontWeight: 600, color: "#111827", maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {r.service_type || "Service"}
+                  </td>
+                  <td style={{ padding: "12px 16px", color: "#374151", maxWidth: 140, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    {r.reviewer_name || r.submitted_by || "Anonymous"}
+                  </td>
+                  <td style={{ padding: "12px 16px", whiteSpace: "nowrap" }}>{starBar(r.overall_rating)}</td>
+                  <td style={{ padding: "12px 16px", color: "#64748b", whiteSpace: "nowrap" }}>
+                    {r.date ? new Date(r.date).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "—"}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+      <div style={{ padding: "12px 20px", borderTop: "1px solid #f1f5f9", textAlign: "right" }}>
+        <button onClick={() => setActive("service_reviews")} style={{ background: "none", border: "none", color: accent, fontWeight: 700, fontSize: 13, cursor: "pointer", padding: 0 }}>
+          View all reviews →
+        </button>
+      </div>
+    </div>
+  );
+
   return (
     <div style={{ display: "flex", minHeight: "100vh", background: "#f8fafc" }}>
       <Sidebar nav={nav} active={active} setActive={setActive} role="quality_control" adminName={admin?.name} onLogout={() => dispatch({ type: "LOGOUT" })} />
       <main style={{ marginLeft: 240, flex: 1, minHeight: "100vh" }}>
         {active === "overview" && (
-          <Page title="Quality Control Dashboard" subtitle={`Welcome back, ${admin?.name || "QC Officer"}`}>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: 20 }}>
-              <div style={{ background: "#fff", padding: 24, borderRadius: 16, boxShadow: "0 4px 20px rgba(0,0,0,0.05)" }}>
-                <h3 style={{ margin: 0, color: "#64748b", fontSize: 14 }}>Submissions</h3>
-                <p style={{ margin: "8px 0 0", fontSize: 24, fontWeight: 800, color: "#0B1F3B" }}>Check Reviews</p>
-                <button onClick={() => setActive("service_reviews")} style={{ marginTop: 12, background: "none", border: "none", color: "#6366f1", fontWeight: 700, cursor: "pointer", padding: 0 }}>View All Reviews →</button>
-              </div>
-              <div style={{ background: "#fff", padding: 24, borderRadius: 16, boxShadow: "0 4px 20px rgba(0,0,0,0.05)" }}>
-                <h3 style={{ margin: 0, color: "#64748b", fontSize: 14 }}>Submit Feedback</h3>
-                <p style={{ margin: "8px 0 0", fontSize: 24, fontWeight: 800, color: "#059669" }}>New Service Review</p>
-                <button onClick={() => setActive("submit_review")} style={{ marginTop: 12, background: "none", border: "none", color: "#059669", fontWeight: 700, cursor: "pointer", padding: 0 }}>Add Review →</button>
-              </div>
-            </div>
+          <Page title="Quality Control Overview" subtitle={`Welcome back, ${admin?.name || "QC Officer"}`}>
+            <ReviewTable title="Recent Reviews" rows={overviewData.recent} accent="#6366f1" />
+            <ReviewTable title="Top Rated" rows={overviewData.top} accent="#10b981" />
+            <ReviewTable title="Low Rated" rows={overviewData.low} accent="#ef4444" />
           </Page>
         )}
         {active === "service_reviews" && <CMSServiceReviews state={state} dispatch={dispatch} toast={toast} role="quality_control" />}
