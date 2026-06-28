@@ -3501,7 +3501,7 @@ const CMSForms = ({ state, dispatch, toast }) => {
 const CMSAdmins = ({ state, dispatch, toast }) => {
   const [showInvite, setShowInvite] = useState(false);
   const [invEmail, setInvEmail] = useState("");
-  const [invRole, setInvRole] = useState("");
+  const [invRole, setInvRole] = useState("media_admin");
   const [invName, setInvName] = useState("");
   const [sending, setSending] = useState(false);
 
@@ -3520,7 +3520,7 @@ const CMSAdmins = ({ state, dispatch, toast }) => {
       if (res.ok) {
         const data = await res.json();
         dispatch({ type: "SYNC_DATA", key: "admins", data: [...state.admins, data.admin] });
-        setInvEmail(""); setInvRole(""); setInvName(""); setShowInvite(false);
+        setInvEmail(""); setInvRole("media_admin"); setInvName(""); setShowInvite(false);
         toast(`Invite sent to ${invEmail} — check their inbox!`, "success");
       } else {
         const err = await res.json();
