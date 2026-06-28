@@ -1,12 +1,11 @@
-# ─── Admin Dashboard (200 Force Rewrite Mask) ───
-/admin/   https://citadel-newdb.onrender.com/admin/   200!
-/admin    https://citadel-newdb.onrender.com/admin/   200!
-/admin/*  https://citadel-newdb.onrender.com/admin/:splat  200!
+# ─── SPA Fallback: Admin Dashboard served directly from /admin/ ───
+/admin    /admin/index.html    200
+/admin/*  /admin/index.html    200
 
 # ─── Public Registration Forms (302 Redirects to Hash Routes) ───
 /first-timer    /admin/#/register/first-timer    302
 /member         /admin/#/register/member-worker  302
 /reviews        /admin/#/service-review          302
 
-# ─── Netlify SPA fallback ───
+# ─── Church Website SPA fallback ───
 /*    /index.html    200
