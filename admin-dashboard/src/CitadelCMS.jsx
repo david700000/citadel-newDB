@@ -2730,7 +2730,7 @@ const CMSHome = ({ state, token, toast }) => {
           }
         </style></head><body>
         <div class="print-watermark">
-          <img src="/logo.jpg" alt="" />
+          <img src={churchLogo} alt="" />
         </div>
         
         <h1>Citadel CMS Master Report</h1>
@@ -6439,7 +6439,7 @@ const ServiceReviewFormPage = ({ onBack, inline = false, onSuccess = null }) => 
           padding: "16px 24px", display: "flex", alignItems: "center", gap: 16,
           position: "sticky", top: 0, zIndex: 100,
         }}>
-          <img src="/logo.jpg" alt="Citadel" style={{ width: 38, height: 38, objectFit: "contain", borderRadius: 8 }} />
+          <img src={churchLogo} alt="Citadel" style={{ width: 38, height: 38, objectFit: "contain", borderRadius: 8 }} />
           <div>
             <div style={{ color: "#0B1F3B", fontWeight: 800, fontSize: 15, lineHeight: 1.2 }}>Citadel of Truth and Mercy Assembly</div>
             <div style={{ color: "#6b7280", fontSize: 12, fontWeight: 500 }}>Post-Service Review Form</div>

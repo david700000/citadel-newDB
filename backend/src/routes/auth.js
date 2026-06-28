@@ -138,7 +138,7 @@ router.post("/invite", requireCMS, async (req, res) => {
     <!-- Header -->
     <div style="background:#0B1F3B;padding:28px 32px;text-align:center;">
       <div style="display:inline-block;background:rgba(244,196,48,0.15);border:1px solid rgba(244,196,48,0.4);border-radius:8px;padding:6px 18px;margin-bottom:12px;">
-        <span style="font-size:12px;font-weight:700;color:#F4C430;letter-spacing:0.08em;text-transform:uppercase;">Command Centre</span>
+        <span style="font-size:12px;font-weight:700;color:#F4C430;letter-spacing:0.08em;text-transform:uppercase;">E-Management</span>
       </div>
       <h1 style="color:#F4C430;margin:0 0 4px;font-size:20px;font-weight:800;">${churchName}</h1>
       <p style="color:rgba(255,255,255,0.5);margin:0;font-size:13px;">Admin Invitation</p>
@@ -147,7 +147,7 @@ router.post("/invite", requireCMS, async (req, res) => {
     <div style="padding:32px;">
       <p style="margin:0 0 8px;color:#111827;font-size:16px;font-weight:700;">Hi ${adminName},</p>
       <p style="margin:0 0 24px;color:#4b5563;font-size:14px;line-height:1.7;">
-        You have been invited as <strong style="color:#0B1F3B;">${roleLabel}</strong> on the Citadel Command Centre. Use the temporary credentials below to log in.
+        You have been invited as <strong style="color:#0B1F3B;">${roleLabel}</strong> on the Citadel E-Management system. Use the temporary credentials below to log in.
       </p>
       <!-- Credentials Card -->
       <div style="background:#f8fafc;border:1px solid #e5e7eb;border-radius:12px;padding:20px;margin-bottom:24px;">
