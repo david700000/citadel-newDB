@@ -352,7 +352,7 @@ const Sidebar = ({ nav, active, setActive, role, onLogout, adminName }) => {
               )}
             </button>
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <img src="/logo.jpg" alt="Logo" style={{ width: 28, height: 28, objectFit: "contain" }} />
+              <img src={churchLogo} alt="Logo" style={{ width: 28, height: 28, objectFit: "contain" }} />
               <span style={{ color: "#fff", fontWeight: 800, fontSize: 15, fontFamily: "'DM Sans', sans-serif" }}>Citadel</span>
             </div>
             <div style={{ width: 36 }} />
