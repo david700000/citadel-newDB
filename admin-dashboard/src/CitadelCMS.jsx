@@ -4407,6 +4407,8 @@ const LeaderDashboard = ({ state, dispatch, admin, toast }) => {
   const [viewUser, setViewUser] = useState(null);
   const [selectedLog, setSelectedLog] = useState(null);
   const sessionStartTime = useRef(Date.now()); // Capture the exact timestamp when this session starts
+  const [recentReviews, setRecentReviews] = useState([]);
+  const [reviewsLoading, setReviewsLoading] = useState(true);
 
   const nav = [
     { key: "overview", label: "Overview", icon: "dashboard" },
@@ -4417,6 +4419,27 @@ const LeaderDashboard = ({ state, dispatch, admin, toast }) => {
     { key: "approvals", label: "Approvals Center", icon: "check" },
     { key: "service_reviews", label: "Service Reviews", icon: "forms" },
   ];
+
+  const fetchRecentReviews = async () => {
+    setReviewsLoading(true);
+    try {
+      const res = await fetch(`${API_URLS.SERVICE_REVIEWS}?limit=3&page=1`);
+      if (res.ok) {
+        const data = await res.json();
+        setRecentReviews(data.reviews || []);
+      }
+    } catch (err) {
+      console.error("Failed to load reviews for leader dashboard", err);
+    } finally {
+      setReviewsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (active === "overview") {
+      fetchRecentReviews();
+    }
+  }, [active]);
 
   const firstTimers = state.users.filter(u => u.tag === "first_timer").length;
   const members = state.users.filter(u => u.tag === "member").length;
@@ -4558,6 +4581,58 @@ const LeaderDashboard = ({ state, dispatch, admin, toast }) => {
               <StatCard label="Workers" value={workers} icon="church" />
               <StatCard label="Total Messages" value={state.messages.filter(m => m.type === "bulk" || m.type === "individual").length} icon="messages" />
               <StatCard label="Attendance Records" value={state.attendance.length} icon="attendance" />
+            </div>
+
+            {/* Quality Control Reviews Notifications for Leader */}
+            <div style={{ background: "#fff", borderRadius: 16, border: "1px solid #e2e8f0", padding: 24, boxShadow: "0 4px 20px rgba(0,0,0,0.02)" }}>
+              <h3 style={{ margin: "0 0 16px", fontSize: 16, fontWeight: 700, color: "#0B1F3B", display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ display: "inline-block", width: 8, height: 8, borderRadius: "50%", background: "#6366f1" }} />
+                Recent Quality Control Service Reviews
+              </h3>
+              {reviewsLoading ? (
+                <div style={{ padding: 20, textAlign: "center", color: "#94a3b8", fontSize: 14 }}>Loading QC reviews...</div>
+              ) : recentReviews.length === 0 ? (
+                <div style={{ padding: 20, textAlign: "center", color: "#94a3b8", fontSize: 14 }}>No service reviews submitted by Quality Control yet.</div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                  {recentReviews.map((r, i) => {
+                    const rating = r.overall_average || r.overall_rating || 0;
+                    const ratingColor = rating >= 8 ? "#10b981" : rating >= 5 ? "#f59e0b" : "#ef4444";
+                    return (
+                      <div key={r._id || i} style={{ border: "1px solid #f1f5f9", borderRadius: 12, padding: 16, background: "#f8fafc", display: "flex", flexDirection: "column", gap: 8 }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
+                          <span style={{ fontWeight: 700, color: "#1e293b", textTransform: "capitalize", fontSize: 14 }}>
+                            {r.service_type?.replace(/_/g, " ")}
+                          </span>
+                          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                            <span style={{ fontSize: 12, color: "#64748b" }}>
+                              {r.service_date ? new Date(r.service_date).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "—"}
+                            </span>
+                            <span style={{ background: ratingColor, color: "#fff", padding: "2px 8px", borderRadius: 20, fontSize: 12, fontWeight: 800 }}>
+                              ★ {rating.toFixed(1)}/10
+                            </span>
+                          </div>
+                        </div>
+                        {r.highlight && (
+                          <p style={{ margin: 0, fontSize: 13, color: "#475569" }}>
+                            <strong>Highlight:</strong> {r.highlight}
+                          </p>
+                        )}
+                        {r.improvement_suggestions && (
+                          <p style={{ margin: 0, fontSize: 13, color: "#475569" }}>
+                            <strong>Suggestions:</strong> {r.improvement_suggestions}
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })}
+                  <div style={{ textAlign: "right", marginTop: 8 }}>
+                    <button onClick={() => setActive("service_reviews")} style={{ background: "none", border: "none", color: "#6366f1", fontWeight: 700, fontSize: 13, cursor: "pointer", padding: 0 }}>
+                      View all detailed reviews →
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </Page>
         )}
@@ -6343,8 +6418,8 @@ const ServiceReviewFormPage = ({ onBack, inline = false, onSuccess = null }) => 
   SERVICE_REVIEW_SECTIONS.forEach(s => s.fields.forEach(f => { emptyRatings[f.field] = 0; }));
 
   const [form, setForm] = useState({
-    full_name: "",
-    role: "",
+    full_name: "QC Officer",
+    role: "leader",
     service_date: "",
     service_type: "",
     highlight: "",
@@ -6359,7 +6434,7 @@ const ServiceReviewFormPage = ({ onBack, inline = false, onSuccess = null }) => 
   useEffect(() => {
     if (!submitted || inline) return;
     const t = setInterval(() => setCountdown(c => c - 1), 1000);
-    const r = setTimeout(() => { window.location.href = "https://citadeloftruth.netlify.app/"; }, 6000);
+    const r = setTimeout(() => { window.location.href = "https://citadeloftruthandmercyassembly.netlify.app/"; }, 6000);
     return () => { clearInterval(t); clearTimeout(r); };
   }, [submitted, inline]);
 
@@ -6371,8 +6446,6 @@ const ServiceReviewFormPage = ({ onBack, inline = false, onSuccess = null }) => 
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!form.full_name.trim()) { setError("Please enter your full name."); return; }
-    if (!form.role) { setError("Please select your role."); return; }
     if (!form.service_date) { setError("Please select the service date."); return; }
     if (!form.service_type) { setError("Please select the service type."); return; }
     const unrated = SERVICE_REVIEW_SECTIONS.flatMap(s => s.fields).filter(f => !form[f.field]);
@@ -6404,8 +6477,8 @@ const ServiceReviewFormPage = ({ onBack, inline = false, onSuccess = null }) => 
 
   const handleReset = () => {
     setForm({
-      full_name: "",
-      role: "",
+      full_name: "QC Officer",
+      role: "leader",
       service_date: "",
       service_type: "",
       highlight: "",
@@ -6543,7 +6616,7 @@ const ServiceReviewFormPage = ({ onBack, inline = false, onSuccess = null }) => 
 
         <form onSubmit={handleSubmit}>
 
-          {/* Your Details card */}
+          {/* Service Details card */}
           <div style={{
             background: "#fff", borderRadius: 12, padding: "20px 24px",
             marginBottom: 20, border: "1px solid #e5e7eb",
@@ -6551,37 +6624,9 @@ const ServiceReviewFormPage = ({ onBack, inline = false, onSuccess = null }) => 
             animation: "fadeUp .3s ease",
           }}>
             <h3 style={{ margin: "0 0 16px", fontSize: 14, fontWeight: 700, color: "#0B1F3B", borderBottom: "1px solid #f3f4f6", paddingBottom: 10 }}>
-              Your Details
+              Service Details
             </h3>
             <div className="sr-details-grid">
-              <div>
-                <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#374151", marginBottom: 5 }}>Full Name <span style={{ color: "#ef4444" }}>*</span></label>
-                <input
-                  type="text" value={form.full_name}
-                  onChange={e => setField("full_name", e.target.value)}
-                  placeholder="Your name"
-                  style={{
-                    width: "100%", height: 40, padding: "0 12px", border: "1.5px solid #e5e7eb",
-                    borderRadius: 8, fontSize: 13, fontFamily: "'DM Sans', sans-serif",
-                    outline: "none", background: "#fafafa", boxSizing: "border-box"
-                  }}
-                />
-              </div>
-              <div>
-                <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#374151", marginBottom: 5 }}>Your Role <span style={{ color: "#ef4444" }}>*</span></label>
-                <select
-                  value={form.role}
-                  onChange={e => setField("role", e.target.value)}
-                  style={{
-                    width: "100%", height: 40, padding: "0 12px", border: "1.5px solid #e5e7eb",
-                    borderRadius: 8, fontSize: 13, fontFamily: "'DM Sans', sans-serif",
-                    outline: "none", background: "#fafafa", boxSizing: "border-box", cursor: "pointer"
-                  }}
-                >
-                  <option value="">Select role</option>
-                  {ROLE_OPTIONS.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
-                </select>
-              </div>
               <div>
                 <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#374151", marginBottom: 5 }}>Service Date <span style={{ color: "#ef4444" }}>*</span></label>
                 <input
