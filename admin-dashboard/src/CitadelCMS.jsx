@@ -7054,7 +7054,14 @@ export default function App() {
   const [state, dispatch_] = useState({ ...INITIAL_STATE, session: null });
   const [isInitializingSession, setIsInitializingSession] = useState(true);
   const [toast, setToast] = useState(null);
-  const [publicForm, setPublicForm] = useState(null); // "first_timer" | "member_worker"
+  const [publicForm, setPublicForm] = useState(() => {
+    if (typeof window === "undefined") return null;
+    const hash = window.location.hash;
+    if (hash === "#/register/first-timer") return "first_timer";
+    if (hash === "#/register/member-worker") return "member_worker";
+    if (hash === "#/service-review") return "service_review";
+    return null;
+  }); // "first_timer" | "member_worker"
   const [redirectUrl, setRedirectUrl] = useState("/");
   const [notifPermission, setNotifPermission] = useState(() => typeof window !== "undefined" && "Notification" in window ? Notification.permission : "default");
   const [forceChangePassword, setForceChangePassword] = useState(false);
