@@ -182,7 +182,7 @@
           <div class="event-card fade-in" style="transition-delay:.${index * 12}s">
             ${imgMarkup}
             <div class="event-card-body">
-              <div class="event-date">📅 ${e.date}</div>
+              <div class="event-date">Date: ${e.date}</div>
               <h3>${e.title}</h3>
               <p>${e.description}</p>
               <a href="event.html?title=${encodeURIComponent(e.title)}" class="event-link">${e.linkRef || 'View Details'} <svg viewBox="0 0 24 24" style="width:13px;fill:var(--blue)"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/></svg></a>
