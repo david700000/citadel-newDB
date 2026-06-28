@@ -137,8 +137,8 @@ router.post("/invite", requireCMS, async (req, res) => {
   <div style="max-width:560px;margin:32px auto;background:#fff;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.08);">
     <!-- Header -->
     <div style="background:#0B1F3B;padding:28px 32px;text-align:center;">
-      <div style="display:inline-block;background:rgba(244,196,48,0.15);border:1px solid rgba(244,196,48,0.3);border-radius:12px;padding:10px 16px;margin-bottom:12px;">
-        <span style="font-size:26px;">🛡️</span>
+      <div style="display:inline-block;background:rgba(244,196,48,0.15);border:1px solid rgba(244,196,48,0.4);border-radius:8px;padding:6px 18px;margin-bottom:12px;">
+        <span style="font-size:12px;font-weight:700;color:#F4C430;letter-spacing:0.08em;text-transform:uppercase;">Command Centre</span>
       </div>
       <h1 style="color:#F4C430;margin:0 0 4px;font-size:20px;font-weight:800;">${churchName}</h1>
       <p style="color:rgba(255,255,255,0.5);margin:0;font-size:13px;">Admin Invitation</p>
@@ -162,7 +162,7 @@ router.post("/invite", requireCMS, async (req, res) => {
             <td style="padding:10px 0;font-family:monospace;font-size:15px;font-weight:800;color:#0B1F3B;letter-spacing:0.08em;">${tempPassword}</td>
           </tr>
         </table>
-        <p style="margin:14px 0 0;font-size:12px;color:#f59e0b;">⚠️ Copy your password before clicking the button below. Change it immediately after logging in.</p>
+        <p style="margin:14px 0 0;font-size:12px;color:#d97706;font-weight:600;">Note: Copy your password before clicking the button below. Change it immediately after logging in.</p>
       </div>
       <!-- CTA Button -->
       <div style="text-align:center;margin-bottom:24px;">
