@@ -289,7 +289,7 @@ const Sidebar = ({ nav, active, setActive, role, onLogout, adminName }) => {
     }}>
       <div style={{ padding: "28px 20px 20px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-          <img src="logo.jpg" alt="Logo" style={{ width: 36, height: 36, objectFit: "contain" }} />
+          <img src={churchLogo} alt="Logo" style={{ width: 36, height: 36, objectFit: "contain" }} />
           <div>
             <div style={{ color: "#fff", fontWeight: 800, fontSize: 15, fontFamily: "'DM Sans', sans-serif" }}>Citadel</div>
             <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 10, fontFamily: "'DM Sans', sans-serif" }}>Management System</div>
@@ -374,7 +374,7 @@ const Sidebar = ({ nav, active, setActive, role, onLogout, adminName }) => {
 const Page = ({ title, subtitle, actions, children }) => (
   <div className="page-container" style={{ padding: "32px 32px 48px", position: "relative" }}>
     <div className="page-watermark">
-      <img src="/logo.jpg" alt="" />
+      <img src={churchLogo} alt="" />
     </div>
     <div style={{ position: "relative", zIndex: 1 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 28 }}>
@@ -653,7 +653,7 @@ const AttendanceDetailsModal = ({ eventLog, users, onClose, onEdit }) => {
       </head>
       <body>
         <div class="print-watermark">
-          <img src="/logo.jpg" alt="" />
+          <img src="logo.jpg" alt="" />
         </div>
         <div class="header">
           <div class="title">${eventLog.event_name}</div>
@@ -991,7 +991,7 @@ const RegisterPage = ({ formType, formFields, onSubmit, onBack }) => {
 
         <div style={{ background: "#fff", borderRadius: 20, padding: "32px 24px", boxShadow: "0 32px 80px rgba(0,0,0,0.3)" }}>
           <div style={{ textAlign: "center", marginBottom: 20 }}>
-            <img src="/logo.jpg" alt="Citadel Logo" style={{ width: 80, height: 80, objectFit: "contain", marginBottom: 12 }} />
+            <img src={churchLogo} alt="Citadel Logo" style={{ width: 80, height: 80, objectFit: "contain", marginBottom: 12 }} />
             <h2 style={{ margin: "0 0 6px", fontSize: 22, fontWeight: 800, color: "#0B1F3B", fontFamily: "'DM Sans', sans-serif" }}>
               {formType === "first_timer"
                 ? "First-Timer Registration"
