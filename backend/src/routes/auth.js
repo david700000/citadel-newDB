@@ -121,14 +121,14 @@ router.post("/invite", requireCMS, async (req, res) => {
 
     // Send Invitation Email
     const churchName = process.env.CHURCH_NAME || "Citadel of Truth and Mercy Assembly";
-    const loginUrl = `${process.env.FRONTEND_URL || "http://localhost:5173"}/`;
+    const loginUrl = (process.env.FRONTEND_URL || "https://citadeloftruthandmercyassembly.netlify.app").replace(/\/$/, '') + '/admin';
     
     try {
       await sendEmail({
         to: email,
         name: adminName,
         subject: `Admin Invitation - ${churchName}`,
-        message: `Hi ${adminName},\n\nYou have been invited as a ${role.replace(/_/g, " ")} at ${churchName}.\n\nYour temporary login credentials are:\nEmail: ${email}\nPassword: ${tempPassword}\n\nPlease login at ${loginUrl} and change your password immediately after logging in.\n\nIf you did not expect this email, please ignore it.`
+        message: `Hi ${adminName},\n\nYou have been invited as a ${role.replace(/_/g, " ")} at ${churchName}.\n\nYour temporary login credentials are:\nEmail: ${email}\nPassword: ${tempPassword}\n\nPlease click this link to log in: ${loginUrl}\n\nMake sure to change your password immediately after logging in.\n\nIf you did not expect this invitation, please ignore this email.`
       });
       console.log(`[Invite] ✅ Email sent successfully to ${email}`);
     } catch (mailErr) {
