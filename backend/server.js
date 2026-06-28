@@ -371,7 +371,7 @@ app.post('/api/users', authenticateToken, async (req, res) => {
         res.json({ success: true, id: user._id, email: user.email, role: user.role });
 
         // Send welcome email with credentials
-        const dashboardUrl = (process.env.FRONTEND_URL || 'https://citadeloftruth.netlify.app') + '/admin.html';
+        const dashboardUrl = (process.env.FRONTEND_URL || 'https://citadeloftruthandmercyassembly.netlify.app') + '/admin';
         const roleLabel = user.role === 'superadmin' ? 'Super Admin' : 'Admin';
         sendMail({
             to: user.email,
