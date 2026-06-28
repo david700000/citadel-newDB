@@ -849,7 +849,7 @@ const LoginPage = ({ onLogin, toast }) => {
       <div style={{ minHeight: "100vh", background: "#0B1F3B", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "'DM Sans', sans-serif", padding: 16 }}>
         <div style={{ width: "100%", maxWidth: 420 }}>
           <div style={{ textAlign: "center", marginBottom: 36 }}>
-            <img src="/logo.jpg" alt="Citadel Logo" style={{ width: 80, height: 80, objectFit: "contain", marginBottom: 16, animation: "scaleIn .4s ease" }} />
+            <img src="logo.jpg" alt="Citadel Logo" style={{ width: 80, height: 80, objectFit: "contain", marginBottom: 16, animation: "scaleIn .4s ease" }} />
             <h1 style={{ color: "#fff", fontSize: 28, fontWeight: 800, margin: "0 0 6px" }}>Citadel</h1>
           </div>
           <div style={{ background: "#fff", borderRadius: 20, padding: 32, boxShadow: "0 32px 80px rgba(0,0,0,0.3)" }}>
@@ -890,7 +890,7 @@ const LoginPage = ({ onLogin, toast }) => {
     }}>
       <div style={{ width: "100%", maxWidth: 420 }}>
         <div style={{ textAlign: "center", marginBottom: 36 }}>
-          <img src="/logo.jpg" alt="Citadel Logo" style={{ width: 80, height: 80, objectFit: "contain", marginBottom: 16, animation: "scaleIn .4s ease" }} />
+          <img src="logo.jpg" alt="Citadel Logo" style={{ width: 80, height: 80, objectFit: "contain", marginBottom: 16, animation: "scaleIn .4s ease" }} />
           <h1 style={{ color: "#fff", fontSize: 28, fontWeight: 800, margin: "0 0 6px" }}>Citadel</h1>
           <p style={{ color: "rgba(255,255,255,0.5)", fontSize: 14, margin: 0 }}>E-Management System</p>
         </div>
