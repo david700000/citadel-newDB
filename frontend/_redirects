@@ -1,1 +1,10 @@
-/admin  /admin.html  200
+# ─── Admin Dashboard ───
+/admin    https://citadel-newdb.onrender.com/admin/    302
+
+# ─── Public Registration Forms (served via CMS hash routes) ───
+/first-timer    https://citadel-newdb.onrender.com/admin/#/register/first-timer    302
+/member         https://citadel-newdb.onrender.com/admin/#/register/member-worker  302
+/reviews        https://citadel-newdb.onrender.com/admin/#/service-review          302
+
+# ─── Netlify SPA fallback ───
+/*    /index.html    200

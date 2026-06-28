@@ -272,7 +272,7 @@ const Sidebar = ({ nav, active, setActive, role, onLogout, adminName }) => {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  const roleLabels = { cms: "CMS Root", media_admin: "Media Admin", usher_admin: "Usher Admin", leader: "Leader", finance_admin: "finance admin" };
+  const roleLabels = { cms: "CMS Root", media_admin: "Media Admin", usher_admin: "Usher Admin", leader: "Leader", finance_admin: "Finance Admin", quality_control: "Quality Control" };
 
   const handleNavClick = (key) => {
     setActive(key);
@@ -288,7 +288,7 @@ const Sidebar = ({ nav, active, setActive, role, onLogout, adminName }) => {
     }}>
       <div style={{ padding: "28px 20px 20px", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 12 }}>
-          <img src="/logo.jpg" alt="Logo" style={{ width: 36, height: 36, objectFit: "contain" }} />
+          <img src="logo.jpg" alt="Logo" style={{ width: 36, height: 36, objectFit: "contain" }} />
           <div>
             <div style={{ color: "#fff", fontWeight: 800, fontSize: 15, fontFamily: "'DM Sans', sans-serif" }}>Citadel</div>
             <div style={{ color: "rgba(255,255,255,0.4)", fontSize: 10, fontFamily: "'DM Sans', sans-serif" }}>Management System</div>
