@@ -1709,15 +1709,16 @@ const CMSWebsiteContent = ({ state, toast }) => {
   );
 };
 
-// ════════════════════════════════════════════════════════════════════════════════
-// CMSEventRegistrations Component
-// ════════════════════════════════════════════════════════════════════════════════
 const CMSEventRegistrations = ({ state, toast }) => {
   const [registrations, setRegistrations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedEvent, setSelectedEvent] = useState(null); // null = overview
   const [detailTab, setDetailTab] = useState("registrations"); // "registrations" | "attendance"
   const [search, setSearch] = useState("");
+
+  // Website data state to load details like logo/banner
+  const [webData, setWebData] = useState({ events: [] });
+  const [updatingAssets, setUpdatingAssets] = useState(false);
 
   const token = state.session?.token;
 
@@ -1740,7 +1741,76 @@ const CMSEventRegistrations = ({ state, toast }) => {
     }
   };
 
-  useEffect(() => { fetchRegistrations(); }, []);
+  const fetchWebData = async () => {
+    try {
+      const res = await fetch('/api/data');
+      if (res.ok) {
+        const data = await res.json();
+        setWebData(data);
+      }
+    } catch (err) {
+      console.error("Failed to load website data in registrations", err);
+    }
+  };
+
+  useEffect(() => {
+    fetchRegistrations();
+    fetchWebData();
+  }, []);
+
+  const handleAssetUpload = async (file, eventTitle, fieldKey) => {
+    if (!file) return;
+    const formData = new FormData();
+    formData.append("image", file);
+    try {
+      toast("Uploading image...", "info");
+      const res = await fetch('/api/upload', {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData
+      });
+      if (res.ok) {
+        const result = await res.json();
+        toast("Upload success!", "success");
+        setWebData(prev => {
+          const updatedEvents = prev.events.map(e => {
+            if (e.title === eventTitle) {
+              return { ...e, [fieldKey]: result.url };
+            }
+            return e;
+          });
+          return { ...prev, events: updatedEvents };
+        });
+      } else {
+        toast("Upload failed", "error");
+      }
+    } catch (err) {
+      toast("Error uploading image", "error");
+    }
+  };
+
+  const handleSaveAssets = async (eventTitle) => {
+    setUpdatingAssets(true);
+    try {
+      const res = await fetch('/api/data', {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify(webData)
+      });
+      if (res.ok) {
+        toast("Event registration page settings updated successfully!", "success");
+      } else {
+        toast("Failed to save changes", "error");
+      }
+    } catch (err) {
+      toast("Network error saving changes", "error");
+    } finally {
+      setUpdatingAssets(false);
+    }
+  };
 
   const handleDelete = async (id) => {
     if (!confirm("Are you sure you want to delete this registration?")) return;
@@ -1821,6 +1891,9 @@ const CMSEventRegistrations = ({ state, toast }) => {
     const absentList = filtered.filter(r => !r.attended);
     const tabList = detailTab === "attendance" ? attendedList : filtered;
 
+    // Find custom event details
+    const dbEvent = webData.events ? webData.events.find(e => e.title === selectedEvent) : null;
+
     return (
       <Page
         title={selectedEvent}
@@ -1832,6 +1905,68 @@ const CMSEventRegistrations = ({ state, toast }) => {
           </div>
         }
       >
+        {/* Banner Cover & Logo configuration for this event */}
+        {dbEvent && (
+          <div style={{ background: "#fff", borderRadius: 14, padding: 24, boxShadow: "0 2px 12px rgba(0,0,0,0.06)", marginBottom: 24 }}>
+            <h3 style={{ margin: "0 0 16px 0", fontSize: 15, fontWeight: 700, color: "#0B1F3B", fontFamily: "'DM Sans', sans-serif" }}>Registration Form Design & Page Assets</h3>
+            
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 20, marginBottom: 20 }}>
+              
+              {/* Banner Cover */}
+              <div style={{ background: "#f8fafc", borderRadius: 10, padding: 16, border: "1px solid #e5e7eb" }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: "#374151", marginBottom: 10, textTransform: "uppercase", letterSpacing: "0.05em" }}>Banner Cover</div>
+                {dbEvent.bannerImage && <img src={dbEvent.bannerImage} alt="Banner" style={{ width: "100%", height: 80, objectFit: "cover", borderRadius: 6, marginBottom: 8 }} />}
+                <input type="file" accept="image/*" onChange={el => handleAssetUpload(el.target.files[0], selectedEvent, "bannerImage")} style={{ fontSize: 11, marginBottom: 8, display: "block" }} />
+                <Input
+                  label="Or Banner URL"
+                  value={dbEvent.bannerImage || ""}
+                  onChange={v => setWebData(prev => {
+                    const u = prev.events.map(e => e.title === selectedEvent ? { ...e, bannerImage: v } : e);
+                    return { ...prev, events: u };
+                  })}
+                  small
+                />
+              </div>
+
+              {/* Event Logo */}
+              <div style={{ background: "#f8fafc", borderRadius: 10, padding: 16, border: "1px solid #e5e7eb" }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: "#374151", marginBottom: 10, textTransform: "uppercase", letterSpacing: "0.05em" }}>Event Logo</div>
+                {dbEvent.logoImage && <img src={dbEvent.logoImage} alt="Logo" style={{ height: 40, objectFit: "contain", borderRadius: 4, marginBottom: 8, display: "block" }} />}
+                <input type="file" accept="image/*" onChange={el => handleAssetUpload(el.target.files[0], selectedEvent, "logoImage")} style={{ fontSize: 11, marginBottom: 8, display: "block" }} />
+                <Input
+                  label="Or Logo URL"
+                  value={dbEvent.logoImage || ""}
+                  onChange={v => setWebData(prev => {
+                    const u = prev.events.map(e => e.title === selectedEvent ? { ...e, logoImage: v } : e);
+                    return { ...prev, events: u };
+                  })}
+                  small
+                />
+              </div>
+
+              {/* Card Thumbnail */}
+              <div style={{ background: "#f8fafc", borderRadius: 10, padding: 16, border: "1px solid #e5e7eb" }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: "#374151", marginBottom: 10, textTransform: "uppercase", letterSpacing: "0.05em" }}>Card Thumbnail</div>
+                {dbEvent.imageUrl && <img src={dbEvent.imageUrl} alt="Thumbnail" style={{ width: "100%", height: 80, objectFit: "cover", borderRadius: 6, marginBottom: 8 }} />}
+                <input type="file" accept="image/*" onChange={el => handleAssetUpload(el.target.files[0], selectedEvent, "imageUrl")} style={{ fontSize: 11, marginBottom: 8, display: "block" }} />
+                <Input
+                  label="Or Thumbnail URL"
+                  value={dbEvent.imageUrl || ""}
+                  onChange={v => setWebData(prev => {
+                    const u = prev.events.map(e => e.title === selectedEvent ? { ...e, imageUrl: v } : e);
+                    return { ...prev, events: u };
+                  })}
+                  small
+                />
+              </div>
+
+            </div>
+
+            <Btn onClick={() => handleSaveAssets(selectedEvent)} variant="accent" disabled={updatingAssets}>
+              {updatingAssets ? "Saving Settings..." : "Save Event Page Settings"}
+            </Btn>
+          </div>
+        )}
         {/* Stats Bar */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, marginBottom: 24 }}>
           {[
