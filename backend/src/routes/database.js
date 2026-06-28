@@ -63,6 +63,12 @@ router.delete("/purge/:target", requireCMS, async (req, res) => {
       await Message.deleteMany({});
       await Reminder.deleteMany({});
       results.communications = "Cleared";
+      try {
+        const { refreshScheduler } = require("../jobs/reminderScheduler");
+        await refreshScheduler();
+      } catch (err) {
+        console.error("Failed to refresh scheduler after purge:", err);
+      }
     }
 
     if (target === "audits" || target === "all") {
