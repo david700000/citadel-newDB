@@ -1234,7 +1234,7 @@ const CMSWebsiteContent = ({ state, toast }) => {
       <div style={{ display: "flex", gap: 10, marginBottom: 20, flexWrap: "wrap" }}>
         {[
           { key: "hero", label: "Hero Slides" },
-          { key: "events", label: "Events" },
+          { key: "events", label: "Programs" },
           { key: "sermons", label: "Sermons" },
           { key: "gallery", label: "Gallery" },
           { key: "global", label: "Global Assets" }
@@ -1382,8 +1382,8 @@ const CMSWebsiteContent = ({ state, toast }) => {
       {subActive === "events" && (
         <div>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
-            <h3 style={{ margin: 0, fontFamily: "'DM Sans', sans-serif", color: "#0B1F3B" }}>Upcoming Events</h3>
-            <Btn onClick={addEvent} variant="accent" small>+ Add Event</Btn>
+            <h3 style={{ margin: 0, fontFamily: "'DM Sans', sans-serif", color: "#0B1F3B" }}>Upcoming Programs</h3>
+            <Btn onClick={addEvent} variant="accent" small>+ Add Program</Btn>
           </div>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: 20 }}>
             {data.events.map((e, i) => (
@@ -2067,7 +2067,7 @@ const CMSEventRegistrations = ({ state, toast }) => {
 
   return (
     <Page
-      title="Event Registrations"
+      title="Program Registrations"
       subtitle={`${totalRegistered} total signups across ${eventNames.length} event${eventNames.length !== 1 ? "s" : ""}`}
       actions={
         <Btn onClick={() => handleDownloadCSV(registrations, `All_Event_Registrations_${new Date().toISOString().split('T')[0]}.csv`)} variant="accent" small>
@@ -2081,7 +2081,7 @@ const CMSEventRegistrations = ({ state, toast }) => {
           { label: "Total Registered", value: totalRegistered, color: "#0B1F3B" },
           { label: "Total Attended", value: totalAttended, color: "#059669" },
           { label: "Absent / Pending", value: totalRegistered - totalAttended, color: "#f59e0b" },
-          { label: "Events", value: eventNames.length, color: "#6366f1" }
+          { label: "Programs", value: eventNames.length, color: "#6366f1" }
         ].map(s => (
           <div key={s.label} style={{ background: "#fff", borderRadius: 14, padding: "18px 22px", boxShadow: "0 2px 12px rgba(0,0,0,0.06)", borderLeft: `4px solid ${s.color}` }}>
             <div style={{ fontSize: 28, fontWeight: 800, color: s.color, fontFamily: "'DM Sans', sans-serif" }}>{s.value}</div>
@@ -2157,7 +2157,7 @@ const CMSDashboard = ({ state, dispatch, toast }) => {
   const nav = [
     { key: "dashboard", label: "Dashboard", icon: "dashboard" },
     { key: "website_content", label: "Website Content", icon: "church" },
-    { key: "event_regs", label: "Event Registrations", icon: "attendance" },
+    { key: "event_regs", label: "Program Registrations", icon: "attendance" },
     { key: "users", label: "Users", icon: "users" },
     { key: "forms", label: "Form Builder", icon: "forms" },
     { key: "admins", label: "Admins", icon: "admins" },

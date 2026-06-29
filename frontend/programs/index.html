@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Program Registration - Citadel of Truth and Mercy Assembly</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="dns-prefetch" href="https://citadel-newdb.onrender.com" />
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=Jost:wght@300;400;500;600&display=swap"
+    rel="stylesheet" media="print" onload="this.media='all'" />
+  <noscript>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  </noscript>
+
+  <link rel="stylesheet" href="../church.css" />
+  <style>
+    .event-page-hero {
+      padding: 180px 5% 100px;
+      text-align: center;
+      background: linear-gradient(to bottom, #0d1b3e, #1a2a5e);
+      color: white;
+    }
+    .event-page-hero h1 {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 3.5rem;
+      margin-bottom: 20px;
+    }
+    .event-page-hero p {
+      font-size: 1.1rem;
+      opacity: 0.9;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+    .event-details-section {
+      padding: 80px 5%;
+      background: #fdfdfd;
+      color: #333;
+    }
+    .event-details-container {
+      max-width: 1000px;
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 50px;
+      align-items: flex-start;
+    }
+    @media(max-width: 768px) {
+      .event-details-container { grid-template-columns: 1fr; }
+    }
+    .event-info img { width: 100%; border-radius: 12px; margin-bottom: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); }
+    .event-info h2 { font-family: 'Cormorant Garamond', serif; font-size: 2.2rem; color: #0d1b3e; margin-bottom: 12px; }
+    .event-meta { display: flex; align-items: center; gap: 10px; font-weight: 500; color: #798399; margin-bottom: 20px; }
+    .event-info p { line-height: 1.8; color: #555; }
+    .registration-box { background: white; padding: 40px; border-radius: 16px; box-shadow: 0 15px 40px rgba(0,0,0,0.06); }
+    .registration-box h3 { font-family: 'Cormorant Garamond', serif; font-size: 1.8rem; color: #0d1b3e; margin-bottom: 8px; }
+    .registration-box > p { color: #798399; margin-bottom: 24px; }
+    .form-field { margin-bottom: 20px; }
+    .form-field label { display: block; margin-bottom: 8px; font-weight: 500; color: #0d1b3e; }
+    .form-field input, .form-field select {
+      width: 100%; padding: 12px 16px; border: 1px solid #e0e4ec;
+      border-radius: 8px; font-family: 'Jost', sans-serif; font-size: 1rem;
+      outline: none; transition: 0.3s; box-sizing: border-box;
+    }
+    .form-field input:focus, .form-field select:focus { border-color: #0d1b3e; }
+    .btn-register {
+      display: block; width: 100%; padding: 14px;
+      background: #0d1b3e; color: white; border: none; border-radius: 8px;
+      font-family: 'Jost', sans-serif; font-size: 1.1rem; font-weight: 600;
+      cursor: pointer; transition: 0.3s; text-align: center;
+    }
+    .btn-register:hover { background: #1a2a5e; }
+    .btn-register:disabled { opacity: 0.7; cursor: not-allowed; }
+  </style>
+</head>
+
+<body>
+
+  <!-- ─── NAV ─── -->
+  <nav id="mainNav">
+    <a href="../index.html" class="nav-logo">
+      <div class="nav-logo-icon" id="header-logo">
+        <svg viewBox="0 0 24 24">
+          <path d="M12 2L4 6v6c0 5.25 3.5 10.15 8 11.35C16.5 22.15 20 17.25 20 12V6L12 2zm0 10.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 7.5 12 7.5s2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5zm0 5c-2.25 0-4.2-1.25-5.24-3h10.48C16.2 16.25 14.25 17.5 12 17.5z" />
+        </svg>
+      </div>
+      <div class="nav-logo-text">
+        <span>Citadel of Truth</span>
+        <span>and Mercy Assembly</span>
+      </div>
+    </a>
+    <ul class="nav-links">
+      <li><a href="../index.html#about">About</a></li>
+      <li><a href="../index.html#beliefs">Beliefs</a></li>
+      <li><a href="../index.html#programs">Programs</a></li>
+      <li><a href="../index.html#sermons">Sermons</a></li>
+      <li><a href="../index.html#give">Give</a></li>
+      <li><a href="../index.html#contact">Contact</a></li>
+      <li><a href="../index.html#contact" class="nav-cta">Join Us</a></li>
+    </ul>
+    <button class="burger" id="burger" aria-label="Menu">
+      <span></span><span></span><span></span>
+    </button>
+  </nav>
+
+  <div class="mobile-nav" id="mobileNav">
+    <a href="../index.html#about" onclick="closeMobile()">About</a>
+    <a href="../index.html#beliefs" onclick="closeMobile()">Beliefs</a>
+    <a href="../index.html#programs" onclick="closeMobile()">Programs</a>
+    <a href="../index.html#sermons" onclick="closeMobile()">Sermons</a>
+    <a href="../index.html#give" onclick="closeMobile()">Give</a>
+    <a href="../index.html#contact" onclick="closeMobile()">Contact</a>
+  </div>
+
+  <!-- ─── PROGRAM HERO ─── -->
+  <section class="event-page-hero">
+    <h1 id="hero-title">Program Registration</h1>
+    <p>Join us and be part of what God is doing.</p>
+  </section>
+
+  <!-- ─── PROGRAM DETAILS & FORM ─── -->
+  <section class="event-details-section">
+    <div class="event-details-container">
+
+      <!-- Left: Program Info -->
+      <div class="event-info" id="event-info-container">
+        <h2 style="font-size: 1.5rem; text-align: center; color: #999;">Loading program details...</h2>
+      </div>
+
+      <!-- Right: Registration Form -->
+      <div class="registration-box">
+        <h3>Register Now</h3>
+        <p>Fill out the form below to secure your spot.</p>
+
+        <form id="event-register-form">
+          <input type="hidden" id="reg-event-title" name="eventTitle" value="">
+
+          <div class="form-field">
+            <label for="reg-fname">First Name</label>
+            <input type="text" id="reg-fname" placeholder="John" required>
+          </div>
+
+          <div class="form-field">
+            <label for="reg-lname">Last Name</label>
+            <input type="text" id="reg-lname" placeholder="Doe" required>
+          </div>
+
+          <div class="form-field">
+            <label for="reg-email">Email Address</label>
+            <input type="email" id="reg-email" placeholder="john@example.com" required>
+          </div>
+
+          <div class="form-field">
+            <label for="reg-phone">Phone Number</label>
+            <input type="tel" id="reg-phone" placeholder="+234..." required>
+          </div>
+
+          <!-- Dynamic custom fields injected by JS -->
+          <div id="reg-dynamic-fields"></div>
+
+          <button type="submit" class="btn-register" id="reg-submit-btn">Complete Registration</button>
+        </form>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ─── FOOTER ─── -->
+  <footer>
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <div class="nav-logo" style="margin-bottom:0">
+          <div class="nav-logo-icon" id="footer-logo">
+            <svg viewBox="0 0 24 24">
+              <path d="M12 2L4 6v6c0 5.25 3.5 10.15 8 11.35C16.5 22.15 20 17.25 20 12V6L12 2zm0 10.5c-1.38 0-2.5-1.12-2.5-2.5S10.62 7.5 12 7.5s2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5zm0 5c-2.25 0-4.2-1.25-5.24-3h10.48C16.2 16.25 14.25 17.5 12 17.5z" />
+            </svg>
+          </div>
+          <div class="nav-logo-text">
+            <span>Citadel of Truth</span>
+            <span style="opacity:.55">and Mercy Assembly</span>
+          </div>
+        </div>
+        <p>A Spirit-filled community committed to authentic worship, sound biblical teaching, and transforming lives through the power of God's Word and love.</p>
+      </div>
+      <div>
+        <h4>Quick Links</h4>
+        <ul>
+          <li><a href="../index.html#about">About Us</a></li>
+          <li><a href="../index.html#beliefs">Our Beliefs</a></li>
+          <li><a href="../index.html#programs">Programs</a></li>
+          <li><a href="../index.html#sermons">Sermons</a></li>
+          <li><a href="../index.html#give">Give</a></li>
+          <li><a href="../index.html#contact">Contact</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>&copy; 2026 Citadel of Truth and Mercy Assembly. All rights reserved.</span>
+      <span>Designed by lume studios.</span>
+    </div>
+  </footer>
+
+  <script>
+  (function() {
+    const API_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+      ? 'http://localhost:3000'
+      : 'https://citadel-newdb.onrender.com';
+
+    // Warm-up ping
+    fetch(API_URL + '/health', { method: 'GET', cache: 'no-store' }).catch(() => {});
+
+    // Burger menu
+    const burger = document.getElementById('burger');
+    const mobileNav = document.getElementById('mobileNav');
+    if (burger) burger.addEventListener('click', () => mobileNav.classList.toggle('open'));
+    window.closeMobile = () => mobileNav.classList.remove('open');
+
+    // Extract slug from URL path: /programs/youth-conference-2026 → "youth-conference-2026"
+    const pathParts = window.location.pathname.split('/');
+    const slug = pathParts[pathParts.length - 1] || pathParts[pathParts.length - 2] || '';
+
+    // Convert slug back to title match: compare slugified db titles
+    const slugify = s => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+
+    const slugify2 = s => s.toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '');
+    const toEventSlug = title => 'event_' + slugify2(title);
+
+    function renderDynamicFields(fields) {
+      const container = document.getElementById('reg-dynamic-fields');
+      if (!container) return;
+      container.innerHTML = '';
+      const active = (fields || []).filter(f => f.active !== false);
+      active.forEach(f => {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'form-field';
+        const label = document.createElement('label');
+        label.setAttribute('for', 'dyn-' + f.field_key);
+        label.textContent = f.label + (f.required ? ' *' : '');
+        wrapper.appendChild(label);
+        let input;
+        if (f.type === 'dropdown' && Array.isArray(f.options) && f.options.length > 0) {
+          input = document.createElement('select');
+          input.id = 'dyn-' + f.field_key;
+          input.name = f.field_key;
+          if (f.required) input.required = true;
+          const ph = document.createElement('option');
+          ph.value = ''; ph.textContent = 'Select ' + f.label;
+          input.appendChild(ph);
+          f.options.forEach(opt => {
+            const o = document.createElement('option');
+            o.value = opt; o.textContent = opt;
+            input.appendChild(o);
+          });
+        } else {
+          input = document.createElement('input');
+          input.type = f.type === 'date' ? 'date' : f.type === 'number' ? 'number' : 'text';
+          input.id = 'dyn-' + f.field_key;
+          input.name = f.field_key;
+          input.placeholder = f.label;
+          if (f.required) input.required = true;
+        }
+        wrapper.appendChild(input);
+        container.appendChild(wrapper);
+      });
+    }
+
+    async function loadProgramData() {
+      try {
+        const dataRes = await fetch(API_URL + '/api/data');
+        if (!dataRes.ok) throw new Error('Data fetch failed');
+        const data = await dataRes.json();
+
+        // Apply global logo
+        if (data.global && data.global.logoImage) {
+          const hl = document.getElementById('header-logo');
+          if (hl) hl.innerHTML = '<img src="' + data.global.logoImage + '" style="width:100%;height:100%;object-fit:contain;" alt="Logo">';
+          const fl = document.getElementById('footer-logo');
+          if (fl) fl.innerHTML = '<img src="' + data.global.logoImage + '" style="width:100%;height:100%;object-fit:contain;" alt="Logo">';
+        }
+
+        const infoContainer = document.getElementById('event-info-container');
+        const titleInput = document.getElementById('reg-event-title');
+
+        if (!slug) {
+          infoContainer.innerHTML = '<h2>Program not found</h2><p>Please return to the <a href="/">home page</a> and select a valid program.</p>';
+          return;
+        }
+
+        // Match by slugified title
+        const event = (data.events || []).find(e => slugify(e.title) === slug);
+
+        if (!event) {
+          infoContainer.innerHTML = '<h2>Program not found</h2><p>The program you are looking for does not exist or has been removed.</p>';
+          return;
+        }
+
+        // Update page title & hero
+        document.title = event.title + ' — Citadel of Truth and Mercy Assembly';
+        const heroTitle = document.getElementById('hero-title');
+        if (heroTitle) heroTitle.textContent = event.title;
+        if (titleInput) titleInput.value = event.title;
+
+        // Load custom fields for this program
+        const eventFormType = toEventSlug(event.title);
+        try {
+          const fieldsRes = await fetch(API_URL + '/api/form-fields?form_type=' + encodeURIComponent(eventFormType));
+          if (fieldsRes.ok) {
+            const fieldsData = await fieldsRes.json();
+            renderDynamicFields(Array.isArray(fieldsData) ? fieldsData : (fieldsData.fields || []));
+          }
+        } catch (_) {}
+
+        // Render program info
+        let bannerMarkup = '';
+        if (event.bannerImage) {
+          bannerMarkup = '<img src="' + event.bannerImage + '" alt="Program Banner" style="width:100%;max-height:280px;object-fit:cover;border-radius:12px;margin-bottom:20px;">';
+        } else if (event.imageUrl) {
+          bannerMarkup = '<img src="' + event.imageUrl + '" alt="' + event.title + '" style="width:100%;max-height:280px;object-fit:cover;border-radius:12px;margin-bottom:20px;">';
+        }
+        let logoMarkup = '';
+        if (event.logoImage) {
+          logoMarkup = '<img src="' + event.logoImage + '" alt="Program Logo" style="height:50px;object-fit:contain;margin-bottom:12px;display:block;">';
+        }
+
+        infoContainer.innerHTML =
+          bannerMarkup + logoMarkup +
+          '<h2>' + event.title + '</h2>' +
+          '<div class="event-meta">' +
+            '<svg viewBox="0 0 24 24" style="width:20px;fill:currentColor;"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>' +
+            event.date +
+          '</div>' +
+          '<p>' + event.description + '</p>';
+
+      } catch (err) {
+        console.error('Failed to load program:', err);
+      }
+    }
+
+    // Form submission
+    const form = document.getElementById('event-register-form');
+    if (form) {
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const submitBtn = document.getElementById('reg-submit-btn');
+        const fname = document.getElementById('reg-fname').value.trim();
+        const lname = document.getElementById('reg-lname').value.trim();
+        const email = document.getElementById('reg-email').value.trim();
+        const phone = document.getElementById('reg-phone').value.trim();
+        const title = document.getElementById('reg-event-title').value;
+
+        const customFields = {};
+        const dynContainer = document.getElementById('reg-dynamic-fields');
+        if (dynContainer) {
+          dynContainer.querySelectorAll('input, select, textarea').forEach(el => {
+            if (el.name) customFields[el.name] = el.value;
+          });
+        }
+
+        submitBtn.textContent = 'Registering...';
+        submitBtn.disabled = true;
+
+        try {
+          const res = await fetch(API_URL + '/api/register-event', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: fname + ' ' + lname, email, phone, eventTitle: title, customFields })
+          });
+          const data = await res.json();
+          if (data.success) {
+            submitBtn.textContent = '✓ Registered!';
+            submitBtn.style.background = '#22c55e';
+            alert(data.message || 'Successfully registered!');
+            form.reset();
+            setTimeout(loadProgramData, 100);
+          } else {
+            throw new Error(data.error || 'Registration failed');
+          }
+        } catch (err) {
+          console.error(err);
+          alert('Error registering. Please try again.');
+          submitBtn.textContent = 'Complete Registration';
+          submitBtn.disabled = false;
+        }
+      });
+    }
+
+    window.addEventListener('DOMContentLoaded', loadProgramData);
+  })();
+  </script>
+</body>
+</html>

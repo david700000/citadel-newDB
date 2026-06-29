@@ -7,5 +7,9 @@
 /member         /admin/#/register/member-worker  302
 /reviews        /admin/#/service-review          302
 
+# ─── Programs: path-based registration pages ───
+/programs       /programs/index.html    200
+/programs/*     /programs/index.html    200
+
 # ─── Church Website SPA fallback ───
 /*    /index.html    200

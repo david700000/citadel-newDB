@@ -177,13 +177,14 @@
         }
       }
 
-      // 3. Events
+      // 3. Programs
       const eventsContainer = document.getElementById('dynamic-events');
       if (eventsContainer && data.events) {
         eventsContainer.innerHTML = data.events.map((e, index) => {
           const imgMarkup = e.imageUrl 
             ? `<div class="event-card-img" style="background-image: url('${e.imageUrl}'); background-size: cover; background-position: center;"><div class="event-card-badge">${e.badge}</div></div>`
             : `<div class="event-card-img"><svg viewBox="0 0 24 24"><path d="${e.iconPath || 'M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z'}"/></svg><div class="event-card-badge">${e.badge}</div></div>`;
+          const slug = e.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
           return `
           <div class="event-card fade-in" style="transition-delay:.${index * 12}s">
             ${imgMarkup}
@@ -191,7 +192,7 @@
               <div class="event-date">Date: ${e.date}</div>
               <h3>${e.title}</h3>
               <p>${e.description}</p>
-              <a href="event.html?title=${encodeURIComponent(e.title)}" class="event-link">${e.linkRef || 'View Details'} <svg viewBox="0 0 24 24" style="width:13px;fill:var(--blue)"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/></svg></a>
+              <a href="/programs/${slug}" class="event-link">${e.linkRef || 'View Details'} <svg viewBox="0 0 24 24" style="width:13px;fill:var(--blue)"><path d="M8.59 16.59L13.17 12 8.59 7.41 10 6l6 6-6 6-1.41-1.41z"/></svg></a>
             </div>
           </div>
         `}).join('');
