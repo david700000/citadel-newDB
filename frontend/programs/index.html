@@ -29,6 +29,7 @@
       background-repeat: no-repeat;
       position: relative;
       margin-top: 80px;
+      cursor: pointer;
     }
     .event-page-hero::after {
       content: '';
@@ -37,6 +38,7 @@
       background: linear-gradient(to bottom, rgba(13,27,62,0.4), rgba(13,27,62,0.6));
       pointer-events: none;
     }
+
 
     .event-details-section {
       padding: 60px 5%;
@@ -137,9 +139,10 @@
       </div>
 
       <!-- Right: Registration Form -->
-      <div class="registration-box">
+      <div class="registration-box" id="registration-section">
         <h3>Register Now</h3>
         <p>Fill out the form below to secure your spot.</p>
+
 
         <form id="event-register-form">
           <input type="hidden" id="reg-event-title" name="eventTitle" value="">
@@ -223,6 +226,18 @@
     const mobileNav = document.getElementById('mobileNav');
     if (burger) burger.addEventListener('click', () => mobileNav.classList.toggle('open'));
     window.closeMobile = () => mobileNav.classList.remove('open');
+
+    // Hero banner click to scroll to registration form
+    const heroEl = document.getElementById('program-hero');
+    if (heroEl) {
+      heroEl.addEventListener('click', () => {
+        const formSec = document.getElementById('registration-section');
+        if (formSec) {
+          formSec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
+    }
+
 
     // Extract slug from URL path: /programs/youth-conference-2026 → "youth-conference-2026"
     const pathParts = window.location.pathname.split('/').filter(Boolean);
