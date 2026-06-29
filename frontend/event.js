@@ -15,8 +15,6 @@
       setTimeout(() => { preloader.style.display = 'none'; }, 650);
     }
   };
-  const preloaderStart = Date.now();
-  const MIN_PRELOADER_MS = 400;
 
   // ─── BURGER MENU ───
   const burger = document.getElementById('burger');
