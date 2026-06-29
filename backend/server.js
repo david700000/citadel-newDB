@@ -114,15 +114,52 @@ app.use(express.json({ limit: '50mb' }));
 const revokedTokens = new Set();
 
 // ─── AUTH MIDDLEWARE ───
-const authenticateToken = (req, res, next) => {
-    const token = req.headers['authorization']?.split(' ')[1];
+const Session = require("./src/models/Session");
+const Admin = require("./src/models/Admin");
+
+const authenticateToken = async (req, res, next) => {
+    let token = req.cookies?.sessionId;
+    
+    // Fallback to Header Authorization
+    if (!token) {
+        const header = req.headers['authorization'] || '';
+        token = header.startsWith('Bearer ') ? header.slice(7) : header;
+    }
+
     if (!token) return res.sendStatus(401);
-    jwt.verify(token, SECRET_KEY, (err, user) => {
-        if (err) return res.sendStatus(403);
-        if (revokedTokens.has('user:' + user.id))
-            return res.status(401).json({ error: 'Access revoked' });
-        req.user = user;
-        next();
+
+    // 1. Try legacy JWT verification first
+    jwt.verify(token, SECRET_KEY, async (err, user) => {
+        if (!err) {
+            if (revokedTokens.has('user:' + user.id)) {
+                return res.status(401).json({ error: 'Access revoked' });
+            }
+            req.user = user;
+            return next();
+        }
+
+        // 2. Fallback to database session validation
+        try {
+            const session = await Session.findOne({ token });
+            if (session && session.expires_at > new Date()) {
+                req.user = { id: session.user_id, role: session.role };
+                if (session.role === 'cms') {
+                    req.user.name = "CMS Root";
+                    req.user.email = process.env.CMS_EMAIL;
+                } else {
+                    const admin = await Admin.findById(session.user_id);
+                    if (admin) {
+                        req.user.name = admin.name;
+                        req.user.email = admin.email;
+                    }
+                }
+                return next();
+            }
+            return res.sendStatus(403);
+        } catch (dbErr) {
+            console.error('[Auth] Session validation error:', dbErr.message);
+            return res.sendStatus(403);
+        }
     });
 };
 
