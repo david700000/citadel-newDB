@@ -83,6 +83,80 @@
     }
     .btn-register:hover { background: #1a2a5e; }
     .btn-register:disabled { opacity: 0.7; cursor: not-allowed; }
+
+    /* Modal Overlay & Box */
+    .success-modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(13, 27, 62, 0.6);
+      backdrop-filter: blur(4px);
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+    .success-modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+    .success-modal-box {
+      background: white;
+      padding: 40px 30px;
+      border-radius: 20px;
+      max-width: 420px;
+      width: 90%;
+      text-align: center;
+      box-shadow: 0 20px 50px rgba(13, 27, 62, 0.2);
+      transform: translateY(30px);
+      transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    }
+    .success-modal-overlay.active .success-modal-box {
+      transform: translateY(0);
+    }
+    .success-modal-icon {
+      width: 72px;
+      height: 72px;
+      background: #eafaf1;
+      color: #22c55e;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 20px;
+      font-size: 32px;
+    }
+    .success-modal-box h4 {
+      font-family: 'Cormorant Garamond', serif;
+      font-size: 1.8rem;
+      color: #0d1b3e;
+      margin-bottom: 12px;
+    }
+    .success-modal-box p {
+      color: #798399;
+      font-size: 0.95rem;
+      line-height: 1.6;
+      margin-bottom: 24px;
+    }
+    .success-modal-btn {
+      display: inline-block;
+      width: 100%;
+      padding: 12px;
+      background: #0d1b3e;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-family: 'Jost', sans-serif;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .success-modal-btn:hover {
+      background: #1a2a5e;
+    }
   </style>
 </head>
 
@@ -211,6 +285,16 @@
       <span>Designed by lume studios.</span>
     </div>
   </footer>
+
+  <!-- ─── SUCCESS MODAL ─── -->
+  <div class="success-modal-overlay" id="success-modal">
+    <div class="success-modal-box">
+      <div class="success-modal-icon">✓</div>
+      <h4 id="success-modal-title">Registration Successful!</h4>
+      <p id="success-modal-desc">Thank you for registering. We look forward to seeing you at our program!</p>
+      <button class="success-modal-btn" id="success-modal-close-btn">Close Window</button>
+    </div>
+  </div>
 
   <script>
   (function() {
@@ -400,7 +484,15 @@
           if (data.success) {
             submitBtn.textContent = '✓ Registered!';
             submitBtn.style.background = '#22c55e';
-            alert(data.message || 'Successfully registered!');
+            
+            // Show custom modal
+            const modal = document.getElementById('success-modal');
+            const modalDesc = document.getElementById('success-modal-desc');
+            if (modal) {
+              if (modalDesc && data.message) modalDesc.textContent = data.message;
+              modal.classList.add('active');
+            }
+
             form.reset();
             setTimeout(loadProgramData, 100);
           } else {
@@ -412,6 +504,25 @@
           submitBtn.textContent = 'Complete Registration';
           submitBtn.disabled = false;
         }
+      });
+    }
+
+    // Modal Close logic
+    const closeBtn = document.getElementById('success-modal-close-btn');
+    const modalOverlay = document.getElementById('success-modal');
+    if (closeBtn && modalOverlay) {
+      const closeModal = () => {
+        modalOverlay.classList.remove('active');
+        const submitBtn = document.getElementById('reg-submit-btn');
+        if (submitBtn) {
+          submitBtn.textContent = 'Complete Registration';
+          submitBtn.style.background = '';
+          submitBtn.disabled = false;
+        }
+      };
+      closeBtn.addEventListener('click', closeModal);
+      modalOverlay.addEventListener('click', (e) => {
+        if (e.target === modalOverlay) closeModal();
       });
     }
 
