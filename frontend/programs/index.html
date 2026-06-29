@@ -225,8 +225,9 @@
     window.closeMobile = () => mobileNav.classList.remove('open');
 
     // Extract slug from URL path: /programs/youth-conference-2026 → "youth-conference-2026"
-    const pathParts = window.location.pathname.split('/');
-    const slug = pathParts[pathParts.length - 1] || pathParts[pathParts.length - 2] || '';
+    const pathParts = window.location.pathname.split('/').filter(Boolean);
+    const slug = pathParts[pathParts.length - 1] || '';
+
 
     // Convert slug back to title match: compare slugified db titles
     const slugify = s => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
