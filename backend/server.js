@@ -138,6 +138,7 @@ app.get('/admin/*path', (req, res) => {
 
 // ─── HEALTH ───
 app.get('/', (req, res) => res.json({ status: 'ok', message: 'Citadel API is running' }));
+app.get('/health', (req, res) => res.json({ status: 'ok', uptime: process.uptime() }));
 
 
 // ─── AUTH: VERIFY (heartbeat) ───
@@ -276,16 +277,17 @@ app.post('/api/auth/change-password', authenticateToken, async (req, res) => {
 });
 
 // ─── SITE DATA: GET ───
-app.get('/api/data', (req, res) => {
+app.get('/api/data', async (req, res) => {
     try {
-        const dataPath = path.join(__dirname, 'data.json');
-        if (fs.existsSync(dataPath)) {
-            const raw = fs.readFileSync(dataPath, 'utf8');
-            return res.json(JSON.parse(raw));
+        let siteDoc = await SiteData.findOne();
+        if (!siteDoc) {
+            // Seed a default document if none exists
+            siteDoc = await SiteData.create({ hero: [], events: [], sermons: [], gallery: [], global: {} });
         }
-        res.json({ hero: [], events: [], sermons: [], gallery: [], global: {} });
+        res.set('Cache-Control', 'no-cache');
+        return res.json(siteDoc);
     } catch (err) {
-        console.error('[data] Failed to read data.json:', err.message);
+        console.error('[data] Failed to fetch SiteData from MongoDB:', err.message);
         res.status(500).json({ error: 'Failed to fetch data' });
     }
 });
@@ -293,8 +295,8 @@ app.get('/api/data', (req, res) => {
 // ─── SITE DATA: SAVE ───
 app.post('/api/data', authenticateToken, async (req, res) => {
     try {
-        const dataPath = path.join(__dirname, 'data.json');
-        const prevRaw = fs.existsSync(dataPath) ? JSON.parse(fs.readFileSync(dataPath, 'utf8')) : {};
+        let siteDoc = await SiteData.findOne();
+        const prevRaw = siteDoc || { hero: [], events: [], sermons: [], gallery: [], global: {} };
         const newData = {
             hero:    req.body.hero    ?? prevRaw.hero    ?? [],
             events:  req.body.events  ?? prevRaw.events  ?? [],
@@ -302,7 +304,18 @@ app.post('/api/data', authenticateToken, async (req, res) => {
             gallery: req.body.gallery ?? prevRaw.gallery ?? [],
             global:  req.body.global  ?? prevRaw.global  ?? {}
         };
-        fs.writeFileSync(dataPath, JSON.stringify(newData, null, 2));
+        
+        if (siteDoc) {
+            siteDoc.hero = newData.hero;
+            siteDoc.events = newData.events;
+            siteDoc.sermons = newData.sermons;
+            siteDoc.gallery = newData.gallery;
+            siteDoc.global = newData.global;
+            await siteDoc.save();
+        } else {
+            siteDoc = await SiteData.create(newData);
+        }
+
         res.json({ success: true });
 
         // Audit email to superadmin (only for non-superadmin saves)

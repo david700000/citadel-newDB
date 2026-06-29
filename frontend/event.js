@@ -4,6 +4,9 @@
     ? 'http://localhost:3000' 
     : 'https://citadel-newdb.onrender.com'; 
 
+  // ─── WARM-UP PING (Render free tier cold-start) ───
+  fetch(`${API_URL}/health`, { method: 'GET', cache: 'no-store' }).catch(() => {});
+
   // ─── PRELOADER ───
   const preloader = document.getElementById('preloader');
   const hidePreloader = () => {
@@ -13,6 +16,7 @@
     }
   };
   const preloaderStart = Date.now();
+  const MIN_PRELOADER_MS = 400;
 
   // ─── BURGER MENU ───
   const burger = document.getElementById('burger');
@@ -162,7 +166,7 @@
 
       // Hide preloader
       const elapsed = Date.now() - preloaderStart;
-      const delay = Math.max(0, 800 - elapsed);
+      const delay = Math.max(0, MIN_PRELOADER_MS - elapsed);
       setTimeout(hidePreloader, delay);
 
     } catch (err) {

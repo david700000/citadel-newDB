@@ -5,6 +5,11 @@
     ? 'http://localhost:3000' 
     : 'https://citadel-newdb.onrender.com'; 
 
+  // ─── WARM-UP PING (Render free tier cold-start) ───
+  // Fire immediately in parallel so the server wakes while the page renders.
+  // We don't await this — it's best-effort only.
+  fetch(`${API_URL}/health`, { method: 'GET', cache: 'no-store' }).catch(() => {});
+
   // ─── PRELOADER ───
   const preloader = document.getElementById('preloader');
   const hidePreloader = () => {
@@ -13,8 +18,9 @@
       setTimeout(() => { preloader.style.display = 'none'; }, 650);
     }
   };
-  // Preloader is now hidden by loadData() after all dynamic images are loaded
+  // Preloader is hidden once critical above-the-fold images load (not all images)
   const preloaderStart = Date.now();
+  const MIN_PRELOADER_MS = 400; // minimum display time (reduced from 1000ms)
 
   // ─── NAV SCROLL EFFECT ───
   const nav = document.getElementById('mainNav');
@@ -250,7 +256,7 @@
             html += arr.map(g =>
               `<div class="gallery-item">
                 <div class="gallery-item-inner">
-                  <img src="${g.imageUrl}" alt="Citadel gallery" loading="eager" style="width:100%;height:100%;object-fit:cover;">
+                  <img src="${g.imageUrl}" alt="Citadel gallery" loading="lazy" style="width:100%;height:100%;object-fit:cover;">
                 </div>
               </div>`
             ).join('');
@@ -304,28 +310,43 @@
       
       document.querySelectorAll('.fade-in').forEach(el => observer.observe(el));
 
-      // ── Wait for ALL dynamic images to load before hiding preloader ──
-      const allImgs = document.querySelectorAll('img');
-      const imagePromises = Array.from(allImgs).map(img => {
-        if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+      // ── Wait for only CRITICAL above-the-fold images (hero + logo) before hiding preloader ──
+      // Gallery/event/sermon images load lazily and must NOT block the preloader.
+      const heroSlides = document.querySelectorAll('.slide-bg');
+      const logoImgs   = document.querySelectorAll('#header-logo img, #footer-logo img, #dynamic-about-img img, #dynamic-pastor-img img');
+      const criticalImgs = [...document.querySelectorAll('.slide img'), ...logoImgs];
+
+      // Also wait for hero slide background images (CSS background-image)
+      const heroPromises = Array.from(heroSlides).map(el => {
+        const url = (el.style.backgroundImage || '').replace(/url\(['"]?([^'"]+)['"]?\)/, '$1');
+        if (!url) return Promise.resolve();
         return new Promise(resolve => {
-          img.addEventListener('load',  resolve, { once: true });
-          img.addEventListener('error', resolve, { once: true }); // don't block on broken images
+          const img = new Image();
+          img.onload = img.onerror = resolve;
+          img.src = url;
         });
       });
 
-      await Promise.all(imagePromises);
+      const imgPromises = Array.from(criticalImgs).map(img => {
+        if (img.complete && img.naturalWidth > 0) return Promise.resolve();
+        return new Promise(resolve => {
+          img.addEventListener('load',  resolve, { once: true });
+          img.addEventListener('error', resolve, { once: true });
+        });
+      });
 
-      // Minimum 1000ms so preloader doesn't flash away instantly
+      await Promise.all([...heroPromises, ...imgPromises]);
+
+      // Minimum display time so preloader doesn't flash away instantly
       const elapsed = Date.now() - preloaderStart;
-      const delay   = Math.max(0, 1000 - elapsed);
+      const delay   = Math.max(0, MIN_PRELOADER_MS - elapsed);
       setTimeout(hidePreloader, delay);
 
     } catch (err) {
       console.error(err);
       // Hide preloader even on error so site doesn't stay stuck
       const elapsed = Date.now() - preloaderStart;
-      setTimeout(hidePreloader, Math.max(0, 800 - elapsed));
+      setTimeout(hidePreloader, Math.max(0, 600 - elapsed));
     }
   }
 
