@@ -1401,18 +1401,12 @@ const CMSWebsiteContent = ({ state, toast }) => {
                     Delete
                   </button>
                 </div>
-                {/* Event Banner Preview */}
-                {e.bannerImage && <img src={e.bannerImage} alt="Banner" style={{ width: "100%", height: 100, objectFit: "cover", borderRadius: 8, marginBottom: 6 }} />}
-                {e.logoImage && (
-                  <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 12 }}>
-                    <img src={e.logoImage} alt="Logo" style={{ height: 40, objectFit: "contain", borderRadius: 4 }} />
-                    <span style={{ fontSize: 11, color: "#6b7280" }}>Event Logo</span>
-                  </div>
-                )}
+
 
                 {/* Banner Cover */}
                 <div style={{ background: "#f8fafc", borderRadius: 8, padding: 12, marginBottom: 12, border: "1px solid #e5e7eb" }}>
                   <div style={{ fontSize: 11, fontWeight: 700, color: "#374151", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.05em" }}>Banner Cover</div>
+                  {e.bannerImage && <img src={e.bannerImage} alt="Banner Preview" style={{ width: "100%", height: 90, objectFit: "cover", borderRadius: 6, marginBottom: 8 }} />}
                   <div style={{ marginBottom: 6 }}>
                     <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#374151", marginBottom: 4 }}>Upload Banner</label>
                     <input type="file" accept="image/*" onChange={el => handleUpload(el.target.files[0], "events", i, "bannerImage")} />
@@ -1432,6 +1426,11 @@ const CMSWebsiteContent = ({ state, toast }) => {
                 {/* Event Logo */}
                 <div style={{ background: "#f8fafc", borderRadius: 8, padding: 12, marginBottom: 12, border: "1px solid #e5e7eb" }}>
                   <div style={{ fontSize: 11, fontWeight: 700, color: "#374151", marginBottom: 8, textTransform: "uppercase", letterSpacing: "0.05em" }}>Event Logo</div>
+                  {e.logoImage && (
+                    <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                      <img src={e.logoImage} alt="Logo" style={{ height: 40, objectFit: "contain", borderRadius: 4 }} />
+                    </div>
+                  )}
                   <div style={{ marginBottom: 6 }}>
                     <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#374151", marginBottom: 4 }}>Upload Logo</label>
                     <input type="file" accept="image/*" onChange={el => handleUpload(el.target.files[0], "events", i, "logoImage")} />
