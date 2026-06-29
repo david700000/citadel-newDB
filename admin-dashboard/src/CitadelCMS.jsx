@@ -1068,7 +1068,7 @@ const CMSWebsiteContent = ({ state, toast }) => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await fetch('/api/data');
+        const res = await fetch(API_URLS.WEBSITE_DATA);
         if (res.ok) {
           const fetched = await res.json();
           setData({
@@ -1096,7 +1096,7 @@ const CMSWebsiteContent = ({ state, toast }) => {
     formData.append("image", file);
     try {
       toast("Uploading image...", "info");
-      const res = await fetch('/api/upload', {
+      const res = await fetch(API_URLS.UPLOAD, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
         body: formData
@@ -1127,7 +1127,7 @@ const CMSWebsiteContent = ({ state, toast }) => {
   const handleSaveAll = async () => {
     setSaving(true);
     try {
-      const res = await fetch('/api/data', {
+      const res = await fetch(API_URLS.WEBSITE_DATA, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -1744,7 +1744,7 @@ const CMSEventRegistrations = ({ state, toast }) => {
 
   const fetchWebData = async () => {
     try {
-      const res = await fetch('/api/data');
+      const res = await fetch(API_URLS.WEBSITE_DATA);
       if (res.ok) {
         const data = await res.json();
         setWebData(data);
@@ -1765,7 +1765,7 @@ const CMSEventRegistrations = ({ state, toast }) => {
     formData.append("image", file);
     try {
       toast("Uploading image...", "info");
-      const res = await fetch('/api/upload', {
+      const res = await fetch(API_URLS.UPLOAD, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
         body: formData
@@ -1793,7 +1793,7 @@ const CMSEventRegistrations = ({ state, toast }) => {
   const handleSaveAssets = async (eventTitle) => {
     setUpdatingAssets(true);
     try {
-      const res = await fetch('/api/data', {
+      const res = await fetch(API_URLS.WEBSITE_DATA, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -3076,7 +3076,7 @@ const CMSForms = ({ state, dispatch, toast }) => {
   const fetchWebData = async () => {
     setLoadingWeb(true);
     try {
-      const res = await fetch('/api/data');
+      const res = await fetch(API_URLS.WEBSITE_DATA);
       if (res.ok) {
         const data = await res.json();
         setWebData(data);
@@ -3111,7 +3111,7 @@ const CMSForms = ({ state, dispatch, toast }) => {
     formData.append("image", file);
     try {
       toast("Uploading image...", "info");
-      const res = await fetch('/api/upload', {
+      const res = await fetch(API_URLS.UPLOAD, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
         body: formData
@@ -3139,7 +3139,7 @@ const CMSForms = ({ state, dispatch, toast }) => {
   const handleSaveAssets = async () => {
     setSavingWeb(true);
     try {
-      const res = await fetch('/api/data', {
+      const res = await fetch(API_URLS.WEBSITE_DATA, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -3725,7 +3725,7 @@ const MediaDashboard = ({ state, dispatch, toast, admin }) => {
 
   const fetchEvents = async () => {
     try {
-      const res = await fetch('/api/data');
+      const res = await fetch(API_URLS.WEBSITE_DATA);
       if (res.ok) {
         const data = await res.json();
         setChurchEvents(data.events || []);
