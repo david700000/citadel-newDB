@@ -1112,7 +1112,8 @@ const CMSWebsiteContent = ({ state, toast }) => {
         } else {
           setData(prev => {
             const arr = [...prev[type]];
-            arr[index] = { ...arr[index], imageUrl: result.url };
+            const key = fieldKey || "imageUrl";
+            arr[index] = { ...arr[index], [key]: result.url };
             return { ...prev, [type]: arr };
           });
         }
