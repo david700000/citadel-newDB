@@ -20,8 +20,19 @@
   <link rel="stylesheet" href="../church.css" />
   <style>
     .event-page-hero {
-      padding: 80px 5% 0;
+      padding: 180px 5% 100px;
       background: linear-gradient(to bottom, #0d1b3e, #1a2a5e);
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      position: relative;
+    }
+    .event-page-hero::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(to bottom, rgba(13,27,62,0.55), rgba(13,27,62,0.75));
+      pointer-events: none;
     }
 
     .event-details-section {
@@ -104,11 +115,9 @@
     <a href="../index.html#contact" onclick="closeMobile()">Contact</a>
   </div>
 
-
   <!-- ─── PROGRAM HERO ─── -->
-  <section class="event-page-hero">
+  <section class="event-page-hero" id="program-hero">
   </section>
-
 
 
   <!-- ─── PROGRAM DETAILS & FORM ─── -->
@@ -289,9 +298,14 @@
 
         // Update page title & hero
         document.title = event.title + ' — Citadel of Truth and Mercy Assembly';
-        const heroTitle = document.getElementById('hero-title');
-        if (heroTitle) heroTitle.textContent = event.title;
         if (titleInput) titleInput.value = event.title;
+
+        // Set hero banner image
+        const heroEl = document.getElementById('program-hero');
+        const heroBg = event.bannerImage || event.imageUrl;
+        if (heroEl && heroBg) {
+          heroEl.style.backgroundImage = 'url(' + heroBg + ')';
+        }
 
         // Load custom fields for this program
         const eventFormType = toEventSlug(event.title);
@@ -303,26 +317,21 @@
           }
         } catch (_) {}
 
-        // Render program info
-        let bannerMarkup = '';
-        if (event.bannerImage) {
-          bannerMarkup = '<img src="' + event.bannerImage + '" alt="Program Banner" style="width:100%;max-height:280px;object-fit:cover;border-radius:12px;margin-bottom:20px;">';
-        } else if (event.imageUrl) {
-          bannerMarkup = '<img src="' + event.imageUrl + '" alt="' + event.title + '" style="width:100%;max-height:280px;object-fit:cover;border-radius:12px;margin-bottom:20px;">';
-        }
+        // Render program info (no banner img here — it's in the hero)
         let logoMarkup = '';
         if (event.logoImage) {
           logoMarkup = '<img src="' + event.logoImage + '" alt="Program Logo" style="height:50px;object-fit:contain;margin-bottom:12px;display:block;">';
         }
 
         infoContainer.innerHTML =
-          bannerMarkup + logoMarkup +
+          logoMarkup +
           '<h2>' + event.title + '</h2>' +
           '<div class="event-meta">' +
             '<svg viewBox="0 0 24 24" style="width:20px;fill:currentColor;"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/></svg>' +
             event.date +
           '</div>' +
           '<p>' + event.description + '</p>';
+
 
       } catch (err) {
         console.error('Failed to load program:', err);
