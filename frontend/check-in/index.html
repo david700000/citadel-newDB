@@ -231,18 +231,29 @@
     }
     async function startCamera() {
       try {
-        stream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            facingMode: 'user',
-            width: { ideal: 1920 },
-            height: { ideal: 1080 }
-          },
-          audio: false
-        });
+        // Try requesting ideal 1080p stream
+        try {
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: {
+              facingMode: 'user',
+              width: { ideal: 1920 },
+              height: { ideal: 1080 }
+            },
+            audio: false
+          });
+        } catch (constraintsErr) {
+          // Fallback to basic user camera request if ideal dimensions are rejected
+          stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: 'user' },
+            audio: false
+          });
+        }
         video.srcObject = stream;
         try { await video.play(); } catch(_) {}
         showScene(sceneCamera);
-      } catch(err) { showError('Camera access denied. Please allow camera permission and try again.'); }
+      } catch(err) {
+        showError('Camera access denied. Please allow camera permission and try again.');
+      }
     }
     $('capture-btn').addEventListener('click', () => {
       cameraBox.style.outline = '3px solid rgba(255,255,255,.8)';
