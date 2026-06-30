@@ -528,6 +528,7 @@ app.post('/api/register-event', async (req, res) => {
     if (!name || !email || !eventTitle) {
         return res.status(400).json({ error: 'Name, email, and event title are required' });
     }
+    try {
         // Save to database (including any dynamic form fields from CMS)
         const reg = await EventRegistration.create({ name, email, phone, eventTitle, customFields: customFields || {} });
 
