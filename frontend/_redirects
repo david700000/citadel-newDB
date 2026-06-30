@@ -11,5 +11,9 @@
 /programs       /programs/index.html    200
 /programs/*     /programs/index.html    200
 
+# ─── Check-In selfie page ───
+/check-in       /check-in/index.html    200
+/check-in/*     /check-in/index.html    200
+
 # ─── Church Website SPA fallback ───
 /*    /index.html    200
