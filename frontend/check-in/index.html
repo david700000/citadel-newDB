@@ -85,7 +85,11 @@
     .btn-share { background:rgba(232,169,35,.1); color:var(--gold-2); border:1.5px solid rgba(232,169,35,.38); flex:1 1 auto; max-width:160px; }
     .btn-retake { background:rgba(255,255,255,.06); color:var(--off-white); border:1.5px solid rgba(255,255,255,.1); flex:0 0 auto; }
     .btn-retry { background:rgba(248,113,113,.1); color:#fca5a5; border:1.5px solid rgba(248,113,113,.28); flex:0 0 auto; }
-    @keyframes flashIn { 0%{opacity:0;transform:scale(.95)} 60%{opacity:1;transform:scale(1.012)} 100%{opacity:1;transform:scale(1)} }
+    @keyframes flashIn {
+      0%{opacity:0;transform:translate(-50%, -50%) scale(.95)}
+      60%{opacity:1;transform:translate(-50%, -50%) scale(1.012)}
+      100%{opacity:1;transform:translate(-50%, -50%) scale(1)}
+    }
     .anim-flash { animation:flashIn .4s var(--ease) both; }
     @media (max-height:600px) {
       .shutter { width:58px; height:58px; } .shutter-core { width:42px; height:42px; }
@@ -265,9 +269,19 @@
     });
     $('retake-btn').addEventListener('click', () => { showScene(sceneLoading); startCamera(); });
     $('download-btn').addEventListener('click', () => {
-      const a = document.createElement('a');
-      a.href = resultImg.src; a.download = 'citadel-photo-' + Date.now() + '.png';
-      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      // Use Blob to preserve raw lossless PNG quality and avoid base64 data URL size caps in browsers
+      fetch(resultImg.src)
+        .then(res => res.blob())
+        .then(blob => {
+          const blobUrl = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = blobUrl;
+          a.download = 'citadel-photo-' + Date.now() + '.png';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+          setTimeout(() => URL.revokeObjectURL(blobUrl), 100);
+        });
     });
     function setupShare(dataUrl) {
       const btn = $('share-btn');
