@@ -37,7 +37,7 @@
     .topbar { width:100%; display:flex; align-items:center; justify-content:center; gap:.5rem;
       padding:max(env(safe-area-inset-top,.5rem),.5rem) 1rem .5rem; flex-shrink:0; }
     .brand-dot { width:7px; height:7px; border-radius:50%; background:var(--gold); box-shadow:0 0 8px var(--gold); flex-shrink:0; }
-    .brand-name { font-size:.7rem; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--gold); opacity:.85; }
+    .brand-name { display:none; }
     .hidden { display:none !important; }
     .splash { width:100%; height:100%; display:flex; align-items:center; justify-content:center; flex:1; }
     .splash-inner { display:flex; flex-direction:column; align-items:center; gap:1.25rem; text-align:center; padding:1rem; }
@@ -55,10 +55,8 @@
     .viewport { flex:1 1 auto; min-height:0; width:100%; display:flex; align-items:center; justify-content:center; overflow:hidden; padding:0 .75rem; }
     .frame-box { position:relative; height:100%; width:auto; max-width:100%; aspect-ratio:4/3;
       border-radius:var(--r-xl); overflow:hidden; background:#000;
-      box-shadow:0 0 0 1px var(--border),var(--glow-gold),0 28px 70px rgba(0,0,0,.65); }
-    .frame-box::before,.frame-box::after { content:''; position:absolute; width:26px; height:26px; z-index:6; pointer-events:none; }
-    .frame-box::before { top:0; left:0; border-top:2.5px solid var(--gold); border-left:2.5px solid var(--gold); border-radius:var(--r-xl) 0 0 0; }
-    .frame-box::after  { bottom:0; right:0; border-bottom:2.5px solid var(--gold); border-right:2.5px solid var(--gold); border-radius:0 0 var(--r-xl) 0; }
+      box-shadow:0 0 0 1px var(--border), 0 28px 70px rgba(0,0,0,.65); }
+    .frame-box::before,.frame-box::after { display:none; }
     .camera-feed { width:100%; height:100%; object-fit:cover; display:block; transform:scaleX(-1); }
     .frame-overlay { position:absolute; inset:0; width:100%; height:100%; object-fit:fill; pointer-events:none; z-index:5; }
     .result-img { width:100%; height:100%; object-fit:cover; display:block; }
@@ -67,7 +65,7 @@
     .shutter:active { transform:scale(.88); }
     .shutter-ring { position:absolute; inset:0; border-radius:50%; border:3px solid rgba(255,255,255,.9); box-shadow:0 0 0 2px rgba(255,255,255,.18), 0 0 30px rgba(232,169,35,.4); }
     .shutter-core { width:50px; height:50px; border-radius:50%; background:#fff; box-shadow:0 2px 10px rgba(0,0,0,.3); }
-    .shutter-label { font-size:.58rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:rgba(255,255,255,.65); text-shadow:0 1px 4px rgba(0,0,0,.5); white-space:nowrap; }
+    .shutter-label { display:none; }
     .actions { display:flex; gap:.55rem; justify-content:center; align-items:center; flex-shrink:0; width:100%; flex-wrap:wrap; }
     .btn { display:inline-flex; align-items:center; justify-content:center; gap:.4rem; height:50px; padding:0 1.35rem;
       border-radius:var(--r-pill); font-family:inherit; font-size:.88rem; font-weight:700; letter-spacing:.005em;
@@ -125,10 +123,7 @@
     </div>
     <!-- CAMERA -->
     <div id="scene-camera" class="scene hidden">
-      <div class="scene-head">
-        <h1 class="scene-title">Strike a <span>Pose</span></h1>
-        <p class="scene-sub">Centre yourself in the frame, then tap the button</p>
-      </div>
+      <div class="scene-head" style="display:none">
       <div class="viewport">
         <div id="camera-box" class="frame-box">
           <video id="camera-feed" autoplay playsinline muted class="camera-feed"></video>
@@ -145,10 +140,7 @@
     </div>
     <!-- RESULT -->
     <div id="scene-result" class="scene hidden">
-      <div class="scene-head">
-        <h1 class="scene-title">Your Photo is <span>Ready</span></h1>
-        <p class="scene-sub">Save or share your photo with everyone</p>
-      </div>
+      <div class="scene-head" style="display:none">
       <div class="viewport">
         <div id="result-box" class="frame-box">
           <img id="result-img" class="result-img" alt="Your photo with church frame">
@@ -216,7 +208,7 @@
     async function startCamera() {
       try {
         stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode:'user', aspectRatio:frameW/frameH, width:{ideal:frameW}, height:{ideal:frameH} },
+          video: { facingMode: 'user' },
           audio: false
         });
         video.srcObject = stream;
