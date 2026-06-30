@@ -2439,8 +2439,83 @@ const CMSSettings = ({ token, toast }) => {
     );
   }
 
+  const [selfieFrameUrl, setSelfieFrameUrl] = useState("");
+  const [uploadingFrame, setUploadingFrame] = useState(false);
+
+  useEffect(() => {
+    const loadFrameSetting = async () => {
+      try {
+        const res = await fetch(API_URLS.SETTINGS);
+        if (res.ok) {
+          const data = await res.json();
+          setSelfieFrameUrl(data.selfie_frame_url || "");
+        }
+      } catch (_) {}
+    };
+    loadFrameSetting();
+  }, [token]);
+
+  const handleFrameUpload = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploadingFrame(true);
+    const formData = new FormData();
+    formData.append("frame", file);
+
+    try {
+      const res = await fetch(`${API_URLS.BASE}/api/upload-frame`, {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`
+        },
+        body: formData
+      });
+      const data = await res.json();
+      if (res.ok) {
+        setSelfieFrameUrl(data.url);
+        toast("Selfie frame uploaded successfully!", "success");
+      } else {
+        toast(data.error || "Frame upload failed", "error");
+      }
+    } catch (err) {
+      toast("Server connection failed during upload", "error");
+    } finally {
+      setUploadingFrame(false);
+    }
+  };
+
   return (
     <Page title="System Settings" subtitle="Configure system templates and defaults">
+      {/* ── Selfie Frame Overlay Configuration ── */}
+      <div style={{ background: "#fff", borderRadius: 14, padding: 28, boxShadow: "0 2px 12px rgba(0,0,0,0.06)", maxWidth: 650, marginBottom: 24, borderLeft: "4px solid #7c3aed" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+          <span style={{ fontSize: 22 }}>📸</span>
+          <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "#111827", fontFamily: "'DM Sans', sans-serif" }}>Selfie Frame Configuration</h3>
+        </div>
+        <p style={{ margin: "0 0 16px 0", color: "#6b7280", fontSize: 13, fontFamily: "'DM Sans', sans-serif", lineHeight: 1.5 }}>
+          Upload a transparent PNG frame overlay (4:3 aspect ratio recommended, e.g. 1440x1080px). Users taking a selfie will be framed by this design automatically.
+        </p>
+
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+          {selfieFrameUrl ? (
+            <div style={{ position: "relative", width: "100%", maxWidth: 240, aspectRatio: "4/3", border: "1px dashed #cbd5e1", borderRadius: 10, overflow: "hidden", background: "#f8fafc", display: "flex", alignItems: "center", justifyContent: "center" }}>
+              <img src={selfieFrameUrl} alt="Current Frame" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
+            </div>
+          ) : (
+            <div style={{ width: "100%", maxWidth: 240, aspectRatio: "4/3", border: "1px dashed #cbd5e1", borderRadius: 10, background: "#f8fafc", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", color: "#94a3b8", fontSize: 13, fontFamily: "'DM Sans', sans-serif" }}>
+              <span>No frame uploaded</span>
+            </div>
+          )}
+
+          <label style={{ display: "inline-flex", width: "fit-content" }}>
+            <span style={{ padding: "10px 20px", background: uploadingFrame ? "#cbd5e1" : "#7c3aed", color: "#fff", border: "none", borderRadius: 10, fontWeight: 700, fontSize: 13, fontFamily: "'DM Sans', sans-serif", cursor: uploadingFrame ? "not-allowed" : "pointer" }}>
+              {uploadingFrame ? "Uploading..." : "Upload PNG Frame"}
+            </span>
+            <input type="file" accept="image/png" onChange={handleFrameUpload} disabled={uploadingFrame} style={{ display: "none" }} />
+          </label>
+        </div>
+      </div>
+
       <div style={{ background: "#fff", borderRadius: 14, padding: 28, boxShadow: "0 2px 12px rgba(0,0,0,0.06)", maxWidth: 650 }}>
         <h3 style={{ margin: "0 0 8px 0", fontSize: 16, fontWeight: 700, color: "#111827", fontFamily: "'DM Sans', sans-serif" }}>Welcome Message Template</h3>
         <p style={{ margin: "0 0 16px 0", color: "#6b7280", fontSize: 13, fontFamily: "'DM Sans', sans-serif", lineHeight: 1.5 }}>

@@ -399,6 +399,37 @@ app.post('/api/upload', authenticateToken, upload.single('image'), (req, res) =>
     res.json({ url: req.file.path });
 });
 
+// ─── SELFIE FRAME: UPLOAD FRAME (CMS authenticated) ───
+// Uploads a PNG frame to Cloudinary and stores its URL in Settings.
+app.post('/api/upload-frame', authenticateToken, upload.single('frame'), async (req, res) => {
+    try {
+        if (!req.file) return res.status(400).json({ error: 'No frame file uploaded' });
+        const Setting = require('./src/models/Setting');
+        await Setting.findOneAndUpdate(
+            { key: 'selfie_frame_url' },
+            { value: req.file.path },
+            { new: true, upsert: true }
+        );
+        res.json({ success: true, url: req.file.path });
+    } catch (err) {
+        console.error('[FrameUpload] Error:', err);
+        res.status(500).json({ error: 'Failed to upload frame' });
+    }
+});
+
+// ─── SETTINGS: GET (public — used by selfie-frame app to load the active frame) ───
+app.get('/api/settings', async (req, res) => {
+    try {
+        const Setting = require('./src/models/Setting');
+        const settings = await Setting.find({});
+        const settingsMap = {};
+        settings.forEach(s => { settingsMap[s.key] = s.value; });
+        res.json(settingsMap);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // ─── USERS: LIST ───
 app.get('/api/users', authenticateToken, async (req, res) => {
     try {
