@@ -232,7 +232,11 @@
     async function startCamera() {
       try {
         stream = await navigator.mediaDevices.getUserMedia({
-          video: { facingMode: 'user' },
+          video: {
+            facingMode: 'user',
+            width: { ideal: 4096 },
+            height: { ideal: 4096 }
+          },
           audio: false
         });
         video.srcObject = stream;
@@ -246,6 +250,8 @@
       const canvas = document.createElement('canvas');
       canvas.width = frameW; canvas.height = frameH;
       const ctx = canvas.getContext('2d');
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = 'high';
       ctx.translate(frameW, 0); ctx.scale(-1, 1);
       const vr = video.videoWidth / video.videoHeight, tr = frameW / frameH;
       let sx, sy, sw, sh;
@@ -255,7 +261,7 @@
       ctx.setTransform(1,0,0,1,0,0);
       // Only draw frame overlay if one was configured and loaded
       if (frameImage) ctx.drawImage(frameImage, 0, 0, frameW, frameH);
-      const dataUrl = canvas.toDataURL('image/png', 1.0);
+      const dataUrl = canvas.toDataURL('image/png');
       resultImg.src = dataUrl;
       if (stream) stream.getTracks().forEach(t => t.stop());
       resultBox.classList.remove('anim-flash');
