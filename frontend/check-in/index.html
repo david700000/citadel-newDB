@@ -187,22 +187,37 @@
     }
     async function init() {
       try {
-        const res = await fetch(API_BASE + '/api/settings');
-        if (!res.ok) throw new Error('Could not load settings from server.');
-        const s = await res.json();
-        const url = s.selfie_frame_url;
-        if (!url) throw new Error('No photo frame configured yet. Please set one in the CMS.');
-        frameImage = new Image();
-        frameImage.crossOrigin = 'anonymous';
-        frameImage.onload = () => {
-          frameW = frameImage.naturalWidth || 1440;
-          frameH = frameImage.naturalHeight || 1080;
-          setBoxRatio(frameW / frameH);
-          camOverlay.src = url;
+        // Try to load frame from settings — graceful fallback if none configured
+        let frameUrl = null;
+        try {
+          const res = await fetch(API_BASE + '/settings');
+          if (res.ok) {
+            const s = await res.json();
+            frameUrl = s.selfie_frame_url || null;
+          }
+        } catch (_) { /* network error — continue without frame */ }
+
+        if (frameUrl) {
+          // Preload the frame image then start camera
+          frameImage = new Image();
+          frameImage.crossOrigin = 'anonymous';
+          frameImage.onload = () => {
+            frameW = frameImage.naturalWidth  || 1440;
+            frameH = frameImage.naturalHeight || 1080;
+            setBoxRatio(frameW / frameH);
+            camOverlay.src = frameUrl;
+            startCamera();
+          };
+          frameImage.onerror = () => {
+            // Frame failed to load — continue without it
+            frameImage = null;
+            startCamera();
+          };
+          frameImage.src = frameUrl;
+        } else {
+          // No frame configured — show camera as-is
           startCamera();
-        };
-        frameImage.onerror = () => showError('Frame image could not be loaded. Check your connection.');
-        frameImage.src = url;
+        }
       } catch(err) { showError(err.message); }
     }
     async function startCamera() {
@@ -228,7 +243,8 @@
       else          { sw = video.videoWidth;  sh = sw/tr; sx = 0; sy = (video.videoHeight-sh)/2; }
       ctx.drawImage(video, sx, sy, sw, sh, 0, 0, frameW, frameH);
       ctx.setTransform(1,0,0,1,0,0);
-      ctx.drawImage(frameImage, 0, 0, frameW, frameH);
+      // Only draw frame overlay if one was configured and loaded
+      if (frameImage) ctx.drawImage(frameImage, 0, 0, frameW, frameH);
       const dataUrl = canvas.toDataURL('image/png', 1.0);
       resultImg.src = dataUrl;
       if (stream) stream.getTracks().forEach(t => t.stop());
