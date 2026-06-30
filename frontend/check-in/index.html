@@ -2,486 +2,269 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Selfie Frame | Photo Experience</title>
-  
-  <!-- Outfit Google Font -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="theme-color" content="#0c0c14">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <title>Photo Experience | Citadel of Truth</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
-  
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style>
-    /* ─── DESIGN TOKENS ─── */
     :root {
-      --color-bg: #0a0a0f;
-      --color-surface: #12121a;
-      --color-surface-2: #1a1a26;
-      --color-border: rgba(255, 255, 255, 0.08);
-      --color-text: #f0f0fa;
-      --color-text-muted: rgba(240, 240, 250, 0.55);
-      --color-accent-1: #7c3aed;
-      --color-accent-2: #c026d3;
-      --color-accent-grad: linear-gradient(135deg, #7c3aed 0%, #c026d3 100%);
-      --color-primary-grad: linear-gradient(135deg, #f59e0b 0%, #ef4444 100%);
-      --radius-xl: 1.75rem;
-      --shadow-glow: 0 0 40px rgba(124, 58, 237, 0.25);
-      --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      --gold: #e8a923; --gold-2: #f5c842;
+      --navy: #0c1428; --navy-2: #14203a; --navy-3: #1d2d4e;
+      --ink: #0c0c14; --white: #ffffff; --off-white: #f0eee8;
+      --text-muted: rgba(240,238,232,0.55);
+      --border: rgba(232,169,35,0.15);
+      --glow-gold: 0 0 40px rgba(232,169,35,0.28);
+      --r-xl: 1.75rem; --r-pill: 999px;
+      --ease: cubic-bezier(0.4,0,0.2,1);
     }
-
-    *, *::before, *::after {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
+    *,*::before,*::after { box-sizing:border-box; margin:0; padding:0; }
+    html { height:100%; height:-webkit-fill-available; }
+    body {
+      min-height:100vh; min-height:-webkit-fill-available;
+      overflow:hidden; background:var(--ink); color:var(--off-white);
+      font-family:'Plus Jakarta Sans',system-ui,sans-serif;
+      -webkit-font-smoothing:antialiased; touch-action:manipulation; overscroll-behavior:none;
     }
-
-    html, body {
-      height: 100%;
-      overflow: hidden;
-      background: var(--color-bg);
-      color: var(--color-text);
-      font-family: "Outfit", sans-serif;
-      -webkit-font-smoothing: antialiased;
-      touch-action: manipulation;
+    .bg { position:fixed; inset:0; z-index:0; pointer-events:none;
+      background: radial-gradient(ellipse 90% 55% at 50% -5%,rgba(232,169,35,.16) 0%,transparent 65%), var(--navy); }
+    .bg-cross { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; opacity:.04; pointer-events:none; z-index:0; }
+    .bg-cross svg { width:min(320px,58vw); }
+    .app { position:relative; z-index:1; width:100vw; height:100vh; height:-webkit-fill-available; display:flex; flex-direction:column; align-items:center; }
+    .topbar { width:100%; display:flex; align-items:center; justify-content:center; gap:.5rem;
+      padding:max(env(safe-area-inset-top,.5rem),.5rem) 1rem .5rem; flex-shrink:0; }
+    .brand-dot { width:7px; height:7px; border-radius:50%; background:var(--gold); box-shadow:0 0 8px var(--gold); flex-shrink:0; }
+    .brand-name { font-size:.7rem; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--gold); opacity:.85; }
+    .hidden { display:none !important; }
+    .splash { width:100%; height:100%; display:flex; align-items:center; justify-content:center; flex:1; }
+    .splash-inner { display:flex; flex-direction:column; align-items:center; gap:1.25rem; text-align:center; padding:1rem; }
+    .spin-ring { width:50px; height:50px; border-radius:50%; border:3px solid rgba(232,169,35,.15); border-top-color:var(--gold); animation:spin .9s linear infinite; }
+    @keyframes spin { to { transform:rotate(360deg); } }
+    .splash-text { font-size:.92rem; font-weight:500; color:var(--text-muted); }
+    .error-icon { font-size:2.4rem; }
+    .error-msg { font-size:.92rem; font-weight:600; color:#f87171; line-height:1.5; max-width:280px; text-align:center; }
+    .scene { width:100%; flex:1 1 auto; min-height:0; display:flex; flex-direction:column; align-items:center;
+      padding:.5rem 1rem calc(max(env(safe-area-inset-bottom,.75rem),.75rem) + .5rem); gap:.6rem; overflow:hidden; }
+    .scene-head { text-align:center; flex-shrink:0; }
+    .scene-title { font-size:clamp(1.1rem,5vw,1.55rem); font-weight:800; letter-spacing:-.02em; line-height:1.15; color:var(--off-white); }
+    .scene-title span { background:linear-gradient(90deg,var(--gold),var(--gold-2)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
+    .scene-sub { margin-top:.22rem; font-size:clamp(.75rem,3vw,.88rem); font-weight:500; color:var(--text-muted); }
+    .viewport { flex:1 1 auto; min-height:0; width:100%; display:flex; align-items:center; justify-content:center; overflow:hidden; padding:0 .75rem; }
+    .frame-box { position:relative; height:100%; width:auto; max-width:100%; aspect-ratio:4/3;
+      border-radius:var(--r-xl); overflow:hidden; background:#000;
+      box-shadow:0 0 0 1px var(--border),var(--glow-gold),0 28px 70px rgba(0,0,0,.65); }
+    .frame-box::before,.frame-box::after { content:''; position:absolute; width:26px; height:26px; z-index:6; pointer-events:none; }
+    .frame-box::before { top:0; left:0; border-top:2.5px solid var(--gold); border-left:2.5px solid var(--gold); border-radius:var(--r-xl) 0 0 0; }
+    .frame-box::after  { bottom:0; right:0; border-bottom:2.5px solid var(--gold); border-right:2.5px solid var(--gold); border-radius:0 0 var(--r-xl) 0; }
+    .camera-feed { width:100%; height:100%; object-fit:cover; display:block; transform:scaleX(-1); }
+    .frame-overlay { position:absolute; inset:0; width:100%; height:100%; object-fit:fill; pointer-events:none; z-index:5; }
+    .result-img { width:100%; height:100%; object-fit:cover; display:block; }
+    .shutter-wrap { position:absolute; bottom:1rem; left:50%; transform:translateX(-50%); z-index:10; display:flex; flex-direction:column; align-items:center; gap:.35rem; }
+    .shutter { width:68px; height:68px; border-radius:50%; background:none; border:none; cursor:pointer; position:relative; display:flex; align-items:center; justify-content:center; -webkit-tap-highlight-color:transparent; transition:transform .18s var(--ease); }
+    .shutter:active { transform:scale(.88); }
+    .shutter-ring { position:absolute; inset:0; border-radius:50%; border:3px solid rgba(255,255,255,.9); box-shadow:0 0 0 2px rgba(255,255,255,.18), 0 0 30px rgba(232,169,35,.4); }
+    .shutter-core { width:50px; height:50px; border-radius:50%; background:#fff; box-shadow:0 2px 10px rgba(0,0,0,.3); }
+    .shutter-label { font-size:.58rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:rgba(255,255,255,.65); text-shadow:0 1px 4px rgba(0,0,0,.5); white-space:nowrap; }
+    .actions { display:flex; gap:.55rem; justify-content:center; align-items:center; flex-shrink:0; width:100%; flex-wrap:wrap; }
+    .btn { display:inline-flex; align-items:center; justify-content:center; gap:.4rem; height:50px; padding:0 1.35rem;
+      border-radius:var(--r-pill); font-family:inherit; font-size:.88rem; font-weight:700; letter-spacing:.005em;
+      border:none; cursor:pointer; white-space:nowrap; transition:transform .18s var(--ease),opacity .15s;
+      -webkit-tap-highlight-color:transparent; min-width:90px; }
+    .btn:active { transform:scale(.93); opacity:.88; }
+    .btn svg { flex-shrink:0; }
+    .btn-download { background:linear-gradient(135deg,var(--gold) 0%,var(--gold-2) 100%); color:var(--navy); box-shadow:0 4px 20px rgba(232,169,35,.4),0 1px 0 rgba(255,255,255,.2) inset; flex:1 1 auto; max-width:210px; }
+    .btn-share { background:rgba(232,169,35,.1); color:var(--gold-2); border:1.5px solid rgba(232,169,35,.38); flex:1 1 auto; max-width:160px; }
+    .btn-retake { background:rgba(255,255,255,.06); color:var(--off-white); border:1.5px solid rgba(255,255,255,.1); flex:0 0 auto; }
+    .btn-retry { background:rgba(248,113,113,.1); color:#fca5a5; border:1.5px solid rgba(248,113,113,.28); flex:0 0 auto; }
+    @keyframes flashIn { 0%{opacity:0;transform:scale(.95)} 60%{opacity:1;transform:scale(1.012)} 100%{opacity:1;transform:scale(1)} }
+    .anim-flash { animation:flashIn .4s var(--ease) both; }
+    @media (max-height:600px) {
+      .shutter { width:58px; height:58px; } .shutter-core { width:42px; height:42px; }
+      .scene { gap:.35rem; } .scene-title { font-size:1rem; }
+      .btn { height:44px; font-size:.83rem; }
     }
-
-    .app-main {
-      width: 100vw;
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      overflow: hidden;
-      background:
-        radial-gradient(ellipse at 20% 0%, rgba(124, 58, 237, 0.12) 0%, transparent 60%),
-        radial-gradient(ellipse at 80% 100%, rgba(192, 38, 211, 0.1) 0%, transparent 60%),
-        var(--color-bg);
-    }
-
-    .scene {
-      width: 100%;
-      height: 100%;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      padding: 1.25rem 1rem 1rem;
-      gap: 0.75rem;
-      overflow: hidden;
-    }
-
-    .scene-header {
-      text-align: center;
-      flex-shrink: 0;
-    }
-
-    .scene-title {
-      font-size: clamp(1.1rem, 4vw, 1.5rem);
-      font-weight: 700;
-      background: var(--color-accent-grad);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-      letter-spacing: -0.01em;
-    }
-
-    .scene-subtitle {
-      font-size: clamp(0.75rem, 2.5vw, 0.9rem);
-      color: var(--color-text-muted);
-      margin-top: 0.2rem;
-    }
-
-    .viewport {
-      flex: 1 1 auto;
-      min-height: 0;
-      width: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      overflow: hidden;
-    }
-
-    .camera-wrapper, .result-wrapper {
-      position: relative;
-      width: 100%;
-      max-width: min(100%, calc((100vh - 200px) * 4 / 3));
-      aspect-ratio: 4 / 3;
-      border-radius: var(--radius-xl);
-      overflow: hidden;
-      background: #000;
-      box-shadow: 0 0 0 1px var(--color-border), var(--shadow-glow), 0 24px 64px rgba(0, 0, 0, 0.6);
-    }
-
-    .camera-feed {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-      transform: scaleX(-1); /* mirror */
-    }
-
-    .frame-overlay {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      object-fit: fill;
-      pointer-events: none;
-      z-index: 5;
-    }
-
-    .capture-btn-container {
-      position: absolute;
-      bottom: 1.25rem;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 10;
-    }
-
-    .capture-btn {
-      position: relative;
-      width: 72px;
-      height: 72px;
-      border: none;
-      background: transparent;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: transform var(--transition);
-    }
-
-    .capture-btn:active {
-      transform: scale(0.92);
-    }
-
-    .capture-btn-ring {
-      position: absolute;
-      inset: 0;
-      border-radius: 50%;
-      border: 3px solid rgba(255, 255, 255, 0.9);
-      box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.2);
-    }
-
-    .capture-btn-core {
-      width: 54px;
-      height: 54px;
-      border-radius: 50%;
-      background: #fff;
-    }
-
-    .result-image {
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      display: block;
-    }
-
-    .action-buttons {
-      display: flex;
-      gap: 0.75rem;
-      justify-content: center;
-      flex-shrink: 0;
-      padding: 0.25rem 0;
-      flex-wrap: wrap;
-    }
-
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.45rem;
-      padding: 0.7rem 1.4rem;
-      border-radius: 999px;
-      font-size: 0.9rem;
-      font-weight: 600;
-      border: none;
-      cursor: pointer;
-      white-space: nowrap;
-      transition: transform var(--transition), box-shadow var(--transition);
-      color: #fff;
-      font-family: inherit;
-    }
-
-    .btn:active {
-      transform: scale(0.95);
-    }
-
-    .btn-icon {
-      width: 16px;
-      height: 16px;
-    }
-
-    .btn-primary {
-      background: var(--color-primary-grad);
-      box-shadow: 0 4px 20px rgba(245, 158, 11, 0.35);
-    }
-
-    .btn-secondary {
-      background: var(--color-surface-2);
-      border: 1px solid var(--color-border);
-      color: var(--color-text);
-    }
-
-    .btn-accent {
-      background: var(--color-accent-grad);
-      box-shadow: 0 4px 20px rgba(124, 58, 237, 0.35);
-    }
-
-    .loading-screen {
-      width: 100%;
-      height: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .loading-content {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 1.25rem;
-      text-align: center;
-    }
-
-    .loading-ring {
-      width: 48px;
-      height: 48px;
-      border: 3px solid rgba(124, 58, 237, 0.15);
-      border-top-color: var(--color-accent-1);
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-    }
-
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-
-    .hidden {
-      display: none !important;
+    @media (min-width:540px) {
+      .btn { height:54px; font-size:.95rem; } .shutter { width:76px; height:76px; } .shutter-core { width:56px; height:56px; }
     }
   </style>
 </head>
 <body>
-  <main class="app-main">
-    
-    <!-- LOADING SCENE -->
-    <div id="scene-loading" class="loading-screen">
-      <div class="loading-content">
-        <div class="loading-ring"></div>
-        <p style="color: var(--color-text-muted)">Preparing photo experience...</p>
+  <div class="bg" aria-hidden="true"></div>
+  <div class="bg-cross" aria-hidden="true">
+    <svg viewBox="0 0 200 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect x="80" y="0" width="40" height="300" rx="8" fill="white"/>
+      <rect x="0" y="80" width="200" height="40" rx="8" fill="white"/>
+    </svg>
+  </div>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand-dot"></div>
+      <span class="brand-name">Citadel of Truth &amp; Mercy</span>
+      <div class="brand-dot"></div>
+    </header>
+    <!-- LOADING -->
+    <div id="scene-loading" class="splash">
+      <div class="splash-inner">
+        <div class="spin-ring"></div>
+        <p class="splash-text">Preparing your photo experience&hellip;</p>
       </div>
     </div>
-
-    <!-- ERROR SCENE -->
-    <div id="scene-error" class="loading-screen hidden">
-      <div class="loading-content">
-        <p id="error-message" style="color: #ef4444; font-weight: 500;"></p>
-        <button class="btn btn-secondary" onclick="window.location.reload()" style="margin-top: 1rem;">Try Again</button>
+    <!-- ERROR -->
+    <div id="scene-error" class="splash hidden">
+      <div class="splash-inner">
+        <div class="error-icon" aria-hidden="true"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="#f87171" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg></div>
+        <p id="error-message" class="error-msg"></p>
+        <button class="btn btn-retry" onclick="window.location.reload()" style="margin-top:.5rem">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+          Try Again
+        </button>
       </div>
     </div>
-
-    <!-- CAMERA SCENE -->
+    <!-- CAMERA -->
     <div id="scene-camera" class="scene hidden">
-      <div class="scene-header">
-        <h1 class="scene-title">Take Your Photo</h1>
-        <p class="scene-subtitle">Position yourself and tap capture</p>
+      <div class="scene-head">
+        <h1 class="scene-title">Strike a <span>Pose</span></h1>
+        <p class="scene-sub">Centre yourself in the frame, then tap the button</p>
       </div>
       <div class="viewport">
-        <div class="camera-wrapper">
-          <video id="camera-feed" autoplay playsinline class="camera-feed"></video>
-          <img id="camera-frame-overlay" class="frame-overlay" alt="Frame" />
-          <div class="capture-btn-container">
-            <button id="capture-btn" class="capture-btn" aria-label="Take selfie">
-              <span class="capture-btn-ring"></span>
-              <span class="capture-btn-core"></span>
+        <div id="camera-box" class="frame-box">
+          <video id="camera-feed" autoplay playsinline muted class="camera-feed"></video>
+          <img id="camera-frame-overlay" class="frame-overlay" alt="">
+          <div class="shutter-wrap">
+            <button id="capture-btn" class="shutter" aria-label="Take photo">
+              <span class="shutter-ring"></span>
+              <span class="shutter-core"></span>
             </button>
+            <span class="shutter-label">Tap to capture</span>
           </div>
         </div>
       </div>
     </div>
-
-    <!-- RESULT SCENE -->
+    <!-- RESULT -->
     <div id="scene-result" class="scene hidden">
-      <div class="scene-header">
-        <h1 class="scene-title">Your Photo is Ready!</h1>
-        <p class="scene-subtitle">Download or share it with the world</p>
+      <div class="scene-head">
+        <h1 class="scene-title">Your Photo is <span>Ready</span></h1>
+        <p class="scene-sub">Save or share your photo with everyone</p>
       </div>
       <div class="viewport">
-        <div class="result-wrapper">
-          <img id="result-img" class="result-image" alt="Composited result" />
+        <div id="result-box" class="frame-box">
+          <img id="result-img" class="result-img" alt="Your photo with church frame">
         </div>
       </div>
-      <div class="action-buttons">
-        <button id="retake-btn" class="btn btn-secondary">Retake</button>
-        <button id="download-btn" class="btn btn-primary">Download</button>
-        <button id="share-btn" class="btn btn-accent hidden">Share</button>
+      <div class="actions">
+        <button id="download-btn" class="btn btn-download">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+          Save Photo
+        </button>
+        <button id="share-btn" class="btn btn-share hidden">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" x2="15.42" y1="13.51" y2="17.49"/><line x1="15.41" x2="8.59" y1="6.51" y2="10.49"/></svg>
+          Share
+        </button>
+        <button id="retake-btn" class="btn btn-retake">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+          Retake
+        </button>
       </div>
     </div>
-
-  </main>
-
+  </div>
   <script>
-    // Configuration
-    const API_BASE = window.location.hostname.includes('netlify.app') 
-      ? 'https://citadel-newdb.onrender.com' 
-      : (window.location.hostname.includes('localhost') || window.location.hostname.includes('127.0.0.1') ? 'http://localhost:3000' : '');
-
-    let frameImage = null;
-    let stream = null;
-
-    // Elements
-    const sceneLoading = document.getElementById('scene-loading');
-    const sceneError = document.getElementById('scene-error');
-    const sceneCamera = document.getElementById('scene-camera');
-    const sceneResult = document.getElementById('scene-result');
-    
-    const video = document.getElementById('camera-feed');
-    const cameraOverlay = document.getElementById('camera-frame-overlay');
-    const resultImg = document.getElementById('result-img');
-    const errorMessage = document.getElementById('error-message');
-
-    // Init
+    const API_BASE = (() => {
+      const h = window.location.hostname;
+      if (h.includes('netlify.app')) return 'https://citadel-newdb.onrender.com';
+      if (h === 'localhost' || h === '127.0.0.1') return 'http://localhost:3000';
+      return '';
+    })();
+    let frameImage = null, stream = null, frameW = 1440, frameH = 1080;
+    const $ = id => document.getElementById(id);
+    const sceneLoading = $('scene-loading'), sceneError = $('scene-error');
+    const sceneCamera = $('scene-camera'), sceneResult = $('scene-result');
+    const video = $('camera-feed'), camOverlay = $('camera-frame-overlay');
+    const resultImg = $('result-img'), errMsg = $('error-message');
+    const cameraBox = $('camera-box'), resultBox = $('result-box');
+    function showScene(el) {
+      [sceneLoading,sceneError,sceneCamera,sceneResult].forEach(s => s.classList.toggle('hidden', s !== el));
+    }
+    function showError(msg) { errMsg.textContent = msg; showScene(sceneError); }
+    function setBoxRatio(r) {
+      [cameraBox,resultBox].forEach(b => {
+        b.style.aspectRatio = String(r);
+      });
+    }
     async function init() {
       try {
-        // Step 1: Load Settings to get frame url
-        const res = await fetch(`${API_BASE}/api/settings`);
-        if (!res.ok) throw new Error("Could not load frame overlay settings");
-        const settings = await res.json();
-        
-        const frameUrl = settings.selfie_frame_url;
-        if (!frameUrl) throw new Error("No frame configured. Please upload a frame in the CMS.");
-
-        // Step 2: Preload frame image
+        const res = await fetch(API_BASE + '/api/settings');
+        if (!res.ok) throw new Error('Could not load settings from server.');
+        const s = await res.json();
+        const url = s.selfie_frame_url;
+        if (!url) throw new Error('No photo frame configured yet. Please set one in the CMS.');
         frameImage = new Image();
-        frameImage.crossOrigin = "anonymous";
-        frameImage.onload = startCamera;
-        frameImage.onerror = () => showError("Failed to preload frame image");
-        frameImage.src = frameUrl;
-        cameraOverlay.src = frameUrl;
-
-      } catch (err) {
-        showError(err.message);
-      }
+        frameImage.crossOrigin = 'anonymous';
+        frameImage.onload = () => {
+          frameW = frameImage.naturalWidth || 1440;
+          frameH = frameImage.naturalHeight || 1080;
+          setBoxRatio(frameW / frameH);
+          camOverlay.src = url;
+          startCamera();
+        };
+        frameImage.onerror = () => showError('Frame image could not be loaded. Check your connection.');
+        frameImage.src = url;
+      } catch(err) { showError(err.message); }
     }
-
-    // Camera Access
     async function startCamera() {
       try {
         stream = await navigator.mediaDevices.getUserMedia({
-          video: {
-            facingMode: "user",
-            aspectRatio: 4 / 3,
-            width: { ideal: 1440 },
-            height: { ideal: 1080 }
-          },
+          video: { facingMode:'user', aspectRatio:frameW/frameH, width:{ideal:frameW}, height:{ideal:frameH} },
           audio: false
         });
         video.srcObject = stream;
-        
-        sceneLoading.classList.add('hidden');
-        sceneCamera.classList.remove('hidden');
-      } catch (err) {
-        showError("Could not access front camera. Please check permissions.");
-      }
+        showScene(sceneCamera);
+      } catch(err) { showError('Camera access denied. Please allow camera permission and try again.'); }
     }
-
-    // Capture & Composite
-    document.getElementById('capture-btn').addEventListener('click', () => {
+    $('capture-btn').addEventListener('click', () => {
+      cameraBox.style.outline = '3px solid rgba(232,169,35,.8)';
+      setTimeout(() => { cameraBox.style.outline = ''; }, 280);
       const canvas = document.createElement('canvas');
-      canvas.width = 1440;
-      canvas.height = 1080;
+      canvas.width = frameW; canvas.height = frameH;
       const ctx = canvas.getContext('2d');
-
-      // Draw mirrored video
-      ctx.translate(1440, 0);
-      ctx.scale(-1, 1);
-      
-      // Calculate cover math for video aspect fill
-      const videoRatio = video.videoWidth / video.videoHeight;
-      const targetRatio = 1440 / 1080;
+      ctx.translate(frameW, 0); ctx.scale(-1, 1);
+      const vr = video.videoWidth / video.videoHeight, tr = frameW / frameH;
       let sx, sy, sw, sh;
-      if (videoRatio > targetRatio) {
-        sh = video.videoHeight;
-        sw = video.videoHeight * targetRatio;
-        sx = (video.videoWidth - sw) / 2;
-        sy = 0;
-      } else {
-        sw = video.videoWidth;
-        sh = video.videoWidth / targetRatio;
-        sx = 0;
-        sy = (video.videoHeight - sh) / 2;
-      }
-      
-      ctx.drawImage(video, sx, sy, sw, sh, 0, 0, 1440, 1080);
-      
-      // Reset transform & Draw frame overlay on top
-      ctx.setTransform(1, 0, 0, 1, 0, 0);
-      ctx.drawImage(frameImage, 0, 0, 1440, 1080);
-
-      // Render composite to page
-      const compositeDataUrl = canvas.toDataURL('image/png', 1.0);
-      resultImg.src = compositeDataUrl;
-
-      // Stop camera track
-      if (stream) {
-        stream.getTracks().forEach(track => track.stop());
-      }
-
-      // Show result scene
-      sceneCamera.classList.add('hidden');
-      sceneResult.classList.remove('hidden');
-      setupShare(compositeDataUrl);
+      if (vr > tr) { sh = video.videoHeight; sw = sh*tr; sx = (video.videoWidth-sw)/2; sy = 0; }
+      else          { sw = video.videoWidth;  sh = sw/tr; sx = 0; sy = (video.videoHeight-sh)/2; }
+      ctx.drawImage(video, sx, sy, sw, sh, 0, 0, frameW, frameH);
+      ctx.setTransform(1,0,0,1,0,0);
+      ctx.drawImage(frameImage, 0, 0, frameW, frameH);
+      const dataUrl = canvas.toDataURL('image/png', 1.0);
+      resultImg.src = dataUrl;
+      if (stream) stream.getTracks().forEach(t => t.stop());
+      resultBox.classList.remove('anim-flash');
+      void resultBox.offsetWidth;
+      resultBox.classList.add('anim-flash');
+      showScene(sceneResult);
+      setupShare(dataUrl);
     });
-
-    // Retake
-    document.getElementById('retake-btn').addEventListener('click', () => {
-      sceneResult.classList.add('hidden');
-      sceneLoading.classList.remove('hidden');
-      startCamera();
-    });
-
-    // Download
-    document.getElementById('download-btn').addEventListener('click', () => {
+    $('retake-btn').addEventListener('click', () => { showScene(sceneLoading); startCamera(); });
+    $('download-btn').addEventListener('click', () => {
       const a = document.createElement('a');
-      a.href = resultImg.src;
-      a.download = `selfie-${Date.now()}.png`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
+      a.href = resultImg.src; a.download = 'citadel-photo-' + Date.now() + '.png';
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
     });
-
-    // Setup native sharing if available
     function setupShare(dataUrl) {
-      const shareBtn = document.getElementById('share-btn');
+      const btn = $('share-btn');
       if (navigator.share && navigator.canShare) {
-        shareBtn.classList.remove('hidden');
-        shareBtn.onclick = async () => {
+        btn.classList.remove('hidden');
+        btn.onclick = async () => {
           try {
             const blob = await (await fetch(dataUrl)).blob();
-            const file = new File([blob], `selfie-${Date.now()}.png`, { type: 'image/png' });
-            if (navigator.canShare({ files: [file] })) {
-              await navigator.share({
-                files: [file],
-                title: "My Photo",
-                text: "Check out my photo! 📸"
-              });
-            }
-          } catch (err) {
-            console.error("Sharing failed:", err);
-          }
+            const file = new File([blob], 'citadel-photo-' + Date.now() + '.png', {type:'image/png'});
+            if (navigator.canShare({files:[file]})) await navigator.share({files:[file], title:'My Citadel Photo', text:'Check out my photo from Citadel of Truth & Mercy!'});
+          } catch(e) {}
         };
-      }
+      } else { btn.classList.add('hidden'); }
     }
-
-    function showError(msg) {
-      errorMessage.textContent = msg;
-      sceneLoading.classList.add('hidden');
-      sceneCamera.classList.add('hidden');
-      sceneResult.classList.add('hidden');
-      sceneError.classList.remove('hidden');
-    }
-
-    // Start
     init();
   </script>
 </body>
