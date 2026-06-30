@@ -52,8 +52,16 @@
     .scene-title { font-size:clamp(1.1rem,5vw,1.55rem); font-weight:800; letter-spacing:-.02em; line-height:1.15; color:var(--off-white); }
     .scene-title span { background:linear-gradient(90deg,var(--gold),var(--gold-2)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text; }
     .scene-sub { margin-top:.22rem; font-size:clamp(.75rem,3vw,.88rem); font-weight:500; color:var(--text-muted); }
-    .viewport { flex:1 1 auto; min-height:0; width:100%; display:flex; align-items:center; justify-content:center; overflow:hidden; padding:0 .75rem; }
-    .frame-box { position:relative; height:100%; width:auto; max-width:100%; aspect-ratio:4/3;
+    .viewport { flex:1 1 auto; min-height:0; width:100%; position:relative; overflow:hidden; }
+    .frame-box {
+      position:absolute;
+      top:50%; left:50%;
+      transform:translate(-50%,-50%);
+      /* Contain-fit: fills the viewport without distortion */
+      width:calc(100% - 1.5rem);
+      height:auto;
+      max-height:100%;
+      aspect-ratio:4/3;
       border-radius:var(--r-xl); overflow:hidden; background:#000;
       box-shadow:0 0 0 1px var(--border), 0 28px 70px rgba(0,0,0,.65); }
     .frame-box::before,.frame-box::after { display:none; }
@@ -227,6 +235,7 @@
           audio: false
         });
         video.srcObject = stream;
+        try { await video.play(); } catch(_) {}
         showScene(sceneCamera);
       } catch(err) { showError('Camera access denied. Please allow camera permission and try again.'); }
     }
