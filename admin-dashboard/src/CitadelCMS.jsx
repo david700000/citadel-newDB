@@ -2310,6 +2310,22 @@ const CMSSettings = ({ token, toast }) => {
   const [purgeConfirmation, setPurgeConfirmation] = useState("");
   const [purging, setPurging] = useState(false);
 
+  const [selfieFrameUrl, setSelfieFrameUrl] = useState("");
+  const [uploadingFrame, setUploadingFrame] = useState(false);
+
+  useEffect(() => {
+    const loadFrameSetting = async () => {
+      try {
+        const res = await fetch(API_URLS.SETTINGS);
+        if (res.ok) {
+          const data = await res.json();
+          setSelfieFrameUrl(data.selfie_frame_url || "");
+        }
+      } catch (_) {}
+    };
+    loadFrameSetting();
+  }, [token]);
+
   useEffect(() => {
     const fetchSettings = async () => {
       try {
@@ -2438,22 +2454,6 @@ const CMSSettings = ({ token, toast }) => {
       </Page>
     );
   }
-
-  const [selfieFrameUrl, setSelfieFrameUrl] = useState("");
-  const [uploadingFrame, setUploadingFrame] = useState(false);
-
-  useEffect(() => {
-    const loadFrameSetting = async () => {
-      try {
-        const res = await fetch(API_URLS.SETTINGS);
-        if (res.ok) {
-          const data = await res.json();
-          setSelfieFrameUrl(data.selfie_frame_url || "");
-        }
-      } catch (_) {}
-    };
-    loadFrameSetting();
-  }, [token]);
 
   const handleFrameUpload = async (e) => {
     const file = e.target.files?.[0];
