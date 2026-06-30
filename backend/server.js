@@ -40,6 +40,7 @@ const SiteData = mongoose.model('SiteData', SiteDataSchema);
 
 
 const EventRegistration = require('./src/models/EventRegistration');
+const Setting = require('./src/models/Setting');
 
 // ─── SMTP ───
 // Brevo SMTP requires the FROM address to be a verified sender in your Brevo account.
@@ -399,6 +400,25 @@ const upload = multer({ storage });
 app.post('/api/upload', authenticateToken, upload.single('image'), (req, res) => {
     if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
     res.json({ url: req.file.path });
+});
+
+app.post('/api/upload-frame', authenticateToken, upload.single('frame'), async (req, res) => {
+    try {
+        if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+        const url = req.file.path;
+        
+        // Save the frame URL to Settings database
+        await Setting.findOneAndUpdate(
+            { key: 'selfie_frame_url' },
+            { value: url },
+            { new: true, upsert: true }
+        );
+        
+        res.json({ url });
+    } catch (err) {
+        console.error('Frame upload error:', err);
+        res.status(500).json({ error: 'Failed to upload frame and save settings' });
+    }
 });
 
 
