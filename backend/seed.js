@@ -9,7 +9,7 @@ const UserSchema = new mongoose.Schema({
     role: { type: String, default: 'admin' },
     recoveryKey: String
 });
-const User = mongoose.model('User', UserSchema);
+const User = mongoose.model('AdminUser', UserSchema, 'users');
 
 async function seed() {
     await mongoose.connect(process.env.MONGODB_URI);

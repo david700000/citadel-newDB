@@ -6,7 +6,7 @@ const FundRequest = require("../models/FundRequest");
 const Admin = require("../models/Admin");
 const User = require("../models/User");
 const PendingNotification = require("../models/PendingNotification");
-const { requireRole, requireAuth, requireCMS } = require("../middleware/auth");
+const { requireRole, requireRoleOrCMS, requireAuth, requireCMS } = require("../middleware/auth");
 const { sendEmail } = require("../services/messaging");
 
 const router = express.Router();
@@ -48,8 +48,8 @@ async function queueFinancialNotification() {
 
 // ─── GENERAL LEDGER ROUTES ───────────────────────────────────────────────────
 
-// GET /financial - Get all active (non-voided) transactions (finance admin, Leader)
-router.get("/", requireRole("finance_admin", "leader"), async (req, res) => {
+// GET /financial - Get all active (non-voided) transactions (finance admin, Leader, CMS root)
+router.get("/", requireRoleOrCMS("finance_admin", "leader"), async (req, res) => {
   try {
     const logs = await FinancialLog.find({ voided: { $ne: true } }).sort({ date: -1 });
     res.json(logs);
@@ -182,7 +182,7 @@ router.patch("/:id/void", requireRole("finance_admin"), async (req, res) => {
 // ─── FINANCIAL SECTIONS (DEPARTMENTS) ROUTES ────────────────────────────────
 
 // GET /financial/sections
-router.get("/sections", requireAuth, async (req, res) => {
+router.get("/sections", requireRoleOrCMS("finance_admin", "leader"), async (req, res) => {
   try {
     const sections = await FinancialSection.find().sort({ name: 1 });
     res.json(sections);
@@ -222,7 +222,7 @@ router.delete("/sections/:id", requireCMS, async (req, res) => {
 // ─── SALARY ROUTES ───────────────────────────────────────────────────────────
 
 // GET /financial/salaries - Active salary logs only
-router.get("/salaries", requireRole("finance_admin", "leader"), async (req, res) => {
+router.get("/salaries", requireRoleOrCMS("finance_admin", "leader"), async (req, res) => {
   try {
     const salaries = await SalaryLog.find({ voided: { $ne: true } }).sort({ createdAt: -1 });
     res.json(salaries);
@@ -356,7 +356,7 @@ router.patch("/salaries/:id/void", requireRole("finance_admin"), async (req, res
 // ─── FUND REQUEST ROUTES ─────────────────────────────────────────────────────
 
 // GET /financial/fund-requests
-router.get("/fund-requests", requireRole("finance_admin", "leader"), async (req, res) => {
+router.get("/fund-requests", requireRoleOrCMS("finance_admin", "leader"), async (req, res) => {
   try {
     const requests = await FundRequest.find().sort({ createdAt: -1 });
     res.json(requests);

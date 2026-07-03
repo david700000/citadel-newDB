@@ -7131,6 +7131,11 @@ export default function App() {
   const [toast, setToast] = useState(null);
   const [publicForm, setPublicForm] = useState(() => {
     if (typeof window === "undefined") return null;
+    const path = window.location.pathname;
+    if (path.includes("/first-timer")) return "first_timer";
+    if (path.includes("/member")) return "member_worker";
+    if (path.includes("/reviews")) return "service_review";
+
     const hash = window.location.hash;
     if (hash === "#/register/first-timer") return "first_timer";
     if (hash === "#/register/member-worker") return "member_worker";
@@ -7236,6 +7241,20 @@ export default function App() {
 
   useEffect(() => {
     const handleHash = () => {
+      const path = window.location.pathname;
+      if (path.includes("/first-timer")) {
+        setPublicForm("first_timer");
+        return;
+      }
+      if (path.includes("/member")) {
+        setPublicForm("member_worker");
+        return;
+      }
+      if (path.includes("/reviews")) {
+        setPublicForm("service_review");
+        return;
+      }
+
       const hash = window.location.hash;
       if (hash === "#/register/first-timer") setPublicForm("first_timer");
       else if (hash === "#/register/member-worker") setPublicForm("member_worker");

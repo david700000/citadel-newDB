@@ -30,7 +30,7 @@ const UserSchema = new mongoose.Schema({
     recoveryKey: String,
     recoveryExpires: Date
 });
-const User = mongoose.model('User', UserSchema);
+const User = mongoose.model('AdminUser', UserSchema, 'users');
 
 const SiteDataSchema = new mongoose.Schema({
     hero: Array, events: Array, sermons: Array, gallery: Array, global: Object

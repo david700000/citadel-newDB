@@ -2,10 +2,10 @@
 /admin    /admin/index.html    200
 /admin/*  /admin/index.html    200
 
-# ─── Public Registration Forms (302 Redirects to Hash Routes) ───
-/first-timer    /admin/#/register/first-timer    302
-/member         /admin/#/register/member-worker  302
-/reviews        /admin/#/service-review          302
+# ─── Public Registration Forms (200 Rewrites to SPA Router) ───
+/first-timer    /admin/index.html    200
+/member         /admin/index.html    200
+/reviews        /admin/index.html    200
 
 # ─── Programs: path-based registration pages ───
 /programs       /programs/index.html    200

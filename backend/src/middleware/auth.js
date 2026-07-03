@@ -55,8 +55,24 @@ function requireCMS(req, res, next) {
   });
 }
 
-// ─── SPECIFIC ROLE ────────────────────────────────────────────────────────────
+// ─── SPECIFIC ROLE (STRICT — does NOT grant CMS root access) ─────────────────
+// Use this for write/operational routes (e.g. POST financial, POST salary).
+// CMS root must use requireCMS routes only; they should NOT be able to log
+// transactions or other operational entries under a role they don't hold.
 function requireRole(...roles) {
+  return (req, res, next) => {
+    requireAuth(req, res, () => {
+      if (!roles.includes(req.user.role)) {
+        return res.status(403).json({ error: `Access denied. Required: ${roles.join(" or ")}` });
+      }
+      next();
+    });
+  };
+}
+
+// ─── SPECIFIC ROLE OR CMS (for read routes accessible to CMS root too) ───────
+// Use this for GET routes where CMS root legitimately needs visibility.
+function requireRoleOrCMS(...roles) {
   return (req, res, next) => {
     requireAuth(req, res, () => {
       if (!roles.includes(req.user.role) && req.user.role !== "cms") {
@@ -67,4 +83,4 @@ function requireRole(...roles) {
   };
 }
 
-module.exports = { requireAuth, requireCMS, requireRole };
+module.exports = { requireAuth, requireCMS, requireRole, requireRoleOrCMS };
