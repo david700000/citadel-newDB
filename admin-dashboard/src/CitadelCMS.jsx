@@ -2301,8 +2301,6 @@ const CMSSettings = ({ token, toast }) => {
   const [saving, setSaving] = useState(false);
   const [savingBirthday, setSavingBirthday] = useState(false);
   const [savingLogout, setSavingLogout] = useState(false);
-  const [runningBirthday, setRunningBirthday] = useState(false);
-  const [birthdayRunResult, setBirthdayRunResult] = useState(null);
 
   // Database Management States
   const [purgeTarget, setPurgeTarget] = useState("finance");
@@ -2582,61 +2580,6 @@ const CMSSettings = ({ token, toast }) => {
         <Btn onClick={handleSaveBirthday} variant="primary" style={{ background: "#d97706", border: "none" }} disabled={savingBirthday}>
           {savingBirthday ? "Saving..." : "Save Birthday Message"}
         </Btn>
-
-        {/* Manual Trigger */}
-        <div style={{ marginTop: 20, paddingTop: 20, borderTop: "1px solid #fde68a" }}>
-          <div style={{ fontSize: 13, fontWeight: 700, color: "#92400e", marginBottom: 8, fontFamily: "'DM Sans', sans-serif" }}>Manual Birthday Run</div>
-          <p style={{ margin: "0 0 12px", fontSize: 12, color: "#6b7280", fontFamily: "'DM Sans', sans-serif", lineHeight: 1.6 }}>
-            Use this to immediately send birthday greetings to <strong>all members/workers who haven't received one this year</strong> — including anyone whose birthday was recently missed.
-            The system will send a belated greeting for past birthdays.
-          </p>
-          <div style={{ display: "flex", alignItems: "center", gap: 16, flexWrap: "wrap" }}>
-            <button
-              onClick={async () => {
-                if (!confirm("Send birthday greetings now to all ungreeted members/workers? This will check all birthdays within the past year.")) return;
-                setRunningBirthday(true);
-                setBirthdayRunResult(null);
-                try {
-                  const res = await fetch("/api/birthday/run-now", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-                    body: JSON.stringify({ graceDays: 365 })
-                  });
-                  const data = await res.json();
-                  if (res.ok) {
-                    setBirthdayRunResult(data);
-                    toast(`Birthday greetings sent: ${data.sent} of ${data.total} users`, "success");
-                  } else {
-                    toast(data.error || "Failed to run birthday greetings", "error");
-                  }
-                } catch (err) {
-                  toast("Server connection failed", "error");
-                } finally {
-                  setRunningBirthday(false);
-                }
-              }}
-              disabled={runningBirthday}
-              style={{
-                padding: "10px 20px",
-                background: runningBirthday ? "#d1d5db" : "#f59e0b",
-                color: runningBirthday ? "#6b7280" : "#fff",
-                border: "none",
-                borderRadius: 10,
-                fontWeight: 700,
-                fontSize: 13,
-                fontFamily: "'DM Sans', sans-serif",
-                cursor: runningBirthday ? "not-allowed" : "pointer"
-              }}
-            >
-              {runningBirthday ? "⏳ Sending..." : "🎂 Send Missed Greetings Now"}
-            </button>
-            {birthdayRunResult && (
-              <div style={{ fontSize: 12, color: "#059669", fontWeight: 700 }}>
-                ✅ Done — {birthdayRunResult.sent} greeting{birthdayRunResult.sent !== 1 ? "s" : ""} sent out of {birthdayRunResult.total} found.
-              </div>
-            )}
-          </div>
-        </div>
       </div>
 
       {/* ── Auto-Logout Timer ──────────────────────────────────────────── */}
@@ -6617,7 +6560,7 @@ const ServiceReviewFormPage = ({ onBack, inline = false, onSuccess = null }) => 
                 </span>
               </div>
               <button
-                onClick={() => { window.location.href = "https://citadeloftruth.netlify.app/"; }}
+                onClick={() => { window.location.href = "https://citadeloftruthandmercyassembly.netlify.app/"; }}
                 style={{
                   marginTop: 20, background: "#0B1F3B", color: "#fff", border: "none",
                   borderRadius: 12, padding: "12px 28px", fontSize: 14, fontWeight: 700,
@@ -7411,7 +7354,7 @@ export default function App() {
               });
               if (res.ok) {
                 dispatch({ type: "REGISTER_USER", values, formType });
-                setRedirectUrl("https://citadeloftruth.netlify.app/");
+                setRedirectUrl("https://citadeloftruthandmercyassembly.netlify.app/");
                 setPublicForm("success");
                 // showToast(data.message || "Registration successful! Welcome 🎉", "success");
               } else {

@@ -168,7 +168,7 @@ router.get("/:id", requireAuth, async (req, res) => {
 // ─── PATCH /users/:id ────────────────────────────────────────────────────────
 router.patch("/:id", requireCMS, async (req, res) => {
   try {
-    const { full_name, email, phone, tag, department, extra_fields } = req.body;
+    const { full_name, email, phone, tag, department, date_of_birth, extra_fields } = req.body;
     
     const update = {};
     if (full_name) update.full_name = full_name.trim();
@@ -176,6 +176,7 @@ router.patch("/:id", requireCMS, async (req, res) => {
     if (phone) update.phone = phone;
     if (tag) update.tag = tag;
     if (department !== undefined) update.department = department;
+    if (date_of_birth !== undefined) update.date_of_birth = date_of_birth ? new Date(date_of_birth) : null;
     if (extra_fields) update.extra_fields = extra_fields;
 
     const user = await User.findByIdAndUpdate(
