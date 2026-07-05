@@ -55,7 +55,8 @@ async function fireBirthdayGreetings({ checkDate = null } = {}) {
       let dob = u.date_of_birth;
       if (!dob && u.extra_fields) {
         const ef = u.extra_fields instanceof Map ? Object.fromEntries(u.extra_fields) : u.extra_fields;
-        if (ef.date_of_birth) dob = new Date(ef.date_of_birth);
+        const dobKey = Object.keys(ef || {}).find(k => /birth|dob/i.test(k));
+        if (dobKey && ef[dobKey]) dob = new Date(ef[dobKey]);
       }
       if (!dob) return false;
       const d = new Date(dob);
