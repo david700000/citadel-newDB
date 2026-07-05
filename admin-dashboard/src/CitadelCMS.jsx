@@ -238,11 +238,12 @@ const Badge = ({ label, color }) => {
 };
 
 // ─── STAT CARD ────────────────────────────────────────────────────────────────
-const StatCard = ({ label, value, icon, accent }) => (
-  <div className="stat-card" style={{
+const StatCard = ({ label, value, icon, accent, onClick }) => (
+  <div className="stat-card" onClick={onClick} style={{
     background: accent ? "#0B1F3B" : "#fff", borderRadius: 14,
     padding: "20px 24px", boxShadow: "0 2px 12px rgba(0,0,0,0.06)",
     display: "flex", alignItems: "center", gap: 16, flex: 1, minWidth: 160,
+    cursor: onClick ? "pointer" : "default"
   }}>
     <div style={{
       background: accent ? "rgba(244,196,48,0.15)" : "#f0f4ff",
@@ -4789,6 +4790,7 @@ const LeaderDashboard = ({ state, dispatch, admin, toast }) => {
   const sessionStartTime = useRef(Date.now()); // Capture the exact timestamp when this session starts
   const [recentReviews, setRecentReviews] = useState([]);
   const [reviewsLoading, setReviewsLoading] = useState(true);
+  const [overviewTab, setOverviewTab] = useState("recent_activity");
 
   const nav = [
     { key: "overview", label: "Overview", icon: "dashboard" },
@@ -4959,61 +4961,146 @@ const LeaderDashboard = ({ state, dispatch, admin, toast }) => {
               <StatCard label="First-Timers" value={firstTimers} icon="bell" />
               <StatCard label="Members" value={members} icon="users" />
               <StatCard label="Workers" value={workers} icon="church" />
-              <StatCard label="Total Messages" value={state.messages.filter(m => m.type === "bulk" || m.type === "individual").length} icon="messages" />
+              <StatCard label="Total Messages" value={state.messages.filter(m => m.type === "bulk" || m.type === "individual").length} icon="messages" onClick={() => setActive("messages")} />
               <StatCard label="Attendance Records" value={state.attendance.length} icon="attendance" />
             </div>
 
-            {/* Quality Control Reviews Notifications for Leader */}
-            <div style={{ background: "#fff", borderRadius: 16, border: "1px solid #e2e8f0", padding: 24, boxShadow: "0 4px 20px rgba(0,0,0,0.02)" }}>
-              <h3 style={{ margin: "0 0 16px", fontSize: 16, fontWeight: 700, color: "#0B1F3B", display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ display: "inline-block", width: 8, height: 8, borderRadius: "50%", background: "#6366f1" }} />
-                Recent Quality Control Service Reviews
-              </h3>
-              {reviewsLoading ? (
-                <div style={{ padding: 20, textAlign: "center", color: "#94a3b8", fontSize: 14 }}>Loading QC reviews...</div>
-              ) : recentReviews.length === 0 ? (
-                <div style={{ padding: 20, textAlign: "center", color: "#94a3b8", fontSize: 14 }}>No service reviews submitted by Quality Control yet.</div>
-              ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                  {recentReviews.map((r, i) => {
-                    const rating = r.overall_average || r.overall_rating || 0;
-                    const ratingColor = rating >= 8 ? "#10b981" : rating >= 5 ? "#f59e0b" : "#ef4444";
-                    return (
-                      <div key={r._id || i} style={{ border: "1px solid #f1f5f9", borderRadius: 12, padding: 16, background: "#f8fafc", display: "flex", flexDirection: "column", gap: 8 }}>
-                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
-                          <span style={{ fontWeight: 700, color: "#1e293b", textTransform: "capitalize", fontSize: 14 }}>
-                            {r.service_type?.replace(/_/g, " ")}
-                          </span>
-                          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                            <span style={{ fontSize: 12, color: "#64748b" }}>
-                              {r.service_date ? new Date(r.service_date).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "—"}
-                            </span>
-                            <span style={{ background: ratingColor, color: "#fff", padding: "2px 8px", borderRadius: 20, fontSize: 12, fontWeight: 800 }}>
-                              ★ {rating.toFixed(1)}/10
-                            </span>
-                          </div>
-                        </div>
-                        {r.highlight && (
-                          <p style={{ margin: 0, fontSize: 13, color: "#475569" }}>
-                            <strong>Highlight:</strong> {r.highlight}
-                          </p>
-                        )}
-                        {r.improvement_suggestions && (
-                          <p style={{ margin: 0, fontSize: 13, color: "#475569" }}>
-                            <strong>Suggestions:</strong> {r.improvement_suggestions}
-                          </p>
-                        )}
-                      </div>
-                    );
-                  })}
-                  <div style={{ textAlign: "right", marginTop: 8 }}>
-                    <button onClick={() => setActive("service_reviews")} style={{ background: "none", border: "none", color: "#6366f1", fontWeight: 700, fontSize: 13, cursor: "pointer", padding: 0 }}>
-                      View all detailed reviews →
+            {(() => {
+              const allActivities = [];
+              state.users.forEach(u => {
+                allActivities.push({
+                  type: "registration",
+                  title: `New User: ${u.full_name}`,
+                  subtitle: `${u.tag.replace('_', ' ')}` + (u.department ? ` • ${u.department}` : ""),
+                  date: new Date(u.created_at),
+                  icon: "users",
+                  color: "#3b82f6"
+                });
+              });
+              groupedLogs.forEach(g => {
+                allActivities.push({
+                  type: "attendance",
+                  title: `Attendance Marked: ${g.event_name}`,
+                  subtitle: `Present: ${g.present} • Absent: ${g.absent}`,
+                  date: new Date(g.date),
+                  icon: "attendance",
+                  color: "#10b981"
+                });
+              });
+              logs.forEach(l => {
+                allActivities.push({
+                  type: "financial",
+                  title: `Finance Log: ${l.category}`,
+                  subtitle: `${l.type.toUpperCase()} • ₦${l.amount.toLocaleString()} (${l.description || 'No notes'})`,
+                  date: new Date(l.date),
+                  icon: "forms",
+                  color: l.type === "income" ? "#059669" : "#dc2626"
+                });
+              });
+              allActivities.sort((a, b) => b.date - a.date);
+              const recentActivities = allActivities.slice(0, 8);
+
+              return (
+                <div style={{ background: "#fff", borderRadius: 16, border: "1px solid #e2e8f0", padding: 24, boxShadow: "0 4px 20px rgba(0,0,0,0.02)" }}>
+                  <div style={{ display: "flex", gap: 24, borderBottom: "2px solid #f1f5f9", marginBottom: 20, paddingBottom: 10, flexWrap: "wrap" }}>
+                    <button
+                      onClick={() => setOverviewTab("recent_activity")}
+                      style={{
+                        background: "none", border: "none", padding: "0 0 8px 0",
+                        fontWeight: 700, fontSize: 15, cursor: "pointer",
+                        color: overviewTab === "recent_activity" ? "#0B1F3B" : "#94a3b8",
+                        borderBottom: overviewTab === "recent_activity" ? "3px solid #0B1F3B" : "3px solid transparent",
+                        transition: "all .15s"
+                      }}
+                    >
+                      Recent Activities Feed
+                    </button>
+                    <button
+                      onClick={() => setOverviewTab("qc_reviews")}
+                      style={{
+                        background: "none", border: "none", padding: "0 0 8px 0",
+                        fontWeight: 700, fontSize: 15, cursor: "pointer",
+                        color: overviewTab === "qc_reviews" ? "#0B1F3B" : "#94a3b8",
+                        borderBottom: overviewTab === "qc_reviews" ? "3px solid #0B1F3B" : "3px solid transparent",
+                        transition: "all .15s"
+                      }}
+                    >
+                      QC Service Reviews
                     </button>
                   </div>
+
+                  {overviewTab === "recent_activity" ? (
+                    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                      {recentActivities.length === 0 ? (
+                        <div style={{ padding: 20, textAlign: "center", color: "#94a3b8", fontSize: 14 }}>No recent activities.</div>
+                      ) : (
+                        recentActivities.map((act, idx) => (
+                          <div key={idx} style={{ display: "flex", alignItems: "flex-start", gap: 14, padding: "12px 16px", border: "1px solid #f1f5f9", borderRadius: 12, background: "#f8fafc" }}>
+                            <div style={{ background: act.color + "15", color: act.color, borderRadius: 10, padding: 8, display: "flex", flexShrink: 0 }}>
+                              <Icon name={act.icon} size={18} />
+                            </div>
+                            <div style={{ flex: 1 }}>
+                              <div style={{ fontSize: 14, fontWeight: 700, color: "#1e293b", fontFamily: "'DM Sans', sans-serif" }}>{act.title}</div>
+                              <div style={{ fontSize: 12, color: "#64748b", fontFamily: "'DM Sans', sans-serif", marginTop: 2 }}>{act.subtitle}</div>
+                            </div>
+                            <div style={{ fontSize: 11, color: "#94a3b8", fontFamily: "'DM Sans', sans-serif" }}>
+                              {act.date.toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  ) : (
+                    <div>
+                      {reviewsLoading ? (
+                        <div style={{ padding: 20, textAlign: "center", color: "#94a3b8", fontSize: 14 }}>Loading QC reviews...</div>
+                      ) : recentReviews.length === 0 ? (
+                        <div style={{ padding: 20, textAlign: "center", color: "#94a3b8", fontSize: 14 }}>No service reviews submitted by Quality Control yet.</div>
+                      ) : (
+                        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+                          {recentReviews.map((r, i) => {
+                            const rating = r.overall_average || r.overall_rating || 0;
+                            const ratingColor = rating >= 8 ? "#10b981" : rating >= 5 ? "#f59e0b" : "#ef4444";
+                            return (
+                              <div key={r._id || i} style={{ border: "1px solid #f1f5f9", borderRadius: 12, padding: 16, background: "#f8fafc", display: "flex", flexDirection: "column", gap: 8 }}>
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
+                                  <span style={{ fontWeight: 700, color: "#1e293b", textTransform: "capitalize", fontSize: 14 }}>
+                                    {r.service_type?.replace(/_/g, " ")}
+                                  </span>
+                                  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                                    <span style={{ fontSize: 12, color: "#64748b" }}>
+                                      {r.service_date ? new Date(r.service_date).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "—"}
+                                    </span>
+                                    <span style={{ background: ratingColor, color: "#fff", padding: "2px 8px", borderRadius: 20, fontSize: 12, fontWeight: 800 }}>
+                                      ★ {rating.toFixed(1)}/10
+                                    </span>
+                                  </div>
+                                </div>
+                                {r.highlight && (
+                                  <p style={{ margin: 0, fontSize: 13, color: "#475569" }}>
+                                    <strong>Highlight:</strong> {r.highlight}
+                                  </p>
+                                )}
+                                {r.improvement_suggestions && (
+                                  <p style={{ margin: 0, fontSize: 13, color: "#475569" }}>
+                                    <strong>Suggestions:</strong> {r.improvement_suggestions}
+                                  </p>
+                                )}
+                              </div>
+                            );
+                          })}
+                          <div style={{ textAlign: "right", marginTop: 8 }}>
+                            <button onClick={() => setActive("service_reviews")} style={{ background: "none", border: "none", color: "#6366f1", fontWeight: 700, fontSize: 13, cursor: "pointer", padding: 0 }}>
+                              View all detailed reviews →
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
-              )}
-            </div>
+              );
+            })()}
           </Page>
         )}
         {active === "users" && (
