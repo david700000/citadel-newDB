@@ -1938,10 +1938,16 @@ const CMSEventRegistrations = ({ state, toast }) => {
 
     let tabAttendedCount = 0;
     let tabAbsentCount = 0;
+    let perfectAttendedCount = 0;
     
     if (selectedDayTab === "all" || eventDaysArr.length === 0) {
       tabAttendedCount = eventRegs.filter(r => r.attended).length;
       tabAbsentCount = eventRegs.filter(r => !r.attended).length;
+      if (eventDaysArr.length > 0) {
+        perfectAttendedCount = eventRegs.filter(r => r.attendanceRecords && r.attendanceRecords.length >= eventDaysArr.length).length;
+      } else {
+        perfectAttendedCount = tabAttendedCount;
+      }
     } else {
       tabAttendedCount = eventRegs.filter(r => r.attendanceRecords && r.attendanceRecords.includes(selectedDayTab)).length;
       tabAbsentCount = eventRegs.length - tabAttendedCount;
@@ -2089,12 +2095,17 @@ const CMSEventRegistrations = ({ state, toast }) => {
         )}
 
         {/* Stats Bar */}
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, marginBottom: 24 }}>
-          {[
+        <div style={{ display: "grid", gridTemplateColumns: selectedDayTab === "all" && eventDaysArr.length > 0 ? "repeat(4, 1fr)" : "repeat(3, 1fr)", gap: 16, marginBottom: 24 }}>
+          {(selectedDayTab === "all" && eventDaysArr.length > 0 ? [
+            { label: "Total Registered", value: eventRegs.length, color: "#0B1F3B" },
+            { label: "Perfect Attendees (All Days)", value: perfectAttendedCount, color: "#10b981" },
+            { label: "Partial Attendees (Some Days)", value: tabAttendedCount - perfectAttendedCount, color: "#3b82f6" },
+            { label: "Absentees (No Days)", value: eventRegs.filter(r => !r.attendanceRecords || r.attendanceRecords.length === 0).length, color: "#f59e0b" }
+          ] : [
             { label: "Total Registered", value: eventRegs.length, color: "#0B1F3B" },
             { label: selectedDayTab === "all" ? "Attended (Any Day)" : `Attended (${selectedDayTab})`, value: tabAttendedCount, color: "#059669" },
             { label: selectedDayTab === "all" ? "Absent / Pending" : `Absent (${selectedDayTab})`, value: tabAbsentCount, color: "#f59e0b" }
-          ].map(s => (
+          ]).map(s => (
             <div key={s.label} style={{ background: "#fff", borderRadius: 14, padding: "18px 22px", boxShadow: "0 2px 12px rgba(0,0,0,0.06)", borderLeft: `4px solid ${s.color}` }}>
               <div style={{ fontSize: 28, fontWeight: 800, color: s.color, fontFamily: "'DM Sans', sans-serif" }}>{s.value}</div>
               <div style={{ fontSize: 12, color: "#6b7280", fontWeight: 600, marginTop: 4 }}>{s.label}</div>
@@ -4181,6 +4192,11 @@ const MediaDashboard = ({ state, dispatch, toast, admin }) => {
     } catch (err) { toast("Delete failed", "error"); }
   };
 
+  const selectedEventObj = churchEvents.find(e => e.title === targetGroup);
+  const targetDaysArr = (selectedEventObj && selectedEventObj.eventDays && selectedEventObj.eventDays.trim()) 
+    ? selectedEventObj.eventDays.split(",").map(d => d.trim()) 
+    : [];
+
   return (
     <div style={{ display: "flex", minHeight: "100vh", background: "#f8fafc" }}>
       <Sidebar nav={nav} active={active} setActive={setActive} role="media_admin" adminName={admin?.name} onLogout={() => dispatch({ type: "LOGOUT" })} />
@@ -4216,6 +4232,12 @@ const MediaDashboard = ({ state, dispatch, toast, admin }) => {
                       <option value="perfect">Perfect Attendees (All Days)</option>
                       <option value="partial">Partial Attendees (Missed some days)</option>
                       <option value="absent">Absentees (Did not attend any day)</option>
+                      {targetDaysArr.length > 0 && targetDaysArr.map(d => (
+                        <optgroup key={d} label={d}>
+                          <option value={`attended:${d}`}>Attended {d}</option>
+                          <option value={`absent:${d}`}>Absent {d}</option>
+                        </optgroup>
+                      ))}
                     </select>
                   </div>
                 )}
@@ -4512,8 +4534,11 @@ const UsherDashboard = ({ state, dispatch, toast, admin }) => {
       groupedLogs.push(groups[key]);
     }
     if (a.status === "present") groups[key].present++;
-    else if (a.status === "absent") groups[key].absent++;
     groups[key].records.push(a);
+  });
+  // Calculate absent based on current eligible members (since unmarked = absent)
+  groupedLogs.forEach(g => {
+    g.absent = Math.max(0, eligible.length - g.present);
   });
   groupedLogs.sort((a, b) => b.date.localeCompare(a.date) || a.event_name.localeCompare(b.event_name));
 
@@ -4532,15 +4557,16 @@ const UsherDashboard = ({ state, dispatch, toast, admin }) => {
               </div>
             </div>
             <div style={{ display: "flex", gap: 12, marginBottom: 20 }}>
-              <StatCard label="Marked Present" value={currentMarked.filter(a => a.status === "present").length} icon="check" />
-              <StatCard label="Marked Absent" value={currentMarked.filter(a => a.status === "absent").length} icon="x" />
-              <StatCard label="Not Marked" value={Math.max(0, eligible.length - currentMarked.length)} icon="users" />
+              <StatCard label="Present" value={currentMarked.filter(a => a.status === "present").length} icon="check" />
+              <StatCard label="Absent (Default)" value={Math.max(0, eligible.length - currentMarked.filter(a => a.status === "present").length)} icon="x" />
             </div>
             <div style={{ background: "#fff", borderRadius: 14, boxShadow: "0 2px 12px rgba(0,0,0,0.06)", overflow: "hidden" }}>
               {eligible.length === 0 ? (
                 <div style={{ padding: 40, textAlign: "center", color: "#9ca3af", fontFamily: "'DM Sans', sans-serif" }}>No members or workers found</div>
               ) : eligible.map((u, i) => {
                 const mark = isMarked(u.id);
+                const isPresent = mark?.status === "present";
+                const isAbsent = !isPresent; // Default to absent
                 return (
                   <div key={u.id} style={{
                     display: "flex", alignItems: "center", padding: "14px 20px",
@@ -4553,12 +4579,12 @@ const UsherDashboard = ({ state, dispatch, toast, admin }) => {
                       <div style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 600, fontSize: 14, color: "#111827" }}>{u.full_name}</div>
                       <div style={{ fontSize: 12, color: "#6b7280", fontFamily: "'DM Sans', sans-serif" }}>{u.tag} {u.department ? `· ${u.department}` : ""}</div>
                     </div>
-                    {mark && <Badge label={mark.status} />}
+                    <Badge label={isAbsent ? "absent" : "present"} />
                     <div style={{ display: "flex", gap: 8 }}>
-                      <Btn onClick={() => handleMark(u.id, "present")} variant={mark?.status === "present" ? "success" : "ghost"} small>
+                      <Btn onClick={() => handleMark(u.id, "present")} variant={isPresent ? "success" : "ghost"} small>
                         <Icon name="check" size={14} /> Present
                       </Btn>
-                      <Btn onClick={() => handleMark(u.id, "absent")} variant={mark?.status === "absent" ? "danger" : "ghost"} small>
+                      <Btn onClick={() => handleMark(u.id, "absent")} variant={isAbsent ? "danger" : "ghost"} small>
                         <Icon name="x" size={14} /> Absent
                       </Btn>
                     </div>

@@ -42,6 +42,14 @@ router.post("/bulk", requireRole("media_admin"), async (req, res) => {
           if (attendanceFilter === 'perfect') return count >= daysCount;
           if (attendanceFilter === 'partial') return count > 0 && count < daysCount;
           if (attendanceFilter === 'absent') return count === 0;
+          if (attendanceFilter.startsWith('attended:')) {
+            const day = attendanceFilter.split(':')[1];
+            return r.attendanceRecords && r.attendanceRecords.includes(day);
+          }
+          if (attendanceFilter.startsWith('absent:')) {
+            const day = attendanceFilter.split(':')[1];
+            return !r.attendanceRecords || !r.attendanceRecords.includes(day);
+          }
           return true;
         });
       }
