@@ -34,7 +34,7 @@ router.post("/register", async (req, res) => {
 // ─── POST /users/register/first-timer ────────────────────────────────────────
 router.post("/register/first-timer", async (req, res) => {
   try {
-    const { full_name, email, phone, ...extra } = req.body;
+    const { full_name, email, phone, fcm_token, ...extra } = req.body;
     if (!full_name) return res.status(400).json({ error: "Full name is required" });
 
     const user = await User.create({
@@ -43,7 +43,7 @@ router.post("/register/first-timer", async (req, res) => {
       phone: phone || undefined,
       tag: "first_timer",
       extra_fields: extra || {},
-      fcm_tokens: req.body.fcm_token ? [req.body.fcm_token] : []
+      fcm_tokens: fcm_token ? [fcm_token] : []
     });
 
     handleWelcome(user);
@@ -60,7 +60,7 @@ router.post("/register/first-timer", async (req, res) => {
 // ─── POST /users/register/member-worker ──────────────────────────────────────
 router.post("/register/member-worker", async (req, res) => {
   try {
-    const { full_name, email, phone, role_type, department, date_of_birth, ...extra } = req.body;
+    const { full_name, email, phone, role_type, department, date_of_birth, fcm_token, ...extra } = req.body;
     if (!full_name) return res.status(400).json({ error: "Full name is required" });
 
     const tag = role_type === "Worker" ? "worker" : "member";
@@ -72,7 +72,7 @@ router.post("/register/member-worker", async (req, res) => {
       department: tag === "worker" ? department : undefined,
       date_of_birth: date_of_birth ? new Date(date_of_birth) : undefined,
       extra_fields: extra || {},
-      fcm_tokens: req.body.fcm_token ? [req.body.fcm_token] : []
+      fcm_tokens: fcm_token ? [fcm_token] : []
     });
 
     handleWelcome(user);
