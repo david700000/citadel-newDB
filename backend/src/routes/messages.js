@@ -26,8 +26,26 @@ router.post("/bulk", requireRole("media_admin"), async (req, res) => {
       users = await User.find(query).select('id full_name email phone fcm_tokens');
     } else {
       // Fetch registrations for the specified event
+      const { attendanceFilter } = req.body; // 'all', 'perfect', 'partial', 'absent'
       const EventRegistration = require("../models/EventRegistration");
-      const regs = await EventRegistration.find({ eventTitle: target_group }).select('name email phone');
+      let regs = await EventRegistration.find({ eventTitle: target_group }).select('name email phone attendanceRecords');
+      
+      if (attendanceFilter && attendanceFilter !== 'all') {
+        const mongoose = require('mongoose');
+        const SiteData = mongoose.model('SiteData');
+        const siteDoc = await SiteData.findOne();
+        const eventDef = siteDoc?.events?.find(e => e.title === target_group);
+        const daysCount = eventDef && eventDef.eventDays ? eventDef.eventDays.split(',').length : 1;
+
+        regs = regs.filter(r => {
+          const count = r.attendanceRecords ? r.attendanceRecords.length : 0;
+          if (attendanceFilter === 'perfect') return count >= daysCount;
+          if (attendanceFilter === 'partial') return count > 0 && count < daysCount;
+          if (attendanceFilter === 'absent') return count === 0;
+          return true;
+        });
+      }
+
       users = regs.map(r => ({
         full_name: r.name,
         email: r.email,

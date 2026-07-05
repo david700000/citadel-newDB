@@ -587,11 +587,28 @@ app.delete('/api/event-registrations/:id', authenticateToken, async (req, res) =
 // ─── EVENT REGISTRATIONS: TOGGLE ATTENDANCE ───
 app.patch('/api/event-registrations/:id/attendance', authenticateToken, async (req, res) => {
     try {
+        const { day } = req.body;
         const reg = await EventRegistration.findById(req.params.id);
         if (!reg) return res.status(404).json({ error: 'Registration not found' });
-        reg.attended = !reg.attended;
+
+        if (day) {
+            // Multi-day tracking: toggle specific day
+            const index = reg.attendanceRecords.indexOf(day);
+            if (index > -1) {
+                reg.attendanceRecords.splice(index, 1);
+            } else {
+                reg.attendanceRecords.push(day);
+            }
+            // If they attended at least one day, mark overall attended as true
+            reg.attended = reg.attendanceRecords.length > 0;
+        } else {
+            // Single-day tracking (fallback)
+            reg.attended = !reg.attended;
+            if (!reg.attended) reg.attendanceRecords = [];
+        }
+
         await reg.save();
-        res.json({ success: true, attended: reg.attended, data: reg });
+        res.json({ success: true, attended: reg.attended, attendanceRecords: reg.attendanceRecords, data: reg });
     } catch (err) {
         console.error('Toggle attendance error:', err);
         res.status(500).json({ error: 'Failed to update attendance' });

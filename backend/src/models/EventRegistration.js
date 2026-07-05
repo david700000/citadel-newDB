@@ -6,6 +6,7 @@ const EventRegistrationSchema = new mongoose.Schema({
     phone: { type: String },
     eventTitle: { type: String, required: true },
     attended: { type: Boolean, default: false },
+    attendanceRecords: { type: [String], default: [] },
     customFields: { type: mongoose.Schema.Types.Mixed, default: {} }
 }, { 
     timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' } 

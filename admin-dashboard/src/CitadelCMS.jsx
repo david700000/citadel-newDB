@@ -1721,6 +1721,11 @@ const CMSEventRegistrations = ({ state, toast }) => {
   const [webData, setWebData] = useState({ events: [] });
   const [updatingAssets, setUpdatingAssets] = useState(false);
 
+  // Manual registration modal state
+  const [showRegModal, setShowRegModal] = useState(false);
+  const [regForm, setRegForm] = useState({ name: "", email: "", phone: "", eventTitle: "" });
+  const [regSubmitting, setRegSubmitting] = useState(false);
+
   const token = state.session?.token;
 
   const fetchRegistrations = async () => {
@@ -1813,6 +1818,35 @@ const CMSEventRegistrations = ({ state, toast }) => {
     }
   };
 
+  const handleManualRegister = async () => {
+    const { name, email, phone, eventTitle } = regForm;
+    if (!name.trim() || !email.trim() || !eventTitle.trim()) {
+      toast("Name, email and program are required", "error");
+      return;
+    }
+    setRegSubmitting(true);
+    try {
+      const res = await fetch(`${API_URLS.BASE}/api/register-event`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: name.trim(), email: email.trim(), phone: phone.trim(), eventTitle: eventTitle.trim() })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        toast(`${name} registered for ${eventTitle}!`, "success");
+        setShowRegModal(false);
+        setRegForm({ name: "", email: "", phone: "", eventTitle: selectedEvent || "" });
+        fetchRegistrations();
+      } else {
+        toast(data.error || "Registration failed", "error");
+      }
+    } catch (err) {
+      toast("Server connection failed", "error");
+    } finally {
+      setRegSubmitting(false);
+    }
+  };
+
   const handleDelete = async (id) => {
     if (!confirm("Are you sure you want to delete this registration?")) return;
     try {
@@ -1831,15 +1865,19 @@ const CMSEventRegistrations = ({ state, toast }) => {
     }
   };
 
-  const handleToggleAttendance = async (id) => {
+  const handleToggleAttendance = async (id, day = null) => {
     try {
       const res = await fetch(`${API_URLS.EVENT_REGISTRATIONS}/${id}/attendance`, {
         method: "PATCH",
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { 
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}` 
+        },
+        body: JSON.stringify({ day })
       });
       if (res.ok) {
-        const { attended } = await res.json();
-        setRegistrations(prev => prev.map(r => r._id === id ? { ...r, attended } : r));
+        const { attended, attendanceRecords } = await res.json();
+        setRegistrations(prev => prev.map(r => r._id === id ? { ...r, attended, attendanceRecords } : r));
       } else {
         toast("Failed to update attendance", "error");
       }
@@ -1896,13 +1934,17 @@ const CMSEventRegistrations = ({ state, toast }) => {
     const dbEvent = webData.events ? webData.events.find(e => e.title === selectedEvent) : null;
 
     return (
+      <>
       <Page
         title={selectedEvent}
         subtitle={`${eventRegs.length} registered · ${eventRegs.filter(r => r.attended).length} attended`}
         actions={
           <div style={{ display: "flex", gap: 10 }}>
+            <Btn onClick={() => { setRegForm({ name: "", email: "", phone: "", eventTitle: selectedEvent }); setShowRegModal(true); }} variant="primary" small>
+              <Icon name="plus" size={14} /> Register Person
+            </Btn>
             <Btn onClick={() => handleDownloadCSV(eventRegs, `${selectedEvent.replace(/\s+/g, '_')}_Registrations.csv`)} variant="accent" small>Download CSV</Btn>
-            <Btn onClick={() => { setSelectedEvent(null); setSearch(""); setDetailTab("registrations"); }} variant="secondary" small>← All Events</Btn>
+            <Btn onClick={() => { setSelectedEvent(null); setSearch(""); setDetailTab("registrations"); }} variant="ghost" small>← All Events</Btn>
           </div>
         }
       >
@@ -1959,6 +2001,24 @@ const CMSEventRegistrations = ({ state, toast }) => {
                   })}
                   small
                 />
+              </div>
+
+              {/* Event Days Configuration */}
+              <div style={{ background: "#f8fafc", borderRadius: 10, padding: 16, border: "1px solid #e5e7eb" }}>
+                <div style={{ fontSize: 12, fontWeight: 700, color: "#374151", marginBottom: 10, textTransform: "uppercase", letterSpacing: "0.05em" }}>Multi-Day Attendance</div>
+                <Input
+                  label="Event Days (comma-separated)"
+                  value={dbEvent.eventDays || ""}
+                  onChange={v => setWebData(prev => {
+                    const u = prev.events.map(e => e.title === selectedEvent ? { ...e, eventDays: v } : e);
+                    return { ...prev, events: u };
+                  })}
+                  placeholder="e.g. Day 1, Day 2, Day 3"
+                  small
+                />
+                <div style={{ fontSize: 11, color: "#6b7280", marginTop: 6, lineHeight: 1.4 }}>
+                  Specify the days for this event to track attendance separately per day. Leave blank for a standard 1-day event.
+                </div>
               </div>
 
             </div>
@@ -2031,22 +2091,51 @@ const CMSEventRegistrations = ({ state, toast }) => {
               </div>
             ) : <span style={{ color: "#94a3b8", fontSize: 11 }}>—</span>,
             r.created_at ? new Date(r.created_at).toLocaleDateString() : "—",
-            <button
-              onClick={() => handleToggleAttendance(r._id)}
-              style={{
-                padding: "4px 14px",
-                borderRadius: 20,
-                border: "none",
-                background: r.attended ? "#dcfce7" : "#f3f4f6",
-                color: r.attended ? "#059669" : "#9ca3af",
-                fontWeight: 700,
-                fontSize: 12,
-                cursor: "pointer",
-                transition: "all 0.2s"
-              }}
-            >
-              {r.attended ? "✓ Present" : "Absent"}
-            </button>,
+            (dbEvent && dbEvent.eventDays && dbEvent.eventDays.trim()) ? (
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", maxWidth: 200 }}>
+                {dbEvent.eventDays.split(",").map(dayStr => {
+                  const day = dayStr.trim();
+                  const isAttended = r.attendanceRecords && r.attendanceRecords.includes(day);
+                  return (
+                    <button
+                      key={day}
+                      onClick={() => handleToggleAttendance(r._id, day)}
+                      style={{
+                        padding: "4px 8px",
+                        borderRadius: 6,
+                        border: isAttended ? "1px solid #10b981" : "1px solid #d1d5db",
+                        background: isAttended ? "#dcfce7" : "#fff",
+                        color: isAttended ? "#059669" : "#6b7280",
+                        fontWeight: 600,
+                        fontSize: 10,
+                        cursor: "pointer",
+                        transition: "all 0.2s"
+                      }}
+                      title={day}
+                    >
+                      {isAttended ? "✓ " : ""}{day}
+                    </button>
+                  );
+                })}
+              </div>
+            ) : (
+              <button
+                onClick={() => handleToggleAttendance(r._id)}
+                style={{
+                  padding: "4px 14px",
+                  borderRadius: 20,
+                  border: "none",
+                  background: r.attended ? "#dcfce7" : "#f3f4f6",
+                  color: r.attended ? "#059669" : "#9ca3af",
+                  fontWeight: 700,
+                  fontSize: 12,
+                  cursor: "pointer",
+                  transition: "all 0.2s"
+                }}
+              >
+                {r.attended ? "✓ Present" : "Absent"}
+              </button>
+            ),
             <button
               onClick={() => handleDelete(r._id)}
               style={{ background: "none", border: "none", color: "#ef4444", cursor: "pointer", padding: 4 }}
@@ -2057,6 +2146,41 @@ const CMSEventRegistrations = ({ state, toast }) => {
           ])}
         />
       </Page>
+
+      {/* Manual Registration Modal — also accessible inside event detail view */}
+      {showRegModal && (
+        <Modal title="Register Person for Program" onClose={() => setShowRegModal(false)}>
+          <p style={{ margin: "0 0 18px", color: "#6b7280", fontFamily: "'DM Sans', sans-serif", fontSize: 14 }}>
+            Fill in the details below to manually register an attendee for a program.
+          </p>
+          <Input label="Full Name" value={regForm.name} onChange={v => setRegForm(f => ({ ...f, name: v }))} placeholder="e.g. John Doe" required />
+          <Input label="Email Address" type="email" value={regForm.email} onChange={v => setRegForm(f => ({ ...f, email: v }))} placeholder="john@example.com" required />
+          <Input label="Phone Number" value={regForm.phone} onChange={v => setRegForm(f => ({ ...f, phone: v }))} placeholder="+234..." />
+          <Input
+            label="Program / Event"
+            type="dropdown"
+            value={regForm.eventTitle}
+            onChange={v => setRegForm(f => ({ ...f, eventTitle: v }))}
+            options={
+              webData.events && webData.events.length > 0
+                ? webData.events.map(e => ({ value: e.title, label: e.title }))
+                : Object.keys(byEvent).map(t => ({ value: t, label: t }))
+            }
+            required
+          />
+          <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
+            <Btn onClick={() => setShowRegModal(false)} variant="ghost">Cancel</Btn>
+            <Btn
+              onClick={handleManualRegister}
+              variant="primary"
+              disabled={regSubmitting || !regForm.name.trim() || !regForm.email.trim() || !regForm.eventTitle.trim()}
+            >
+              {regSubmitting ? "Registering..." : "Complete Registration"}
+            </Btn>
+          </div>
+        </Modal>
+      )}
+      </>
     );
   }
 
@@ -2066,13 +2190,19 @@ const CMSEventRegistrations = ({ state, toast }) => {
   const totalAttended = registrations.filter(r => r.attended).length;
 
   return (
+    <>
     <Page
       title="Program Registrations"
       subtitle={`${totalRegistered} total signups across ${eventNames.length} event${eventNames.length !== 1 ? "s" : ""}`}
       actions={
-        <Btn onClick={() => handleDownloadCSV(registrations, `All_Event_Registrations_${new Date().toISOString().split('T')[0]}.csv`)} variant="accent" small>
-          Export All CSV
-        </Btn>
+        <div style={{ display: "flex", gap: 10 }}>
+          <Btn onClick={() => { setRegForm({ name: "", email: "", phone: "", eventTitle: eventNames[0] || "" }); setShowRegModal(true); }} variant="primary" small>
+            <Icon name="plus" size={14} /> Register Person
+          </Btn>
+          <Btn onClick={() => handleDownloadCSV(registrations, `All_Event_Registrations_${new Date().toISOString().split('T')[0]}.csv`)} variant="accent" small>
+            Export All CSV
+          </Btn>
+        </div>
       }
     >
       {/* Global Stats */}
@@ -2145,6 +2275,67 @@ const CMSEventRegistrations = ({ state, toast }) => {
         </div>
       )}
     </Page>
+
+    {/* Manual Registration Modal */}
+    {showRegModal && (
+      <Modal title="Register Person for Program" onClose={() => setShowRegModal(false)}>
+        <p style={{ margin: "0 0 18px", color: "#6b7280", fontFamily: "'DM Sans', sans-serif", fontSize: 14 }}>
+          Fill in the details below to manually register an attendee for a program.
+        </p>
+        <Input
+          label="Full Name"
+          value={regForm.name}
+          onChange={v => setRegForm(f => ({ ...f, name: v }))}
+          placeholder="e.g. John Doe"
+          required
+        />
+        <Input
+          label="Email Address"
+          type="email"
+          value={regForm.email}
+          onChange={v => setRegForm(f => ({ ...f, email: v }))}
+          placeholder="john@example.com"
+          required
+        />
+        <Input
+          label="Phone Number"
+          value={regForm.phone}
+          onChange={v => setRegForm(f => ({ ...f, phone: v }))}
+          placeholder="+234..."
+        />
+        <Input
+          label="Program / Event"
+          type="dropdown"
+          value={regForm.eventTitle}
+          onChange={v => setRegForm(f => ({ ...f, eventTitle: v }))}
+          options={
+            webData.events && webData.events.length > 0
+              ? webData.events.map(e => ({ value: e.title, label: e.title }))
+              : Object.keys(byEvent).map(t => ({ value: t, label: t }))
+          }
+          required
+        />
+        {(webData.events.length === 0 && Object.keys(byEvent).length === 0) && (
+          <Input
+            label="Or type program name"
+            value={regForm.eventTitle}
+            onChange={v => setRegForm(f => ({ ...f, eventTitle: v }))}
+            placeholder="Program / Event name"
+          />
+        )}
+        <div style={{ display: "flex", gap: 10, marginTop: 8 }}>
+          <Btn onClick={() => setShowRegModal(false)} variant="ghost">Cancel</Btn>
+          <Btn
+            onClick={handleManualRegister}
+            variant="primary"
+            disabled={regSubmitting || !regForm.name.trim() || !regForm.email.trim() || !regForm.eventTitle.trim()}
+          >
+            {regSubmitting ? "Registering..." : "Complete Registration"}
+          </Btn>
+        </div>
+      </Modal>
+    )}
+    </>
   );
 };
 
@@ -3734,6 +3925,7 @@ const MediaDashboard = ({ state, dispatch, toast, admin }) => {
   const [message, setMessage] = useState("");
   const [sending, setSending] = useState(false);
   const [targetGroup, setTargetGroup] = useState("first_timer");
+  const [attendanceFilter, setAttendanceFilter] = useState("all");
   const [channels, setChannels] = useState({ push: true, email: true, sms: false });
   const [newReminder, setNewReminder] = useState({ name: "", day: "sunday", time: "09:00", message: "" });
   const [reminderTargets, setReminderTargets] = useState({ first_timer: true, member: false, worker: false });
@@ -3778,7 +3970,7 @@ const MediaDashboard = ({ state, dispatch, toast, admin }) => {
       const res = await fetch(`${API_URLS.MESSAGES}/bulk`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${state.session.token}` },
-        body: JSON.stringify({ message, channels: selectedChannels, subject: "Church Update", target_group: targetGroup })
+        body: JSON.stringify({ message, channels: selectedChannels, subject: "Church Update", target_group: targetGroup, attendanceFilter })
       });
       if (res.ok) {
         const data = await res.json();
@@ -3876,7 +4068,7 @@ const MediaDashboard = ({ state, dispatch, toast, admin }) => {
               <div style={{ display: "flex", gap: 16, marginBottom: 20 }}>
                 <div style={{ flex: 1 }}>
                   <label style={{ display: "block", fontFamily: "'DM Sans', sans-serif", fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 8 }}>Target Audience</label>
-                  <select value={targetGroup} onChange={e => setTargetGroup(e.target.value)} style={{ width: "100%", padding: "10px", borderRadius: 8, border: "1px solid #e5e7eb", outline: "none", fontFamily: "'DM Sans', sans-serif" }}>
+                  <select value={targetGroup} onChange={e => { setTargetGroup(e.target.value); setAttendanceFilter("all"); }} style={{ width: "100%", padding: "10px", borderRadius: 8, border: "1px solid #e5e7eb", outline: "none", fontFamily: "'DM Sans', sans-serif" }}>
                     <optgroup label="System Roles">
                       <option value="first_timer">First Timers</option>
                       <option value="member">Members</option>
@@ -3892,6 +4084,17 @@ const MediaDashboard = ({ state, dispatch, toast, admin }) => {
                     )}
                   </select>
                 </div>
+                {churchEvents.some(e => e.title === targetGroup) && (
+                  <div style={{ flex: 1 }}>
+                    <label style={{ display: "block", fontFamily: "'DM Sans', sans-serif", fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 8 }}>Attendance Filter</label>
+                    <select value={attendanceFilter} onChange={e => setAttendanceFilter(e.target.value)} style={{ width: "100%", padding: "10px", borderRadius: 8, border: "1px solid #e5e7eb", outline: "none", fontFamily: "'DM Sans', sans-serif" }}>
+                      <option value="all">All Registered</option>
+                      <option value="perfect">Perfect Attendees (All Days)</option>
+                      <option value="partial">Partial Attendees (Missed some days)</option>
+                      <option value="absent">Absentees (Did not attend any day)</option>
+                    </select>
+                  </div>
+                )}
               </div>
               <div style={{ marginBottom: 20 }}>
                 <label style={{ display: "block", fontFamily: "'DM Sans', sans-serif", fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 8 }}>Channels</label>
@@ -4126,6 +4329,7 @@ const UsherDashboard = ({ state, dispatch, toast, admin }) => {
     { key: "history", label: "Attendance Logs", icon: "eye" },
     { key: "members", label: "Members & Workers", icon: "users" },
     { key: "add_user", label: "Register User", icon: "admins" },
+    { key: "event_regs", label: "Event Registrations", icon: "forms" },
   ];
 
   const eligible = state.users.filter(u => {
@@ -4276,6 +4480,7 @@ const UsherDashboard = ({ state, dispatch, toast, admin }) => {
         )}
 
         {active === "add_user" && <UsherAddUser state={state} dispatch={dispatch} toast={toast} />}
+        {active === "event_regs" && <CMSEventRegistrations state={state} toast={toast} />}
       </main>
 
       {/* Create New Log Modal */}
