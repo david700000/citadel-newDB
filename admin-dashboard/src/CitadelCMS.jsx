@@ -3995,8 +3995,8 @@ const CMSAttendance = ({ state }) => {
     <Page title="Attendance Records" subtitle="View all attendance logs">
       <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 24 }}>
         <StatCard label="Total Event Sheets" value={groupedLogs.length} icon="attendance" />
-        <StatCard label="Total Present Marks" value={state.attendance.filter(a => a.status === "present").length} icon="check" />
-        <StatCard label="Total Absent Marks" value={state.attendance.filter(a => a.status === "absent").length} icon="x" />
+        <StatCard label="Present Today" value={state.attendance.filter(a => a.status === "present" && (typeof a.date === "string" ? a.date.slice(0, 10) : new Date(a.date).toISOString().slice(0, 10)) === new Date().toISOString().slice(0, 10)).length} icon="check" />
+        <StatCard label="Absent Today" value={state.attendance.filter(a => a.status === "absent" && (typeof a.date === "string" ? a.date.slice(0, 10) : new Date(a.date).toISOString().slice(0, 10)) === new Date().toISOString().slice(0, 10)).length} icon="x" />
       </div>
       <Table
         headers={["Event Name", "Date", "Present", "Absent", "Total Marks"]}
@@ -4791,6 +4791,7 @@ const LeaderDashboard = ({ state, dispatch, admin, toast }) => {
   const [recentReviews, setRecentReviews] = useState([]);
   const [reviewsLoading, setReviewsLoading] = useState(true);
   const [overviewTab, setOverviewTab] = useState("recent_activity");
+  const [selectedActivity, setSelectedActivity] = useState(null);
   const [viewedActivities, setViewedActivities] = useState(() => {
     try {
       return JSON.parse(localStorage.getItem("leader_viewed_activities") || "[]");
@@ -4970,12 +4971,12 @@ const LeaderDashboard = ({ state, dispatch, admin, toast }) => {
               You have view-only access. No edits can be made from this dashboard.
             </div>
             <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 24 }}>
-              <StatCard label="Total Users" value={state.users.length} icon="users" accent />
-              <StatCard label="First-Timers" value={firstTimers} icon="bell" />
-              <StatCard label="Members" value={members} icon="users" />
-              <StatCard label="Workers" value={workers} icon="church" />
-              <StatCard label="Total Messages" value={state.messages.filter(m => m.type === "bulk" || m.type === "individual").length} icon="messages" onClick={() => setActive("messages")} />
-              <StatCard label="Attendance Records" value={state.attendance.length} icon="attendance" />
+              <StatCard label="Total Users" value={state.users.length} icon="users" accent onClick={() => setActive("users")} />
+              <StatCard label="First-Timers" value={firstTimers} icon="bell" onClick={() => setActive("users")} />
+              <StatCard label="Members" value={members} icon="users" onClick={() => setActive("users")} />
+              <StatCard label="Workers" value={workers} icon="church" onClick={() => setActive("users")} />
+              <StatCard label="Total Messages" value={state.messages.filter(m => new Date(m.created_at).getTime() > sessionStartTime.current).length} icon="messages" onClick={() => setActive("messages")} />
+              <StatCard label="Attendance Records" value={state.attendance.length} icon="attendance" onClick={() => setActive("attendance")} />
             </div>
 
             {(() => {
@@ -5060,7 +5061,7 @@ const LeaderDashboard = ({ state, dispatch, admin, toast }) => {
                         <div style={{ padding: 20, textAlign: "center", color: "#94a3b8", fontSize: 14 }}>No new activities.</div>
                       ) : (
                         recentActivities.map((act) => (
-                          <div key={act.key} style={{ display: "flex", alignItems: "center", gap: 14, padding: "12px 16px", border: "1px solid #f1f5f9", borderRadius: 12, background: "#f8fafc" }}>
+                          <div key={act.key} onClick={() => setSelectedActivity(act)} style={{ display: "flex", alignItems: "center", gap: 14, padding: "12px 16px", border: "1px solid #f1f5f9", borderRadius: 12, background: "#f8fafc", cursor: "pointer", transition: "all .15s" }}>
                             <div style={{ background: act.color + "15", color: act.color, borderRadius: 10, padding: 8, display: "flex", flexShrink: 0 }}>
                               <Icon name={act.icon} size={18} />
                             </div>
@@ -5072,13 +5073,6 @@ const LeaderDashboard = ({ state, dispatch, admin, toast }) => {
                               <span style={{ fontSize: 11, color: "#94a3b8", fontFamily: "'DM Sans', sans-serif" }}>
                                 {act.date.toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
                               </span>
-                              <button
-                                onClick={() => handleMarkActivityViewed(act.key)}
-                                style={{ background: "none", border: "none", color: "#94a3b8", cursor: "pointer", padding: 4, display: "flex", alignSelf: "center" }}
-                                title="Dismiss"
-                              >
-                                <Icon name="x" size={14} />
-                              </button>
                             </div>
                           </div>
                         ))
@@ -5145,6 +5139,44 @@ const LeaderDashboard = ({ state, dispatch, admin, toast }) => {
             })()}
           </Page>
         )}
+
+        {selectedActivity && selectedActivity.type === "registration" && (
+          <UserDetailsModal 
+            user={state.users.find(u => `reg-${u.id || u._id}` === selectedActivity.key)} 
+            onClose={() => { handleMarkActivityViewed(selectedActivity.key); setSelectedActivity(null); }} 
+          />
+        )}
+        {selectedActivity && selectedActivity.type === "attendance" && (
+          <AttendanceDetailsModal 
+            eventLog={groupedLogs.find(g => `att-${g.event_name}-${g.date}` === selectedActivity.key)} 
+            users={state.users} 
+            onClose={() => { handleMarkActivityViewed(selectedActivity.key); setSelectedActivity(null); }} 
+          />
+        )}
+        {selectedActivity && selectedActivity.type === "financial" && (
+          <Modal title="Financial Log Details" onClose={() => { handleMarkActivityViewed(selectedActivity.key); setSelectedActivity(null); }}>
+            <div style={{ padding: "10px 0" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 16, borderBottom: "1px solid #e5e7eb", paddingBottom: 16, marginBottom: 16 }}>
+                <div style={{
+                  width: 52, height: 52, borderRadius: "50%", background: selectedActivity.color + "15", color: selectedActivity.color,
+                  display: "flex", alignItems: "center", justifyContent: "center"
+                }}>
+                  <Icon name="forms" size={24} />
+                </div>
+                <div>
+                  <h4 style={{ margin: 0, fontSize: 18, fontWeight: 700, color: "#0B1F3B", fontFamily: "'DM Sans', sans-serif" }}>{selectedActivity.title}</h4>
+                  <div style={{ fontSize: 14, color: "#6b7280", fontFamily: "'DM Sans', sans-serif", marginTop: 4 }}>
+                    {selectedActivity.subtitle}
+                  </div>
+                </div>
+              </div>
+              <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
+                <Btn onClick={() => { handleMarkActivityViewed(selectedActivity.key); setSelectedActivity(null); }} variant="ghost">Close</Btn>
+              </div>
+            </div>
+          </Modal>
+        )}
+
         {active === "users" && (
           <Page title="All Users" subtitle="View only" actions={<div style={{ minWidth: 200, maxWidth: 300, marginBottom: -16 }}><SearchInput value={searchQuery} onChange={setSearchQuery} placeholder="Search users..." /></div>}>
             <Table
