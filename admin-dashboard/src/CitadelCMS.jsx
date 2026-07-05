@@ -4791,6 +4791,19 @@ const LeaderDashboard = ({ state, dispatch, admin, toast }) => {
   const [recentReviews, setRecentReviews] = useState([]);
   const [reviewsLoading, setReviewsLoading] = useState(true);
   const [overviewTab, setOverviewTab] = useState("recent_activity");
+  const [viewedActivities, setViewedActivities] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("leader_viewed_activities") || "[]");
+    } catch {
+      return [];
+    }
+  });
+
+  const handleMarkActivityViewed = (key) => {
+    const updated = [...viewedActivities, key];
+    setViewedActivities(updated);
+    localStorage.setItem("leader_viewed_activities", JSON.stringify(updated));
+  };
 
   const nav = [
     { key: "overview", label: "Overview", icon: "dashboard" },
@@ -4968,7 +4981,9 @@ const LeaderDashboard = ({ state, dispatch, admin, toast }) => {
             {(() => {
               const allActivities = [];
               state.users.forEach(u => {
+                const uKey = `reg-${u.id || u._id}`;
                 allActivities.push({
+                  key: uKey,
                   type: "registration",
                   title: `New User: ${u.full_name}`,
                   subtitle: `${u.tag.replace('_', ' ')}` + (u.department ? ` • ${u.department}` : ""),
@@ -4978,7 +4993,9 @@ const LeaderDashboard = ({ state, dispatch, admin, toast }) => {
                 });
               });
               groupedLogs.forEach(g => {
+                const aKey = `att-${g.event_name}-${g.date}`;
                 allActivities.push({
+                  key: aKey,
                   type: "attendance",
                   title: `Attendance Marked: ${g.event_name}`,
                   subtitle: `Present: ${g.present} • Absent: ${g.absent}`,
@@ -4988,7 +5005,9 @@ const LeaderDashboard = ({ state, dispatch, admin, toast }) => {
                 });
               });
               logs.forEach(l => {
+                const fKey = `fin-${l.id || l._id}`;
                 allActivities.push({
+                  key: fKey,
                   type: "financial",
                   title: `Finance Log: ${l.category}`,
                   subtitle: `${l.type.toUpperCase()} • ₦${l.amount.toLocaleString()} (${l.description || 'No notes'})`,
@@ -4997,8 +5016,14 @@ const LeaderDashboard = ({ state, dispatch, admin, toast }) => {
                   color: l.type === "income" ? "#059669" : "#dc2626"
                 });
               });
-              allActivities.sort((a, b) => b.date - a.date);
-              const recentActivities = allActivities.slice(0, 8);
+
+              // Filter unviewed only
+              const unreadActivities = allActivities.filter(act => !viewedActivities.includes(act.key));
+              unreadActivities.sort((a, b) => b.date - a.date);
+              const recentActivities = unreadActivities.slice(0, 8);
+
+              // Filter unread QC Reviews
+              const unreadReviews = recentReviews.filter(r => !viewedActivities.includes(`rev-${r._id || r.id}`));
 
               return (
                 <div style={{ background: "#fff", borderRadius: 16, border: "1px solid #e2e8f0", padding: 24, boxShadow: "0 4px 20px rgba(0,0,0,0.02)" }}>
@@ -5013,7 +5038,7 @@ const LeaderDashboard = ({ state, dispatch, admin, toast }) => {
                         transition: "all .15s"
                       }}
                     >
-                      Recent Activities Feed
+                      Recent Activities Feed ({unreadActivities.length})
                     </button>
                     <button
                       onClick={() => setOverviewTab("qc_reviews")}
@@ -5025,17 +5050,17 @@ const LeaderDashboard = ({ state, dispatch, admin, toast }) => {
                         transition: "all .15s"
                       }}
                     >
-                      QC Service Reviews
+                      QC Service Reviews ({unreadReviews.length})
                     </button>
                   </div>
 
                   {overviewTab === "recent_activity" ? (
                     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
                       {recentActivities.length === 0 ? (
-                        <div style={{ padding: 20, textAlign: "center", color: "#94a3b8", fontSize: 14 }}>No recent activities.</div>
+                        <div style={{ padding: 20, textAlign: "center", color: "#94a3b8", fontSize: 14 }}>No new activities.</div>
                       ) : (
-                        recentActivities.map((act, idx) => (
-                          <div key={idx} style={{ display: "flex", alignItems: "flex-start", gap: 14, padding: "12px 16px", border: "1px solid #f1f5f9", borderRadius: 12, background: "#f8fafc" }}>
+                        recentActivities.map((act) => (
+                          <div key={act.key} style={{ display: "flex", alignItems: "center", gap: 14, padding: "12px 16px", border: "1px solid #f1f5f9", borderRadius: 12, background: "#f8fafc" }}>
                             <div style={{ background: act.color + "15", color: act.color, borderRadius: 10, padding: 8, display: "flex", flexShrink: 0 }}>
                               <Icon name={act.icon} size={18} />
                             </div>
@@ -5043,8 +5068,17 @@ const LeaderDashboard = ({ state, dispatch, admin, toast }) => {
                               <div style={{ fontSize: 14, fontWeight: 700, color: "#1e293b", fontFamily: "'DM Sans', sans-serif" }}>{act.title}</div>
                               <div style={{ fontSize: 12, color: "#64748b", fontFamily: "'DM Sans', sans-serif", marginTop: 2 }}>{act.subtitle}</div>
                             </div>
-                            <div style={{ fontSize: 11, color: "#94a3b8", fontFamily: "'DM Sans', sans-serif" }}>
-                              {act.date.toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
+                            <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                              <span style={{ fontSize: 11, color: "#94a3b8", fontFamily: "'DM Sans', sans-serif" }}>
+                                {act.date.toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
+                              </span>
+                              <button
+                                onClick={() => handleMarkActivityViewed(act.key)}
+                                style={{ background: "none", border: "none", color: "#94a3b8", cursor: "pointer", padding: 4, display: "flex", alignSelf: "center" }}
+                                title="Dismiss"
+                              >
+                                <Icon name="x" size={14} />
+                              </button>
                             </div>
                           </div>
                         ))
@@ -5054,15 +5088,16 @@ const LeaderDashboard = ({ state, dispatch, admin, toast }) => {
                     <div>
                       {reviewsLoading ? (
                         <div style={{ padding: 20, textAlign: "center", color: "#94a3b8", fontSize: 14 }}>Loading QC reviews...</div>
-                      ) : recentReviews.length === 0 ? (
-                        <div style={{ padding: 20, textAlign: "center", color: "#94a3b8", fontSize: 14 }}>No service reviews submitted by Quality Control yet.</div>
+                      ) : unreadReviews.length === 0 ? (
+                        <div style={{ padding: 20, textAlign: "center", color: "#94a3b8", fontSize: 14 }}>No unread service reviews.</div>
                       ) : (
                         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-                          {recentReviews.map((r, i) => {
+                          {unreadReviews.map((r, i) => {
+                            const rKey = `rev-${r._id || r.id}`;
                             const rating = r.overall_average || r.overall_rating || 0;
                             const ratingColor = rating >= 8 ? "#10b981" : rating >= 5 ? "#f59e0b" : "#ef4444";
                             return (
-                              <div key={r._id || i} style={{ border: "1px solid #f1f5f9", borderRadius: 12, padding: 16, background: "#f8fafc", display: "flex", flexDirection: "column", gap: 8 }}>
+                              <div key={rKey} style={{ border: "1px solid #f1f5f9", borderRadius: 12, padding: 16, background: "#f8fafc", display: "flex", flexDirection: "column", gap: 8 }}>
                                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 10 }}>
                                   <span style={{ fontWeight: 700, color: "#1e293b", textTransform: "capitalize", fontSize: 14 }}>
                                     {r.service_type?.replace(/_/g, " ")}
@@ -5074,6 +5109,13 @@ const LeaderDashboard = ({ state, dispatch, admin, toast }) => {
                                     <span style={{ background: ratingColor, color: "#fff", padding: "2px 8px", borderRadius: 20, fontSize: 12, fontWeight: 800 }}>
                                       ★ {rating.toFixed(1)}/10
                                     </span>
+                                    <button
+                                      onClick={() => handleMarkActivityViewed(rKey)}
+                                      style={{ background: "none", border: "none", color: "#94a3b8", cursor: "pointer", padding: 4, display: "flex" }}
+                                      title="Dismiss"
+                                    >
+                                      <Icon name="x" size={14} />
+                                    </button>
                                   </div>
                                 </div>
                                 {r.highlight && (
