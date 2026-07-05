@@ -469,7 +469,10 @@ const UserDetailsModal = ({ user, onClose, onEdit }) => {
             <span style={{ display: "block", fontSize: 11, fontWeight: 600, color: "#6b7280", fontFamily: "'DM Sans', sans-serif", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4 }}>Date of Birth</span>
             <span style={{ display: "block", fontSize: 14, fontWeight: 500, color: "#111827", fontFamily: "'DM Sans', sans-serif" }}>
               {(() => {
-                const dobVal = user.date_of_birth || (user.extra_fields && user.extra_fields.date_of_birth);
+                // Look in top-level field first, then search extra_fields for any DOB-like key
+                const dobVal = user.date_of_birth ||
+                  (user.extra_fields && Object.entries(user.extra_fields)
+                    .find(([k]) => /birth|dob/i.test(k))?.[1]);
                 if (!dobVal) return "Not provided";
                 const d = new Date(dobVal);
                 return isNaN(d.getTime()) ? String(dobVal) : d.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
@@ -502,13 +505,13 @@ const UserDetailsModal = ({ user, onClose, onEdit }) => {
           </div>
         </div>
 
-        {user.extra_fields && Object.keys(user.extra_fields).filter(k => k !== "date_of_birth").length > 0 && (
+        {user.extra_fields && Object.keys(user.extra_fields).filter(k => !/birth|dob/i.test(k)).length > 0 && (
           <div style={{ borderTop: "1px solid #e5e7eb", paddingTop: 16 }}>
             <h5 style={{ margin: "0 0 12px", fontSize: 12, fontWeight: 700, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.05em", fontFamily: "'DM Sans', sans-serif" }}>Additional Information</h5>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px 20px" }}>
-              {Object.entries(user.extra_fields).filter(([k]) => k !== "date_of_birth").map(([k, val]) => {
+              {Object.entries(user.extra_fields).filter(([k]) => !/birth|dob/i.test(k)).map(([k, val]) => {
                 const valString = typeof val === "object" && val !== null ? JSON.stringify(val) : String(val || "—");
-                const formattedKey = k.split(/[_-]/).map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(" ");
+                const formattedKey = k.split(/[_\-\s]/).map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(" ");
                 return (
                   <div key={k}>
                     <span style={{ display: "block", fontSize: 11, fontWeight: 600, color: "#6b7280", fontFamily: "'DM Sans', sans-serif", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4 }}>{formattedKey}</span>
@@ -3015,7 +3018,11 @@ const CMSHome = ({ state, token, toast }) => {
   const members = state.users.filter(u => u.tag === "member").length;
   const workers = state.users.filter(u => u.tag === "worker").length;
   const activeAdmins = state.admins.filter(a => a.status === "active").length;
-  const todayAttendance = state.attendance.filter(a => a.status === "present").length;
+  const todayStr = new Date().toLocaleDateString("en-CA");
+  const todayAttendance = state.attendance.filter(a => {
+    const aDate = a.date ? (typeof a.date === "string" ? a.date.slice(0, 10) : new Date(a.date).toLocaleDateString("en-CA")) : "";
+    return aDate === todayStr && a.status === "present";
+  }).length;
   const [printing, setPrinting] = useState(false);
 
   const handlePrintAll = async () => {
@@ -5818,6 +5825,23 @@ const FinancialDashboard = ({ state, dispatch, toast, admin }) => {
 
 
   const sectionOptions = sections.length > 0 ? sections.map(s => s.name) : ["Offering", "Tithes", "Donation", "Building"];
+  const expenseCategoryOptions = [
+    "Diesel / Fuel",
+    "Electricity / Power",
+    "Generator Maintenance",
+    "Building Repairs",
+    "Stationery / Printing",
+    "Catering / Food",
+    "Transportation",
+    "Equipment Purchase",
+    "Sound / Media Supplies",
+    "Welfare / Benevolence",
+    "Staff Welfare",
+    "Sanitation / Cleaning",
+    "Event Expenses",
+    "Utilities (Water, Internet)",
+    "Miscellaneous"
+  ];
 
 
 
@@ -5963,10 +5987,10 @@ const FinancialDashboard = ({ state, dispatch, toast, admin }) => {
                   <form onSubmit={handleLogExpense}>
                     <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
                       <div style={{ flex: "1 1 200px" }}>
-                        <Input label="Section" value={expenseCategory} onChange={setExpenseCategory} type="dropdown" options={sectionOptions} required />
+                        <Input label="Expense Category" value={expenseCategory} onChange={setExpenseCategory} type="dropdown" options={expenseCategoryOptions} required />
                       </div>
                       <div style={{ flex: "1 1 200px" }}>
-                        <Input label="Sub-category / Detail" value={expenseSubCategory} onChange={setExpenseSubCategory} placeholder="e.g. Power Bill, Repairs" required />
+                        <Input label="Description / Detail" value={expenseSubCategory} onChange={setExpenseSubCategory} placeholder="e.g. Generator diesel top-up" required />
                       </div>
                     </div>
 
