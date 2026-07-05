@@ -6791,8 +6791,7 @@ const ServiceReviewFormPage = ({ onBack, inline = false, onSuccess = null }) => 
   SERVICE_REVIEW_SECTIONS.forEach(s => s.fields.forEach(f => { emptyRatings[f.field] = 0; }));
 
   const [form, setForm] = useState({
-    full_name: "QC Officer",
-    role: "leader",
+    role: "member",
     service_date: "",
     service_type: "",
     highlight: "",
@@ -6850,8 +6849,7 @@ const ServiceReviewFormPage = ({ onBack, inline = false, onSuccess = null }) => 
 
   const handleReset = () => {
     setForm({
-      full_name: "QC Officer",
-      role: "leader",
+      role: "member",
       service_date: "",
       service_type: "",
       highlight: "",
@@ -6884,7 +6882,7 @@ const ServiceReviewFormPage = ({ onBack, inline = false, onSuccess = null }) => 
           </div>
           <h2 style={{ margin: "0 0 12px", fontSize: 26, fontWeight: 800, color: "#0B1F3B" }}>Submitted Successfully!</h2>
           <p style={{ margin: "0 0 8px", color: "#6b7280", fontSize: 15, lineHeight: 1.6 }}>
-            Thank you, <strong style={{ color: "#0B1F3B" }}>{form.full_name}</strong>. Your review has been recorded.
+            Thank you! Your anonymous review has been recorded.
           </p>
           <p style={{ margin: "0 0 32px", color: "#9ca3af", fontSize: 13 }}>Your feedback helps us improve every service.</p>
           

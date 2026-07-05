@@ -15,5 +15,8 @@
 /check-in       /check-in/index.html    200
 /check-in/*     /check-in/index.html    200
 
+# ─── Firebase Service Worker: must be accessible at root for FCM push notifications ───
+/firebase-messaging-sw.js  /firebase-messaging-sw.js  200
+
 # ─── Church Website SPA fallback ───
 /*    /index.html    200

@@ -13,9 +13,9 @@ const ServiceReviewSchema = new mongoose.Schema(
     // ── Submitter Details ────────────────────────────────────────────────────
     full_name: {
       type: String,
-      required: true,
       trim: true,
       maxlength: 120,
+      default: "Anonymous"
     },
     role: {
       type: String,

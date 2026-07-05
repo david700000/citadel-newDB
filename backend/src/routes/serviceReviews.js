@@ -59,8 +59,7 @@ router.post("/", async (req, res) => {
     } = req.body;
 
     // Validate required string fields
-    const cleanName = sanitizeStr(full_name, 120);
-    if (!cleanName) return res.status(400).json({ error: "Full name is required." });
+    const cleanName = sanitizeStr(full_name, 120) || "Anonymous";
 
     const allowedRoles = ["worker", "member", "visitor", "leader", "pastor"];
     if (!allowedRoles.includes(role)) return res.status(400).json({ error: "Invalid role." });
