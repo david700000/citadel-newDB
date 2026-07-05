@@ -1714,6 +1714,7 @@ const CMSEventRegistrations = ({ state, toast }) => {
   const [registrations, setRegistrations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedEvent, setSelectedEvent] = useState(null); // null = overview
+  const [selectedDayTab, setSelectedDayTab] = useState("all"); // "all" or specific day
   const [detailTab, setDetailTab] = useState("registrations"); // "registrations" | "attendance"
   const [search, setSearch] = useState("");
 
@@ -1926,25 +1927,42 @@ const CMSEventRegistrations = ({ state, toast }) => {
       r.email.toLowerCase().includes(searchLower) ||
       (r.phone && r.phone.includes(search))
     );
-    const attendedList = filtered.filter(r => r.attended);
-    const absentList = filtered.filter(r => !r.attended);
-    const tabList = detailTab === "attendance" ? attendedList : filtered;
-
     // Find custom event details
     const dbEvent = webData.events ? webData.events.find(e => e.title === selectedEvent) : null;
+    const eventDaysArr = (dbEvent && dbEvent.eventDays && dbEvent.eventDays.trim()) 
+      ? dbEvent.eventDays.split(",").map(d => d.trim()) 
+      : [];
+
+    let tabAttendedCount = 0;
+    let tabAbsentCount = 0;
+    
+    if (selectedDayTab === "all" || eventDaysArr.length === 0) {
+      tabAttendedCount = eventRegs.filter(r => r.attended).length;
+      tabAbsentCount = eventRegs.filter(r => !r.attended).length;
+    } else {
+      tabAttendedCount = eventRegs.filter(r => r.attendanceRecords && r.attendanceRecords.includes(selectedDayTab)).length;
+      tabAbsentCount = eventRegs.length - tabAttendedCount;
+    }
+
+    const attendedList = filtered.filter(r => {
+      if (selectedDayTab === "all" || eventDaysArr.length === 0) return r.attended;
+      return r.attendanceRecords && r.attendanceRecords.includes(selectedDayTab);
+    });
+    const absentList = filtered.filter(r => !attendedList.includes(r));
+    const tabList = detailTab === "attendance" ? attendedList : filtered;
 
     return (
       <>
       <Page
         title={selectedEvent}
-        subtitle={`${eventRegs.length} registered · ${eventRegs.filter(r => r.attended).length} attended`}
+        subtitle={`${eventRegs.length} registered · ${tabAttendedCount} attended`}
         actions={
           <div style={{ display: "flex", gap: 10 }}>
             <Btn onClick={() => { setRegForm({ name: "", email: "", phone: "", eventTitle: selectedEvent }); setShowRegModal(true); }} variant="primary" small>
               <Icon name="plus" size={14} /> Register Person
             </Btn>
             <Btn onClick={() => handleDownloadCSV(eventRegs, `${selectedEvent.replace(/\s+/g, '_')}_Registrations.csv`)} variant="accent" small>Download CSV</Btn>
-            <Btn onClick={() => { setSelectedEvent(null); setSearch(""); setDetailTab("registrations"); }} variant="ghost" small>← All Events</Btn>
+            <Btn onClick={() => { setSelectedEvent(null); setSelectedDayTab("all"); setSearch(""); setDetailTab("registrations"); }} variant="ghost" small>← All Events</Btn>
           </div>
         }
       >
@@ -2028,12 +2046,51 @@ const CMSEventRegistrations = ({ state, toast }) => {
             </Btn>
           </div>
         )}
+        {/* Folder Tabs for Multi-Day */}
+        {eventDaysArr.length > 0 && (
+          <div style={{ display: "flex", gap: 8, marginBottom: 16, overflowX: "auto", borderBottom: "2px solid #e2e8f0" }}>
+            <button
+              onClick={() => setSelectedDayTab("all")}
+              style={{
+                padding: "10px 20px",
+                borderRadius: "10px 10px 0 0",
+                border: "none",
+                background: selectedDayTab === "all" ? "#0B1F3B" : "#f1f5f9",
+                color: selectedDayTab === "all" ? "#fff" : "#475569",
+                fontWeight: 700,
+                cursor: "pointer",
+                transition: "all 0.2s"
+              }}
+            >
+              Overview
+            </button>
+            {eventDaysArr.map(day => (
+              <button
+                key={day}
+                onClick={() => setSelectedDayTab(day)}
+                style={{
+                  padding: "10px 20px",
+                  borderRadius: "10px 10px 0 0",
+                  border: "none",
+                  background: selectedDayTab === day ? "#0B1F3B" : "#f1f5f9",
+                  color: selectedDayTab === day ? "#fff" : "#475569",
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  transition: "all 0.2s"
+                }}
+              >
+                {day}
+              </button>
+            ))}
+          </div>
+        )}
+
         {/* Stats Bar */}
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 16, marginBottom: 24 }}>
           {[
             { label: "Total Registered", value: eventRegs.length, color: "#0B1F3B" },
-            { label: "Attended", value: eventRegs.filter(r => r.attended).length, color: "#059669" },
-            { label: "Absent / Pending", value: eventRegs.filter(r => !r.attended).length, color: "#f59e0b" }
+            { label: selectedDayTab === "all" ? "Attended (Any Day)" : `Attended (${selectedDayTab})`, value: tabAttendedCount, color: "#059669" },
+            { label: selectedDayTab === "all" ? "Absent / Pending" : `Absent (${selectedDayTab})`, value: tabAbsentCount, color: "#f59e0b" }
           ].map(s => (
             <div key={s.label} style={{ background: "#fff", borderRadius: 14, padding: "18px 22px", boxShadow: "0 2px 12px rgba(0,0,0,0.06)", borderLeft: `4px solid ${s.color}` }}>
               <div style={{ fontSize: 28, fontWeight: 800, color: s.color, fontFamily: "'DM Sans', sans-serif" }}>{s.value}</div>
@@ -2095,6 +2152,7 @@ const CMSEventRegistrations = ({ state, toast }) => {
               <div style={{ display: "flex", gap: 6, flexWrap: "wrap", maxWidth: 200 }}>
                 {dbEvent.eventDays.split(",").map(dayStr => {
                   const day = dayStr.trim();
+                  if (selectedDayTab !== "all" && selectedDayTab !== day) return null;
                   const isAttended = r.attendanceRecords && r.attendanceRecords.includes(day);
                   return (
                     <button
