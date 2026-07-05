@@ -1727,6 +1727,9 @@ const CMSEventRegistrations = ({ state, toast }) => {
   const [regForm, setRegForm] = useState({ name: "", email: "", phone: "", eventTitle: "" });
   const [regSubmitting, setRegSubmitting] = useState(false);
 
+  // User detail modal state
+  const [selectedUser, setSelectedUser] = useState(null);
+
   const token = state.session?.token;
 
   const fetchRegistrations = async () => {
@@ -2133,49 +2136,45 @@ const CMSEventRegistrations = ({ state, toast }) => {
 
         {/* Table */}
         <Table
-          headers={["Name", "Email", "Phone", "Custom Fields", "Reg. Date", "Attended", "Actions"]}
+          headers={["Name", "Email", "Reg. Date", "Attendance", "Actions"]}
           rows={tabList.map(r => [
-            <div style={{ fontWeight: 700, color: "#0B1F3B" }}>{r.name}</div>,
+            <div style={{ fontWeight: 700, color: "#0B1F3B", cursor: "pointer" }} onClick={() => setSelectedUser(r)}>{r.name}</div>,
             r.email,
-            r.phone || "—",
-            r.customFields && Object.keys(r.customFields).length > 0 ? (
-              <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                {Object.entries(r.customFields).map(([k, v]) => (
-                  <span key={k} style={{ fontSize: 11, color: "#475569" }}>
-                    <strong>{k.replace(/_/g, ' ')}:</strong> {String(v)}
-                  </span>
-                ))}
-              </div>
-            ) : <span style={{ color: "#94a3b8", fontSize: 11 }}>—</span>,
             r.created_at ? new Date(r.created_at).toLocaleDateString() : "—",
             (dbEvent && dbEvent.eventDays && dbEvent.eventDays.trim()) ? (
-              <div style={{ display: "flex", gap: 6, flexWrap: "wrap", maxWidth: 200 }}>
-                {dbEvent.eventDays.split(",").map(dayStr => {
-                  const day = dayStr.trim();
-                  if (selectedDayTab !== "all" && selectedDayTab !== day) return null;
-                  const isAttended = r.attendanceRecords && r.attendanceRecords.includes(day);
-                  return (
-                    <button
-                      key={day}
-                      onClick={() => handleToggleAttendance(r._id, day)}
-                      style={{
-                        padding: "4px 8px",
-                        borderRadius: 6,
-                        border: isAttended ? "1px solid #10b981" : "1px solid #d1d5db",
-                        background: isAttended ? "#dcfce7" : "#fff",
-                        color: isAttended ? "#059669" : "#6b7280",
-                        fontWeight: 600,
-                        fontSize: 10,
-                        cursor: "pointer",
-                        transition: "all 0.2s"
-                      }}
-                      title={day}
-                    >
-                      {isAttended ? "✓ " : ""}{day}
-                    </button>
-                  );
-                })}
-              </div>
+              selectedDayTab === "all" ? (
+                <span style={{ fontSize: 13, fontWeight: 600, color: "#475569" }}>
+                  {r.attendanceRecords ? r.attendanceRecords.length : 0} / {eventDaysArr.length} days
+                </span>
+              ) : (
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap", maxWidth: 200 }}>
+                  {dbEvent.eventDays.split(",").map(dayStr => {
+                    const day = dayStr.trim();
+                    if (selectedDayTab !== day) return null;
+                    const isAttended = r.attendanceRecords && r.attendanceRecords.includes(day);
+                    return (
+                      <button
+                        key={day}
+                        onClick={() => handleToggleAttendance(r._id, day)}
+                        style={{
+                          padding: "4px 8px",
+                          borderRadius: 6,
+                          border: isAttended ? "1px solid #10b981" : "1px solid #d1d5db",
+                          background: isAttended ? "#dcfce7" : "#fff",
+                          color: isAttended ? "#059669" : "#6b7280",
+                          fontWeight: 600,
+                          fontSize: 10,
+                          cursor: "pointer",
+                          transition: "all 0.2s"
+                        }}
+                        title={day}
+                      >
+                        {isAttended ? "✓ " : ""}{day}
+                      </button>
+                    );
+                  })}
+                </div>
+              )
             ) : (
               <button
                 onClick={() => handleToggleAttendance(r._id)}
@@ -2194,13 +2193,22 @@ const CMSEventRegistrations = ({ state, toast }) => {
                 {r.attended ? "✓ Present" : "Absent"}
               </button>
             ),
-            <button
-              onClick={() => handleDelete(r._id)}
-              style={{ background: "none", border: "none", color: "#ef4444", cursor: "pointer", padding: 4 }}
-              title="Delete"
-            >
-              <Icon name="trash" size={14} />
-            </button>
+            <div style={{ display: "flex", gap: 8 }}>
+              <button
+                onClick={() => setSelectedUser(r)}
+                style={{ background: "none", border: "none", color: "#3b82f6", cursor: "pointer", padding: 4 }}
+                title="View Full Info"
+              >
+                <Icon name="eye" size={14} />
+              </button>
+              <button
+                onClick={() => handleDelete(r._id)}
+                style={{ background: "none", border: "none", color: "#ef4444", cursor: "pointer", padding: 4 }}
+                title="Delete"
+              >
+                <Icon name="trash" size={14} />
+              </button>
+            </div>
           ])}
         />
       </Page>
@@ -2238,7 +2246,65 @@ const CMSEventRegistrations = ({ state, toast }) => {
           </div>
         </Modal>
       )}
-      </>
+        {/* User Info Modal */}
+      {selectedUser && (
+        <Modal title="Registration Details" onClose={() => setSelectedUser(null)}>
+          <div style={{ fontFamily: "'DM Sans', sans-serif" }}>
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontSize: 12, color: "#6b7280", textTransform: "uppercase", fontWeight: 700, marginBottom: 4 }}>Full Name</div>
+              <div style={{ fontSize: 16, color: "#111827", fontWeight: 500 }}>{selectedUser.name}</div>
+            </div>
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontSize: 12, color: "#6b7280", textTransform: "uppercase", fontWeight: 700, marginBottom: 4 }}>Email</div>
+              <div style={{ fontSize: 16, color: "#111827" }}>{selectedUser.email}</div>
+            </div>
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontSize: 12, color: "#6b7280", textTransform: "uppercase", fontWeight: 700, marginBottom: 4 }}>Phone</div>
+              <div style={{ fontSize: 16, color: "#111827" }}>{selectedUser.phone || "Not provided"}</div>
+            </div>
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontSize: 12, color: "#6b7280", textTransform: "uppercase", fontWeight: 700, marginBottom: 4 }}>Registration Date</div>
+              <div style={{ fontSize: 16, color: "#111827" }}>{new Date(selectedUser.created_at).toLocaleString()}</div>
+            </div>
+            
+            {/* Custom Fields */}
+            {selectedUser.customFields && Object.keys(selectedUser.customFields).length > 0 && (
+              <div style={{ marginBottom: 16 }}>
+                <div style={{ fontSize: 12, color: "#6b7280", textTransform: "uppercase", fontWeight: 700, marginBottom: 8 }}>Additional Responses</div>
+                <div style={{ background: "#f8fafc", padding: 12, borderRadius: 8, border: "1px solid #e2e8f0" }}>
+                  {Object.entries(selectedUser.customFields).map(([k, v]) => (
+                    <div key={k} style={{ marginBottom: 6, fontSize: 14 }}>
+                      <strong style={{ color: "#475569" }}>{k.replace(/_/g, ' ')}:</strong> {String(v)}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Attendance Overview */}
+            <div style={{ marginBottom: 16 }}>
+              <div style={{ fontSize: 12, color: "#6b7280", textTransform: "uppercase", fontWeight: 700, marginBottom: 8 }}>Attendance Record</div>
+              {selectedUser.attendanceRecords && selectedUser.attendanceRecords.length > 0 ? (
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                  {selectedUser.attendanceRecords.map(day => (
+                    <span key={day} style={{ background: "#dcfce7", color: "#059669", padding: "4px 10px", borderRadius: 12, fontSize: 12, fontWeight: 700 }}>
+                      ✓ {day}
+                    </span>
+                  ))}
+                </div>
+              ) : (
+                <div style={{ fontSize: 14, color: "#ef4444" }}>No attendance recorded yet.</div>
+              )}
+            </div>
+
+            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 24 }}>
+              <Btn onClick={() => setSelectedUser(null)} variant="primary">Close</Btn>
+            </div>
+          </div>
+        </Modal>
+      )}
+
+    </>
     );
   }
 
