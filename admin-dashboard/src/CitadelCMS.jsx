@@ -119,7 +119,7 @@ const isValidPhone = (v) => /^[+]?[0-9][\d\s\-().]{6,19}$/.test(v.trim());
 
 // ─── FORM INPUT ───────────────────────────────────────────────────────────────
 const Input = ({ id, label, value, onChange, type = "text", placeholder, required, options, small, ...rest }) => {
-  const [touched, setTouched] = React.useState(false);
+  const [touched, setTouched] = useState(false);
   let validationError = null;
   if (touched && value) {
     if (type === "email" && !isValidEmail(value)) validationError = "Enter a valid email address (e.g. john@example.com)";
