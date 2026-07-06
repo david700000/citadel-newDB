@@ -5694,6 +5694,13 @@ const FinancialCharts = ({ logs }) => {
   const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   const currentYear = new Date().getFullYear();
 
+  const formatCompact = (num) => {
+    if (num === 0) return '';
+    if (num >= 1000000) return (num / 1000000).toFixed(1).replace(/\.0$/, '') + 'm';
+    if (num >= 1000) return (num / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
+    return num.toString();
+  };
+
   if (selectedMonth !== null) {
     const daysInMonth = new Date(currentYear, selectedMonth + 1, 0).getDate();
     const dailyIncome = Array(daysInMonth).fill(0);
@@ -5723,15 +5730,19 @@ const FinancialCharts = ({ logs }) => {
             <span style={{ fontSize: 12, color: "#dc2626", fontWeight: 600, fontFamily: "'DM Sans',sans-serif" }}>● Expense</span>
           </div>
         </div>
-        <div style={{ display: "flex", alignItems: "flex-end", gap: 4, height: chartH + 28, overflowX: "auto", paddingBottom: 8 }}>
+        <div style={{ display: "flex", alignItems: "flex-end", gap: 4, height: chartH + 48, overflowX: "auto", paddingBottom: 8, paddingTop: 30 }}>
           {Array.from({ length: daysInMonth }).map((_, idx) => {
             const incH = (dailyIncome[idx] / maxVal) * chartH;
             const expH = (dailyExpense[idx] / maxVal) * chartH;
             return (
               <div key={idx} style={{ flex: 1, minWidth: 20, display: "flex", flexDirection: "column", alignItems: "center" }}>
                 <div style={{ display: "flex", alignItems: "flex-end", gap: 1, height: chartH, width: "100%", justifyContent: "center" }}>
-                  <div title={`Income: ₦${dailyIncome[idx].toLocaleString()}`} style={{ width: "40%", maxWidth: 12, height: Math.max(incH, 2), background: "#059669", borderRadius: "2px 2px 0 0" }} />
-                  <div title={`Expense: ₦${dailyExpense[idx].toLocaleString()}`} style={{ width: "40%", maxWidth: 12, height: Math.max(expH, 2), background: "#dc2626", borderRadius: "2px 2px 0 0" }} />
+                  <div title={`Income: ₦${dailyIncome[idx].toLocaleString()}`} style={{ position: "relative", width: "40%", maxWidth: 12, height: Math.max(incH, 2), background: "#059669", borderRadius: "2px 2px 0 0" }}>
+                    {dailyIncome[idx] > 0 && <span style={{ position: "absolute", bottom: "100%", left: "50%", transform: "translateX(-50%) translateY(-6px) rotate(-90deg)", transformOrigin: "bottom center", fontSize: 9, fontWeight: 700, color: "#059669" }}>{formatCompact(dailyIncome[idx])}</span>}
+                  </div>
+                  <div title={`Expense: ₦${dailyExpense[idx].toLocaleString()}`} style={{ position: "relative", width: "40%", maxWidth: 12, height: Math.max(expH, 2), background: "#dc2626", borderRadius: "2px 2px 0 0" }}>
+                    {dailyExpense[idx] > 0 && <span style={{ position: "absolute", bottom: "100%", left: "50%", transform: "translateX(-50%) translateY(-6px) rotate(-90deg)", transformOrigin: "bottom center", fontSize: 9, fontWeight: 700, color: "#dc2626" }}>{formatCompact(dailyExpense[idx])}</span>}
+                  </div>
                 </div>
                 <div style={{ fontSize: 10, color: "#9ca3af", marginTop: 4, fontFamily: "'DM Sans',sans-serif" }}>{idx + 1}</div>
               </div>
@@ -5764,15 +5775,19 @@ const FinancialCharts = ({ logs }) => {
           <span style={{ fontSize: 12, color: "#dc2626", fontWeight: 600, fontFamily: "'DM Sans',sans-serif" }}>● Expense</span>
         </div>
       </div>
-      <div style={{ display: "flex", alignItems: "flex-end", gap: 6, height: chartH + 28, overflowX: "auto" }}>
+      <div style={{ display: "flex", alignItems: "flex-end", gap: 6, height: chartH + 40, overflowX: "auto", paddingTop: 20 }}>
         {months.map((m, idx) => {
           const incH = (monthlyIncome[idx] / maxVal) * chartH;
           const expH = (monthlyExpense[idx] / maxVal) * chartH;
           return (
             <div key={idx} onClick={() => setSelectedMonth(idx)} style={{ flex: 1, minWidth: 40, display: "flex", flexDirection: "column", alignItems: "center", cursor: "pointer", padding: "4px 0", borderRadius: 8, transition: "background 0.2s" }} onMouseOver={e => e.currentTarget.style.background = "#f8fafc"} onMouseOut={e => e.currentTarget.style.background = "transparent"}>
               <div style={{ display: "flex", alignItems: "flex-end", gap: 2, height: chartH, width: "100%", justifyContent: "center" }}>
-                <div title={`Income: ₦${monthlyIncome[idx].toLocaleString()}`} style={{ width: "46%", maxWidth: 20, height: Math.max(incH, 3), background: "#059669", borderRadius: "3px 3px 0 0" }} />
-                <div title={`Expense: ₦${monthlyExpense[idx].toLocaleString()}`} style={{ width: "46%", maxWidth: 20, height: Math.max(expH, 3), background: "#dc2626", borderRadius: "3px 3px 0 0" }} />
+                <div title={`Income: ₦${monthlyIncome[idx].toLocaleString()}`} style={{ position: "relative", width: "46%", maxWidth: 20, height: Math.max(incH, 3), background: "#059669", borderRadius: "3px 3px 0 0" }}>
+                  {monthlyIncome[idx] > 0 && <span style={{ position: "absolute", bottom: "100%", left: "50%", transform: "translateX(-50%) translateY(-2px)", fontSize: 9, fontWeight: 700, color: "#059669" }}>{formatCompact(monthlyIncome[idx])}</span>}
+                </div>
+                <div title={`Expense: ₦${monthlyExpense[idx].toLocaleString()}`} style={{ position: "relative", width: "46%", maxWidth: 20, height: Math.max(expH, 3), background: "#dc2626", borderRadius: "3px 3px 0 0" }}>
+                  {monthlyExpense[idx] > 0 && <span style={{ position: "absolute", bottom: "100%", left: "50%", transform: "translateX(-50%) translateY(-2px)", fontSize: 9, fontWeight: 700, color: "#dc2626" }}>{formatCompact(monthlyExpense[idx])}</span>}
+                </div>
               </div>
               <div style={{ fontSize: 11, fontWeight: 600, color: "#6b7280", marginTop: 4, fontFamily: "'DM Sans',sans-serif" }}>{m}</div>
             </div>
