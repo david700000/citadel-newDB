@@ -360,7 +360,7 @@
   // ─── YOUTUBE LIVE EMBED ───
   async function loadYoutubeLive() {
     try {
-      const res = await fetch(`${API_URL}/api/settings`);
+      const res = await fetch(`${API_URL}/settings`);
       if (!res.ok) return;
       const settings = await res.json();
       const channelId = (settings.youtube_live_url || '').trim();

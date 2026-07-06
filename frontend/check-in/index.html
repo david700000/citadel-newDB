@@ -199,7 +199,7 @@
       try {
         let frameUrl = null;
         try {
-          const res = await fetch(API_BASE + '/api/settings');
+          const res = await fetch(API_BASE + '/settings');
           if (res.ok) {
             const s = await res.json();
 
