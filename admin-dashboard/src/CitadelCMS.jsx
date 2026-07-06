@@ -4983,7 +4983,7 @@ const LeaderDashboard = ({ state, dispatch, admin, toast }) => {
               <StatCard label="Members" value={members} icon="users" onClick={() => { setActive("users"); setUserFilterTag("member"); }} />
               <StatCard label="Workers" value={workers} icon="church" onClick={() => { setActive("users"); setUserFilterTag("worker"); }} />
               <StatCard label="Total Messages" value={state.messages.filter(m => new Date(m.created_at).getTime() > sessionStartTime.current).length} icon="messages" onClick={() => setActive("messages")} />
-              <StatCard label="Attendance Records" value={state.attendance.length} icon="attendance" onClick={() => setActive("attendance")} />
+              <StatCard label="Attendance Sheets" value={groupedLogs.length} icon="attendance" onClick={() => setActive("attendance")} />
             </div>
 
             {(() => {
