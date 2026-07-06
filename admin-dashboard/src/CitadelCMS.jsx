@@ -6664,7 +6664,20 @@ const FinancialDashboard = ({ state, dispatch, toast, admin }) => {
         </p>
         <form onSubmit={handleEditSubmit}>
           <div style={{ marginBottom: 12 }}>
-            <Input label="Section / Category" value={editCategory} onChange={setEditCategory} type="dropdown" options={editModal?.type === "income" ? incomeCategoryOptions : expenseCategoryOptions} required />
+            <label style={{ display: "block", fontFamily: "'DM Sans', sans-serif", fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 6 }}>Section / Category <span style={{ color: "#ef4444" }}>*</span></label>
+            <select
+              value={editCategory}
+              onChange={e => setEditCategory(e.target.value)}
+              style={{ width: "100%", boxSizing: "border-box", padding: "10px 14px", border: "1.5px solid #e5e7eb", borderRadius: 10, fontSize: 14, fontFamily: "'DM Sans', sans-serif", color: "#111827", background: "#fafafa", outline: "none" }}
+              required
+            >
+              <option value="">Select...</option>
+              {(() => {
+                const baseOptions = editModal?.type === "income" ? incomeCategoryOptions : expenseCategoryOptions;
+                const allOptions = baseOptions.includes(editCategory) || !editCategory ? baseOptions : [...baseOptions, editCategory];
+                return allOptions.map(o => <option key={o} value={o}>{o}</option>);
+              })()}
+            </select>
           </div>
           <div style={{ marginBottom: 12 }}>
             <Input label="Amount (₦)" value={editAmount} onChange={setEditAmount} type="text" inputMode="decimal" required />

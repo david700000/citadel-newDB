@@ -154,7 +154,7 @@ router.patch("/:id/acknowledge", requireRole("leader"), async (req, res) => {
 
 // PATCH /financial/:id/void - Soft-delete (void) a transaction — requires reason (finance admin)
 // Records are NEVER hard-deleted. This only marks them as voided for audit trail.
-router.patch("/:id/void", requireRoleOrCMS("finance_admin"), async (req, res) => {
+router.patch("/:id/void", requireRole("finance_admin"), async (req, res) => {
   try {
     const { void_reason } = req.body;
     if (!void_reason || !void_reason.trim()) {
@@ -180,7 +180,7 @@ router.patch("/:id/void", requireRoleOrCMS("finance_admin"), async (req, res) =>
 
 // PUT /financial/:id - Edit a transaction (finance admin)
 // Edits are handled by voiding the old record and creating a new one to preserve audit trail
-router.put("/:id", requireRoleOrCMS("finance_admin"), async (req, res) => {
+router.put("/:id", requireRole("finance_admin"), async (req, res) => {
   try {
     const { category, amount, description, date } = req.body;
     
@@ -382,7 +382,7 @@ router.patch("/salaries/:id/acknowledge", requireRole("leader"), async (req, res
 });
 
 // PATCH /financial/salaries/:id/void - Soft-delete salary log (finance admin)
-router.patch("/salaries/:id/void", requireRoleOrCMS("finance_admin"), async (req, res) => {
+router.patch("/salaries/:id/void", requireRole("finance_admin"), async (req, res) => {
   try {
     const { void_reason } = req.body;
     if (!void_reason || !void_reason.trim()) {
