@@ -6110,7 +6110,8 @@ const FinancialDashboard = ({ state, dispatch, toast, admin }) => {
   const openEditModal = (log) => {
     setEditModal(log);
     setEditCategory(log.category);
-    setEditAmount(log.amount);
+    // Store as string so comparison is consistent with what the user types
+    setEditAmount(String(log.amount));
     setEditDescription(log.description || "");
     setEditDate(new Date(log.date).toISOString().split("T")[0]);
   };
@@ -6119,6 +6120,24 @@ const FinancialDashboard = ({ state, dispatch, toast, admin }) => {
     e.preventDefault();
     if (!editCategory || !editAmount) return toast("Section and amount required", "error");
     if (isNaN(editAmount) || parseFloat(editAmount) <= 0) return toast("Amount must be a positive number", "error");
+
+    // ── No-change guard: if nothing was actually modified, just close ──
+    const origCategory = editModal.category;
+    const origAmount   = String(editModal.amount);
+    const origDesc     = editModal.description || "";
+    const origDate     = new Date(editModal.date).toISOString().split("T")[0];
+
+    const nothingChanged =
+      editCategory === origCategory &&
+      parseFloat(editAmount) === parseFloat(origAmount) &&
+      editDescription === origDesc &&
+      editDate === origDate;
+
+    if (nothingChanged) {
+      toast("No changes detected — record unchanged.", "info");
+      setEditModal(null);
+      return;
+    }
 
     setEditingLog(true);
     try {
