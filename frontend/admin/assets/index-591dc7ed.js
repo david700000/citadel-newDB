@@ -1578,4 +1578,9 @@ Error generating stack: `+s.message+`
       height: min(350px, 80vw) !important;
     }
   }
-`;Bs.createRoot(document.getElementById("root")).render(r.jsx(mh.StrictMode,{children:r.jsx(Lx,{})}));
+`;window.onerror=function(e,t,n,i,o){document.body.innerHTML=`<div style="padding: 20px; color: red; font-family: monospace;">
+    <h2>Admin Dashboard Crashed</h2>
+    <p><strong>Error:</strong> ${e}</p>
+    <p><strong>Location:</strong> ${t}:${n}:${i}</p>
+    <pre>${o?o.stack:""}</pre>
+  </div>`};Bs.createRoot(document.getElementById("root")).render(r.jsx(mh.StrictMode,{children:r.jsx(Lx,{})}));
