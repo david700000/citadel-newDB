@@ -2652,6 +2652,7 @@ const CMSSettings = ({ token, toast }) => {
   const [autoLogoutMinutes, setAutoLogoutMinutes] = useState("10");
   const [youtubeLiveUrl, setYoutubeLiveUrl] = useState("");
   const [youtubeLiveEnabled, setYoutubeLiveEnabled] = useState("true");
+  const [serviceCheckinEnabled, setServiceCheckinEnabled] = useState("true");
   const [savingYoutube, setSavingYoutube] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -2691,6 +2692,9 @@ const CMSSettings = ({ token, toast }) => {
           setYoutubeLiveUrl(data.youtube_live_url || "");
           if (data.youtube_live_enabled !== undefined) {
             setYoutubeLiveEnabled(data.youtube_live_enabled);
+          }
+          if (data.service_checkin_enabled !== undefined) {
+            setServiceCheckinEnabled(data.service_checkin_enabled);
           }
           if (data.auto_logout_minutes) setAutoLogoutMinutes(String(data.auto_logout_minutes));
         }
@@ -2876,6 +2880,19 @@ const CMSSettings = ({ token, toast }) => {
     }
   };
 
+  const handleSaveCheckinStatus = async () => {
+    try {
+      await fetch(API_URLS.SETTINGS, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+        body: JSON.stringify({ key: "service_checkin_enabled", value: serviceCheckinEnabled })
+      });
+      toast("Check-in status saved!", "success");
+    } catch (err) {
+      toast("Failed to save check-in status", "error");
+    }
+  };
+
   return (
     <Page title="System Settings" subtitle="Configure system templates and defaults">
       {/* ── YouTube Livestream ── */}
@@ -2933,6 +2950,21 @@ const CMSSettings = ({ token, toast }) => {
           Upload a transparent PNG frame overlay (4:3 aspect ratio recommended, e.g. 1440x1080px). Users taking a selfie will be framed by this design automatically.
         </p>
 
+        <div style={{ padding: "12px 16px", background: "#f8fafc", borderRadius: 10, border: "1px solid #e2e8f0", marginBottom: 20 }}>
+          <label style={{ display: "flex", alignItems: "center", gap: 10, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", fontSize: 14, fontWeight: 600, color: "#1e293b" }}>
+            <input 
+              type="checkbox" 
+              checked={serviceCheckinEnabled === "true"} 
+              onChange={(e) => setServiceCheckinEnabled(e.target.checked ? "true" : "false")}
+              style={{ width: 18, height: 18, accentColor: "#7c3aed", cursor: "pointer" }}
+            />
+            Enable Service Check-in Page
+          </label>
+          <p style={{ margin: "6px 0 0 28px", color: "#64748b", fontSize: 12, lineHeight: 1.5 }}>
+            Turn this off when service is over to prevent people from using the check-in photo experience.
+          </p>
+        </div>
+
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           {selfieFrameUrl ? (
             <div style={{ position: "relative", width: "100%", maxWidth: 240, aspectRatio: "4/3", border: "1px dashed #cbd5e1", borderRadius: 10, overflow: "hidden", background: "#f8fafc", display: "flex", alignItems: "center", justifyContent: "center" }}>
@@ -2950,6 +2982,12 @@ const CMSSettings = ({ token, toast }) => {
             </span>
             <input type="file" accept="image/png" onChange={handleFrameUpload} disabled={uploadingFrame} style={{ display: "none" }} />
           </label>
+        </div>
+        
+        <div style={{ marginTop: 20 }}>
+          <Btn onClick={handleSaveCheckinStatus} variant="primary" style={{ background: "#7c3aed" }}>
+            Save Check-in Settings
+          </Btn>
         </div>
       </div>
 

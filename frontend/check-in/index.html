@@ -197,12 +197,18 @@
     }
     async function init() {
       try {
-        // Try to load frame from settings — graceful fallback if none configured
         let frameUrl = null;
         try {
-          const res = await fetch(API_BASE + '/settings');
+          const res = await fetch(API_BASE + '/api/settings');
           if (res.ok) {
             const s = await res.json();
+
+            // Check if check-in is disabled by admin
+            if (s.service_checkin_enabled === "false") {
+              showError("Service check-in is currently closed.");
+              return;
+            }
+
             frameUrl = s.selfie_frame_url || null;
           }
         } catch (_) { /* network error — continue without frame */ }
