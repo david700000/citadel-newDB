@@ -550,16 +550,17 @@ const AttendanceDetailsModal = ({ eventLog, users, onClose, onEdit }) => {
       day: "numeric"
     });
 
-    const rowsHtml = eventLog.records.map((r) => {
+    const presentRecords = eventLog.records.filter(r => r.status === "present");
+    const absentRecords = eventLog.records.filter(r => r.status === "absent");
+
+    const buildRows = (records) => records.map((r) => {
       const user = users.find(u => u.id === r.user_id || u._id === r.user_id);
       const userName = r.user_full_name || user?.full_name || r.user_id;
       const userTag = user?.tag || "—";
-      const statusColor = r.status === "present" ? "#047857" : "#b91c1c";
       return `
         <tr style="border-bottom: 1px solid #e5e7eb;">
           <td style="padding: 12px; font-size: 14px; font-weight: 500; color: #111827;">${userName}</td>
           <td style="padding: 12px; font-size: 14px; color: #4b5563; text-transform: capitalize;">${userTag.replace(/_/g, ' ')}</td>
-          <td style="padding: 12px; font-size: 14px; font-weight: 700; color: ${statusColor}; text-transform: uppercase;">${r.status}</td>
         </tr>
       `;
     }).join("");
@@ -601,19 +602,18 @@ const AttendanceDetailsModal = ({ eventLog, users, onClose, onEdit }) => {
             padding: 16px;
             margin-bottom: 30px;
           }
-          .stat-box {
-            font-size: 14px;
+          .stat-box { font-size: 14px; }
+          .stat-val { font-size: 18px; font-weight: 700; margin-top: 4px; }
+          .section-title {
+            font-size: 16px;
+            font-weight: 800;
+            margin: 30px 0 10px 0;
+            padding: 8px 14px;
+            border-radius: 6px;
           }
-          .stat-val {
-            font-size: 18px;
-            font-weight: 700;
-            margin-top: 4px;
-          }
-          table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-          }
+          .section-present { background: #d1fae5; color: #065f46; }
+          .section-absent { background: #fee2e2; color: #991b1b; margin-top: 40px; }
+          table { width: 100%; border-collapse: collapse; margin-top: 10px; }
           th {
             background: #f1f5f9;
             padding: 12px;
@@ -625,86 +625,50 @@ const AttendanceDetailsModal = ({ eventLog, users, onClose, onEdit }) => {
             border-bottom: 2px solid #cbd5e1;
           }
           .print-watermark {
-            position: fixed;
-            top: 50%;
-            left: 50%;
+            position: fixed; top: 50%; left: 50%;
             transform: translate(-50%, -50%);
-            opacity: 0.05;
-            z-index: -1;
-            pointer-events: none;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+            opacity: 0.05; z-index: -1; pointer-events: none;
+            display: flex; justify-content: center; align-items: center;
             -webkit-print-color-adjust: exact !important;
             print-color-adjust: exact !important;
           }
-          .print-watermark img {
-            width: 550px;
-            height: 550px;
-            object-fit: contain;
-            filter: grayscale(100%);
-          }
+          .print-watermark img { width: 550px; height: 550px; object-fit: contain; filter: grayscale(100%); }
           @media print {
             body { padding: 20px; }
             tr { page-break-inside: avoid; }
-            .print-watermark {
-              opacity: 0.08 !important;
-              -webkit-print-color-adjust: exact !important;
-              print-color-adjust: exact !important;
-            }
+            .print-watermark { opacity: 0.08 !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
           }
         </style>
       </head>
       <body>
-        <div class="print-watermark">
-          <img src="logo.jpg" alt="" />
-        </div>
+        <div class="print-watermark"><img src="logo.jpg" alt="" /></div>
         <div class="header">
           <div class="title">${eventLog.event_name}</div>
           <div class="meta">Date: <strong>${formattedDate}</strong></div>
           <div class="stats-container">
-            <div class="stat-box">
-              <div>Present</div>
-              <div class="stat-val" style="color: #047857;">${eventLog.present}</div>
-            </div>
-            <div class="stat-box">
-              <div>Absent</div>
-              <div class="stat-val" style="color: #b91c1c;">${eventLog.absent}</div>
-            </div>
-            <div class="stat-box">
-              <div>Total Members</div>
-              <div class="stat-val">${eventLog.present + eventLog.absent}</div>
-            </div>
-            <div class="stat-box">
-              <div>Attendance Rate</div>
-              <div class="stat-val">${(eventLog.present + eventLog.absent) > 0 ? Math.round((eventLog.present / (eventLog.present + eventLog.absent)) * 100) : 0}%</div>
-            </div>
+            <div class="stat-box"><div>Present</div><div class="stat-val" style="color: #047857;">${presentRecords.length}</div></div>
+            <div class="stat-box"><div>Absent</div><div class="stat-val" style="color: #b91c1c;">${absentRecords.length}</div></div>
+            <div class="stat-box"><div>Total</div><div class="stat-val">${eventLog.present + eventLog.absent}</div></div>
+            <div class="stat-box"><div>Attendance Rate</div><div class="stat-val">${(eventLog.present + eventLog.absent) > 0 ? Math.round((eventLog.present / (eventLog.present + eventLog.absent)) * 100) : 0}%</div></div>
           </div>
         </div>
 
+        <div class="section-title section-present">✓ Present (${presentRecords.length})</div>
         <table>
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Role</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${rowsHtml}
-          </tbody>
+          <thead><tr><th>Name</th><th>Role</th></tr></thead>
+          <tbody>${buildRows(presentRecords) || "<tr><td colspan='2' style='padding:12px;color:#9ca3af;'>No present records</td></tr>"}</tbody>
+        </table>
+
+        <div class="section-title section-absent">✗ Absent (${absentRecords.length})</div>
+        <table>
+          <thead><tr><th>Name</th><th>Role</th></tr></thead>
+          <tbody>${buildRows(absentRecords) || "<tr><td colspan='2' style='padding:12px;color:#9ca3af;'>No absent records</td></tr>"}</tbody>
         </table>
 
         <div style="margin-top: 50px; border-top: 1px dashed #cbd5e1; padding-top: 10px; font-size: 11px; color: #94a3b8; text-align: center;">
           Generated by Citadel Church CMS on ${new Date().toLocaleString()}
         </div>
-
-        <script>
-          window.onload = function() {
-            window.print();
-            setTimeout(function() { window.close(); }, 500);
-          };
-        </script>
+        <script>window.onload = function() { window.print(); setTimeout(function() { window.close(); }, 500); };</script>
       </body>
       </html>
     `;
@@ -1894,27 +1858,58 @@ const CMSEventRegistrations = ({ state, toast }) => {
     }
   };
 
-  const handleDownloadCSV = (rows, filename) => {
-    const csvHeaders = ["Name", "Email", "Phone", "Event Title", "Registration Date", "Attended"];
-    const csvRows = rows.map(r => [
-      `"${r.name.replace(/"/g, '""')}"`,
-      `"${r.email.replace(/"/g, '""')}"`,
-      `"${(r.phone || "").replace(/"/g, '""')}"`,
-      `"${r.eventTitle.replace(/"/g, '""')}"`,
-      `"${r.created_at ? new Date(r.created_at).toLocaleString() : "N/A"}"`,
-      r.attended ? "Yes" : "No"
-    ]);
-    const csvContent = [csvHeaders.join(","), ...csvRows.map(row => row.join(","))].join("\n");
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", filename);
-    link.style.visibility = "hidden";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    toast("Report downloaded!", "success");
+  const handlePrintRegistrations = (rows, title) => {
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) {
+      alert("Please allow popups to print the report");
+      return;
+    }
+
+    const rowsHtml = rows.map(r => `
+      <tr style="border-bottom: 1px solid #e5e7eb;">
+        <td style="padding: 10px; font-size: 13px; color: #111827; font-weight: 500;">${r.name}</td>
+        <td style="padding: 10px; font-size: 13px; color: #4b5563;">${r.email}</td>
+        <td style="padding: 10px; font-size: 13px; color: #4b5563;">${r.phone || "—"}</td>
+        <td style="padding: 10px; font-size: 13px; color: #4b5563;">${r.eventTitle}</td>
+        <td style="padding: 10px; font-size: 13px; font-weight: 600; color: ${r.attended ? '#047857' : '#b91c1c'};">${r.attended ? "Yes" : "No"}</td>
+      </tr>
+    `).join("");
+
+    const churchName = import.meta.env.VITE_CHURCH_NAME || "Church";
+    const dateStr = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+
+    const printContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>${churchName} - ${title}</title>
+        <style>
+          body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 40px; margin: 0; }
+          .header { border-bottom: 2px solid #111827; padding-bottom: 20px; margin-bottom: 30px; }
+          .title { font-size: 24px; font-weight: 800; margin: 0 0 8px 0; color: #0b1f3b; }
+          .meta { font-size: 14px; color: #4b5563; margin-bottom: 16px; }
+          table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+          th { background: #f1f5f9; padding: 12px 10px; font-size: 12px; font-weight: 700; color: #475569; text-transform: uppercase; text-align: left; border-bottom: 2px solid #cbd5e1; }
+          @media print { body { padding: 20px; } tr { page-break-inside: avoid; } }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div class="title">${churchName} - ${title}</div>
+          <div class="meta">Generated: <strong>${dateStr}</strong> | Total Registrations: <strong>${rows.length}</strong></div>
+        </div>
+        <table>
+          <thead>
+            <tr><th>Name</th><th>Email</th><th>Phone</th><th>Event</th><th>Attended</th></tr>
+          </thead>
+          <tbody>${rowsHtml}</tbody>
+        </table>
+        <script>window.onload = function() { window.print(); setTimeout(function() { window.close(); }, 500); };</script>
+      </body>
+      </html>
+    `;
+    printWindow.document.write(printContent);
+    printWindow.document.close();
   };
 
   // Group registrations by event
@@ -1974,7 +1969,7 @@ const CMSEventRegistrations = ({ state, toast }) => {
             <Btn onClick={() => { setRegForm({ name: "", email: "", phone: "", eventTitle: selectedEvent }); setShowRegModal(true); }} variant="primary" small>
               <Icon name="plus" size={14} /> Register Person
             </Btn>
-            <Btn onClick={() => handleDownloadCSV(eventRegs, `${selectedEvent.replace(/\s+/g, '_')}_Registrations.csv`)} variant="accent" small>Download CSV</Btn>
+            <Btn onClick={() => handlePrintRegistrations(eventRegs, `${selectedEvent} Registrations`)} variant="accent" small><Icon name="print" size={14} /> Print Registrations</Btn>
             <Btn onClick={() => { setSelectedEvent(null); setSelectedDayTab("all"); setSearch(""); setDetailTab("registrations"); }} variant="ghost" small>← All Events</Btn>
           </div>
         }
@@ -2338,8 +2333,8 @@ const CMSEventRegistrations = ({ state, toast }) => {
           <Btn onClick={() => { setRegForm({ name: "", email: "", phone: "", eventTitle: eventNames[0] || "" }); setShowRegModal(true); }} variant="primary" small>
             <Icon name="plus" size={14} /> Register Person
           </Btn>
-          <Btn onClick={() => handleDownloadCSV(registrations, `All_Event_Registrations_${new Date().toISOString().split('T')[0]}.csv`)} variant="accent" small>
-            Export All CSV
+          <Btn onClick={() => handlePrintRegistrations(registrations, "All Event Registrations")} variant="accent" small>
+            <Icon name="print" size={14} /> Print All Registrations
           </Btn>
         </div>
       }
@@ -3280,64 +3275,58 @@ const CMSUsers = ({ state, dispatch, toast, initialFilter = "all" }) => {
     } catch (err) { toast("Update failed", "error"); }
   };
 
-  const handleDownloadCSV = () => {
-    const extraKeys = new Set();
-    state.users.forEach(u => {
-      if (u.extra_fields) {
-        Object.keys(u.extra_fields).forEach(k => extraKeys.add(k));
-      }
-    });
-    const extraKeysArray = Array.from(extraKeys);
+  const handlePrintUsers = () => {
+    const printWindow = window.open("", "_blank");
+    if (!printWindow) {
+      alert("Please allow popups to print the user report");
+      return;
+    }
 
-    const csvHeaders = [
-      "Full Name",
-      "Email Address",
-      "Phone Number",
-      "Role/Tag",
-      "Department",
-      "Push Status",
-      "Registered Date",
-      ...extraKeysArray.map(k => {
-        return k
-          .split(/[_-]/)
-          .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-          .join(" ");
-      })
-    ];
+    const rowsHtml = state.users.map(u => `
+      <tr style="border-bottom: 1px solid #e5e7eb;">
+        <td style="padding: 10px; font-size: 13px; color: #111827;">${u.full_name || "—"}</td>
+        <td style="padding: 10px; font-size: 13px; color: #4b5563;">${u.email || "—"}</td>
+        <td style="padding: 10px; font-size: 13px; color: #4b5563;">${u.phone || "—"}</td>
+        <td style="padding: 10px; font-size: 13px; color: #4b5563; text-transform: capitalize;">${(u.tag || "—").replace(/_/g, ' ')}</td>
+        <td style="padding: 10px; font-size: 13px; color: #4b5563;">${u.department || "—"}</td>
+      </tr>
+    `).join("");
 
-    const csvRows = state.users.map(u => {
-      const coreData = [
-        `"${(u.full_name || "").replace(/"/g, '""')}"`,
-        `"${(u.email || "").replace(/"/g, '""')}"`,
-        `"${(u.phone || "").replace(/"/g, '""')}"`,
-        `"${(u.tag || "").replace(/"/g, '""')}"`,
-        `"${(u.department || "N/A").replace(/"/g, '""')}"`,
-        u.fcm_tokens && u.fcm_tokens.length > 0 ? "Active" : "Inactive",
-        `"${u.created_at ? new Date(u.created_at).toLocaleString() : "N/A"}"`
-      ];
-
-      const extras = extraKeysArray.map(k => {
-        const val = u.extra_fields ? u.extra_fields[k] : "";
-        const valString = typeof val === "object" && val !== null ? JSON.stringify(val) : String(val || "");
-        return `"${valString.replace(/"/g, '""')}"`;
-      });
-
-      return [...coreData, ...extras];
-    });
-
-    const csvContent = [csvHeaders.join(","), ...csvRows.map(row => row.join(","))].join("\n");
-
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
     const churchName = import.meta.env.VITE_CHURCH_NAME || "Church";
-    link.setAttribute("download", `${churchName.replace(/\s+/g, '_')}_All_DB_User_Report_${new Date().toISOString().split('T')[0]}.csv`);
-    link.style.visibility = "hidden";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    toast("Database report downloaded successfully!", "success");
+    const dateStr = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+
+    const printContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>${churchName} - User Database Report</title>
+        <style>
+          body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 40px; margin: 0; }
+          .header { border-bottom: 2px solid #111827; padding-bottom: 20px; margin-bottom: 30px; }
+          .title { font-size: 24px; font-weight: 800; margin: 0 0 8px 0; color: #0b1f3b; }
+          .meta { font-size: 14px; color: #4b5563; margin-bottom: 16px; }
+          table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+          th { background: #f1f5f9; padding: 12px 10px; font-size: 12px; font-weight: 700; color: #475569; text-transform: uppercase; text-align: left; border-bottom: 2px solid #cbd5e1; }
+          @media print { body { padding: 20px; } tr { page-break-inside: avoid; } }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div class="title">${churchName} - Database Users</div>
+          <div class="meta">Generated: <strong>${dateStr}</strong> | Total Users: <strong>${state.users.length}</strong></div>
+        </div>
+        <table>
+          <thead>
+            <tr><th>Name</th><th>Email</th><th>Phone</th><th>Tag</th><th>Department</th></tr>
+          </thead>
+          <tbody>${rowsHtml}</tbody>
+        </table>
+        <script>window.onload = function() { window.print(); setTimeout(function() { window.close(); }, 500); };</script>
+      </body>
+      </html>
+    `;
+    printWindow.document.write(printContent);
+    printWindow.document.close();
   };
 
   return (
@@ -3355,9 +3344,8 @@ const CMSUsers = ({ state, dispatch, toast, initialFilter = "all" }) => {
               fontSize: 13, fontFamily: "'DM Sans', sans-serif", fontWeight: 600,
             }}>{f === "all" ? "All" : f.replace("_", " ")}</button>
           ))}
-          <Btn onClick={handleDownloadCSV} variant="accent" small>
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4m4-5 5 5 5-5m-5 5V3" /></svg>
-            Download Report
+          <Btn onClick={handlePrintUsers} variant="accent" small>
+            <Icon name="print" size={14} /> Print Report (PDF)
           </Btn>
         </div>
       }
@@ -5245,7 +5233,7 @@ const LeaderDashboard = ({ state, dispatch, admin, toast }) => {
 
         {/* VIEW 5: FINANCIAL REVIEW (READ-ONLY WITH GRAPHS) */}
         {active === "financial_review" && (
-          <Page title="Financial Audit Logs" subtitle="Review financial trends and history" actions={<Btn onClick={handleExportCSV} variant="accent"><Icon name="forms" size={16} /> Export CSV</Btn>}>
+          <Page title="Financial Audit Logs" subtitle="Review financial trends and history">
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 16, marginBottom: 24 }}>
               <StatCard label="Total Income" value={`₦${totalIncome.toLocaleString()}`} icon="check" />
               <StatCard label="Total Expenses" value={`₦${totalExpense.toLocaleString()}`} icon="x" />
@@ -6039,7 +6027,7 @@ const FinancialDashboard = ({ state, dispatch, toast, admin }) => {
         {active === "add_user" && <UsherAddUser state={state} dispatch={dispatch} toast={toast} />}
 
         {active === "overview" && (
-          <Page title="Finance Dashboard" subtitle="Manage church revenues and expenses" actions={<Btn onClick={handleExportCSV} variant="accent"><Icon name="forms" size={16} /> Export CSV</Btn>}>
+          <Page title="Finance Dashboard" subtitle="Manage church revenues and expenses">
 
             {/* KPI Cards */}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 16, marginBottom: 24 }}>
@@ -6520,11 +6508,6 @@ const CMSServiceReviews = ({ state, dispatch, toast, role }) => {
     <Page
       title="Service Reviews Dashboard"
       subtitle="Monitor congregation feedback and rating trends"
-      actions={
-        <Btn onClick={handleExport} variant="accent">
-          <Icon name="forms" size={16} /> Export CSV
-        </Btn>
-      }
     >
       {/* Stats Section */}
       {stats && (
