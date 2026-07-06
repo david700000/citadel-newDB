@@ -5999,7 +5999,8 @@ const FinancialDashboard = ({ state, dispatch, toast, admin }) => {
   const handleExportCSV = () => exportFinancialCSV(logs, toast);
 
 
-  const sectionOptions = sections.length > 0 ? sections.map(s => s.name) : ["Offering", "Tithes", "Donation", "Building"];
+  const incomeCategoryOptions = sections.length > 0 ? [...sections.map(s => s.name), "Others"] : ["Offering", "Tithes", "Donation", "Building", "Others"];
+  
   const expenseCategoryOptions = [
     "Diesel / Fuel",
     "Electricity / Power",
@@ -6015,7 +6016,16 @@ const FinancialDashboard = ({ state, dispatch, toast, admin }) => {
     "Sanitation / Cleaning",
     "Event Expenses",
     "Utilities (Water, Internet)",
-    "Miscellaneous"
+    "Miscellaneous",
+    "Others"
+  ];
+
+  const fundRequestCategoryOptions = [
+    "Media",
+    "Choir",
+    "Welfare",
+    "Ushering",
+    "Others"
   ];
 
 
@@ -6128,7 +6138,7 @@ const FinancialDashboard = ({ state, dispatch, toast, admin }) => {
                   <form onSubmit={handleLogIncome}>
                     <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
                       <div style={{ flex: "1 1 200px" }}>
-                        <Input label="Section" value={incomeCategory} onChange={setIncomeCategory} type="dropdown" options={sectionOptions} required />
+                        <Input label="Section" value={incomeCategory} onChange={setIncomeCategory} type="dropdown" options={incomeCategoryOptions} required />
                       </div>
                       <div style={{ flex: "1 1 200px" }}>
                         <Input label="Sub-category / Detail" value={incomeSubCategory} onChange={setIncomeSubCategory} placeholder="e.g. Sunday Offering" required />
@@ -6346,7 +6356,7 @@ const FinancialDashboard = ({ state, dispatch, toast, admin }) => {
                 <FCard style={{ padding: 20 }}>
                   <form onSubmit={handleCreateFundRequest}>
                     <Input label="Project Title" value={reqTitle} onChange={setReqTitle} placeholder="e.g. Repair church backup generator" required />
-                    <Input label="Section / Department" value={reqDept} onChange={setReqDept} type="dropdown" options={sectionOptions} required />
+                    <Input label="Section / Department" value={reqDept} onChange={setReqDept} type="dropdown" options={fundRequestCategoryOptions} required />
                     <Input label="Requested Amount (₦)" value={reqAmount} onChange={setReqAmount} placeholder="0.00" required />
                     <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#374151", fontFamily: "'DM Sans',sans-serif", marginBottom: 6 }}>Purpose / Description</label>
                     <textarea value={reqDesc} onChange={e => setReqDesc(e.target.value)} placeholder="Describe what these funds will be used for..." style={{ width: "100%", boxSizing: "border-box", padding: "10px 12px", border: "1.5px solid #e5e7eb", borderRadius: 8, fontSize: 13, fontFamily: "'DM Sans',sans-serif", minHeight: 90, resize: "vertical", outline: "none", marginBottom: 16, color: "#374151" }} required />
