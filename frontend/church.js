@@ -357,5 +357,70 @@
     }
   }
 
-  window.addEventListener('DOMContentLoaded', loadData);
+  // ─── YOUTUBE LIVE EMBED ───
+  async function loadYoutubeLive() {
+    try {
+      const res = await fetch(`${API_URL}/api/settings`);
+      if (!res.ok) return;
+      const settings = await res.json();
+      const raw = (settings.youtube_live_url || '').trim();
+      if (!raw) return; // Nothing saved — keep section hidden
+
+      let embedSrc = null;
+      let watchUrl = null;
+
+      // ── Strategy 1: Admin pasted a full <iframe> embed code ──
+      const srcMatch = raw.match(/src=["']([^"']+youtube[^"']+)["']/i);
+      if (srcMatch) {
+        embedSrc = srcMatch[1];
+        // Extract video ID from embed src for the "open on YouTube" link
+        const vidMatch = embedSrc.match(/\/embed\/([a-zA-Z0-9_-]{11})/);
+        if (vidMatch) watchUrl = `https://www.youtube.com/watch?v=${vidMatch[1]}`;
+      }
+
+      // ── Strategy 2: Admin pasted a plain YouTube URL ──
+      if (!embedSrc) {
+        let videoId = null;
+        try {
+          const url = new URL(raw);
+          if (url.hostname.includes('youtu.be')) {
+            videoId = url.pathname.slice(1);
+          } else if (url.hostname.includes('youtube.com')) {
+            if (url.pathname.includes('/live/')) {
+              videoId = url.pathname.split('/live/')[1].split('/')[0];
+            } else if (url.pathname.includes('/watch')) {
+              videoId = url.searchParams.get('v');
+            } else if (url.pathname.includes('/embed/')) {
+              videoId = url.pathname.split('/embed/')[1].split('/')[0];
+            }
+          }
+        } catch (_) {
+          if (/^[a-zA-Z0-9_-]{11}$/.test(raw)) videoId = raw;
+        }
+        if (videoId) {
+          embedSrc = `https://www.youtube.com/embed/${videoId}?rel=0&modestbranding=1`;
+          watchUrl = `https://www.youtube.com/watch?v=${videoId}`;
+        }
+      }
+
+      if (!embedSrc) return;
+
+      const section = document.getElementById('watch-live');
+      const iframe  = document.getElementById('yt-live-iframe');
+      const ytLink  = document.getElementById('watch-live-yt-link');
+
+      if (section && iframe) {
+        iframe.src = embedSrc;
+        if (ytLink && watchUrl) ytLink.href = watchUrl;
+        section.style.display = '';
+      }
+    } catch (_) {
+      // Silently fail — livestream is optional
+    }
+  }
+
+  window.addEventListener('DOMContentLoaded', () => {
+    loadData();
+    loadYoutubeLive();
+  });
 })();

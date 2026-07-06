@@ -2650,6 +2650,8 @@ const CMSSettings = ({ token, toast }) => {
   const [welcomeMessage, setWelcomeMessage] = useState("");
   const [birthdayMessage, setBirthdayMessage] = useState("");
   const [autoLogoutMinutes, setAutoLogoutMinutes] = useState("10");
+  const [youtubeLiveUrl, setYoutubeLiveUrl] = useState("");
+  const [savingYoutube, setSavingYoutube] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [savingBirthday, setSavingBirthday] = useState(false);
@@ -2685,6 +2687,7 @@ const CMSSettings = ({ token, toast }) => {
           const data = await res.json();
           setWelcomeMessage(data.welcome_message || "");
           setBirthdayMessage(data.birthday_message || "");
+          setYoutubeLiveUrl(data.youtube_live_url || "");
           if (data.auto_logout_minutes) setAutoLogoutMinutes(String(data.auto_logout_minutes));
         }
       } catch (err) {
@@ -2767,6 +2770,30 @@ const CMSSettings = ({ token, toast }) => {
     }
   };
 
+  const handleSaveYoutubeUrl = async () => {
+    setSavingYoutube(true);
+    try {
+      // Accept both full YouTube URLs and video IDs, normalise to just the video/live URL
+      const res = await fetch(API_URLS.SETTINGS, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({ key: "youtube_live_url", value: youtubeLiveUrl.trim() })
+      });
+      if (res.ok) {
+        toast("YouTube livestream URL saved! It will show on the church website.", "success");
+      } else {
+        toast("Failed to save YouTube URL", "error");
+      }
+    } catch (err) {
+      toast("Server connection failed", "error");
+    } finally {
+      setSavingYoutube(false);
+    }
+  };
+
   const handlePurge = async () => {
     if (purgeConfirmation !== "I UNDERSTAND AND WISH TO PURGE DATA") {
       return toast("Incorrect confirmation phrase.", "error");
@@ -2837,6 +2864,31 @@ const CMSSettings = ({ token, toast }) => {
 
   return (
     <Page title="System Settings" subtitle="Configure system templates and defaults">
+      {/* ── YouTube Livestream ── */}
+      <div style={{ background: "#fff", borderRadius: 14, padding: 28, boxShadow: "0 2px 12px rgba(0,0,0,0.06)", maxWidth: 650, marginBottom: 24, borderLeft: "4px solid #ef4444" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
+          <span style={{ fontSize: 22 }}>📺</span>
+          <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "#111827", fontFamily: "'DM Sans', sans-serif" }}>YouTube Livestream</h3>
+        </div>
+        <p style={{ margin: "0 0 16px 0", color: "#6b7280", fontSize: 13, fontFamily: "'DM Sans', sans-serif", lineHeight: 1.6 }}>
+          On YouTube, open your live video → click <strong>Share</strong> → click <strong>Embed</strong> → copy the full <code style={{background:"#f3f4f6",padding:"2px 6px",borderRadius:4}}>&lt;iframe&gt;...&lt;/iframe&gt;</code> code and paste it below. Leave blank to hide the section.
+        </p>
+        <Input
+          label="YouTube Embed Code (paste full iframe code from YouTube)"
+          value={youtubeLiveUrl}
+          onChange={setYoutubeLiveUrl}
+          placeholder='<iframe width="560" height="315" src="https://www.youtube.com/embed/..." ...></iframe>'
+        />
+        {youtubeLiveUrl && (
+          <p style={{ margin: "4px 0 12px", fontSize: 11, color: "#6b7280", fontFamily: "'DM Sans', sans-serif" }}>
+            Preview: The embed will be extracted automatically from the URL above.
+          </p>
+        )}
+        <Btn onClick={handleSaveYoutubeUrl} variant="primary" style={{ background: "#ef4444" }} disabled={savingYoutube}>
+          {savingYoutube ? "Saving..." : "Save Livestream URL"}
+        </Btn>
+      </div>
+
       {/* ── Selfie Frame Overlay Configuration ── */}
       <div style={{ background: "#fff", borderRadius: 14, padding: 28, boxShadow: "0 2px 12px rgba(0,0,0,0.06)", maxWidth: 650, marginBottom: 24, borderLeft: "4px solid #7c3aed" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 8 }}>
