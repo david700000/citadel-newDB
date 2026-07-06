@@ -186,6 +186,18 @@
       const phone = document.getElementById('reg-phone').value.trim();
       const title = document.getElementById('reg-event-title').value;
 
+      // Validation
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+      const phoneRegex = /^[+]?[0-9][\d\s\-().]{6,19}$/;
+      if (!emailRegex.test(email)) {
+        alert('Please enter a valid email address (e.g. john@example.com)');
+        return;
+      }
+      if (phone && !phoneRegex.test(phone)) {
+        alert('Please enter a valid phone number (e.g. +2348012345678)');
+        return;
+      }
+
       // Collect dynamic custom field values
       const customFields = {};
       const dynContainer = document.getElementById('reg-dynamic-fields');

@@ -58,6 +58,12 @@
             return;
         }
 
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+        if (!emailRegex.test(email.trim())) {
+            alert('Please enter a valid email address (e.g. john@example.com)');
+            return;
+        }
+
         contactSubmit.textContent = 'Sending...';
         contactSubmit.disabled = true;
 

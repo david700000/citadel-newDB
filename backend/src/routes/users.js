@@ -7,11 +7,17 @@ const { sendViaChannels, welcomeMessage } = require("../services/messaging");
 
 const router = express.Router();
 
+// ─── VALIDATION HELPERS ──────────────────────────────────────────────────────
+const isValidEmail = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test((v || "").trim());
+const isValidPhone = (v) => /^[+]?[0-9][\d\s\-().]{6,19}$/.test((v || "").trim());
+
 // ─── POST /users/register (Legacy/Base) ──────────────────────────────────────
 router.post("/register", async (req, res) => {
   try {
     const { full_name, email, phone, tag, department, extra_fields } = req.body;
     if (!full_name) return res.status(400).json({ error: "Full name is required" });
+    if (email && !isValidEmail(email)) return res.status(400).json({ error: "Please enter a valid email address" });
+    if (phone && !isValidPhone(phone)) return res.status(400).json({ error: "Please enter a valid phone number" });
     const validTags = ["first_timer", "member", "worker"];
     if (!validTags.includes(tag)) return res.status(400).json({ error: "Invalid tag" });
     
@@ -36,6 +42,8 @@ router.post("/register/first-timer", async (req, res) => {
   try {
     const { full_name, email, phone, fcm_token, ...extra } = req.body;
     if (!full_name) return res.status(400).json({ error: "Full name is required" });
+    if (email && !isValidEmail(email)) return res.status(400).json({ error: "Please enter a valid email address" });
+    if (phone && !isValidPhone(phone)) return res.status(400).json({ error: "Please enter a valid phone number" });
 
     const user = await User.create({
       full_name: full_name.trim(),
@@ -62,6 +70,8 @@ router.post("/register/member-worker", async (req, res) => {
   try {
     const { full_name, email, phone, role_type, department, date_of_birth, fcm_token, ...extra } = req.body;
     if (!full_name) return res.status(400).json({ error: "Full name is required" });
+    if (email && !isValidEmail(email)) return res.status(400).json({ error: "Please enter a valid email address" });
+    if (phone && !isValidPhone(phone)) return res.status(400).json({ error: "Please enter a valid phone number" });
 
     const tag = role_type === "Worker" ? "worker" : "member";
     const user = await User.create({

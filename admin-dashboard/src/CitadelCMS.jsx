@@ -113,35 +113,54 @@ const Modal = ({ title, onClose, children }) => {
   );
 };
 
+// ─── VALIDATION HELPERS ───────────────────────────────────────────────────────
+const isValidEmail = (v) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v.trim());
+const isValidPhone = (v) => /^[+]?[0-9][\d\s\-().]{6,19}$/.test(v.trim());
+
 // ─── FORM INPUT ───────────────────────────────────────────────────────────────
-const Input = ({ id, label, value, onChange, type = "text", placeholder, required, options, small, ...rest }) => (
-  <div style={{ marginBottom: small ? 12 : 16 }}>
-    {label && <label style={{ display: "block", fontFamily: "'DM Sans', sans-serif", fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 6 }}>{label}{required && <span style={{ color: "#ef4444" }}> *</span>}</label>}
-    {type === "dropdown" ? (
-      <select id={id} value={value} onChange={e => onChange && onChange(e.target.value)} style={inputStyle} {...rest}>
-        <option value="">Select...</option>
-        {(options || []).map(o => {
-          const val = typeof o === "object" ? o.value : o;
-          const lbl = typeof o === "object" ? o.label : o;
-          return <option key={val} value={val}>{lbl}</option>;
-        })}
-      </select>
-    ) : (
-      <input
-        id={id}
-        type={type}
-        value={value}
-        onChange={e => onChange && onChange(e.target.value)}
-        placeholder={placeholder}
-        style={{
-          ...inputStyle,
-          ...(type === "date" ? dateInputStyle : {}),
-        }}
-        {...rest}
-      />
-    )}
-  </div>
-);
+const Input = ({ id, label, value, onChange, type = "text", placeholder, required, options, small, ...rest }) => {
+  const [touched, setTouched] = React.useState(false);
+  let validationError = null;
+  if (touched && value) {
+    if (type === "email" && !isValidEmail(value)) validationError = "Enter a valid email address (e.g. john@example.com)";
+    if (type === "tel" && !isValidPhone(value)) validationError = "Enter a valid phone number (e.g. +2348012345678)";
+  }
+  return (
+    <div style={{ marginBottom: small ? 12 : 16 }}>
+      {label && <label style={{ display: "block", fontFamily: "'DM Sans', sans-serif", fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 6 }}>{label}{required && <span style={{ color: "#ef4444" }}> *</span>}</label>}
+      {type === "dropdown" ? (
+        <select id={id} value={value} onChange={e => onChange && onChange(e.target.value)} style={inputStyle} {...rest}>
+          <option value="">Select...</option>
+          {(options || []).map(o => {
+            const val = typeof o === "object" ? o.value : o;
+            const lbl = typeof o === "object" ? o.label : o;
+            return <option key={val} value={val}>{lbl}</option>;
+          })}
+        </select>
+      ) : (
+        <input
+          id={id}
+          type={type}
+          value={value}
+          onBlur={() => setTouched(true)}
+          onChange={e => { onChange && onChange(e.target.value); }}
+          placeholder={placeholder}
+          style={{
+            ...inputStyle,
+            ...(type === "date" ? dateInputStyle : {}),
+            ...(validationError ? { borderColor: "#ef4444", background: "#fff5f5" } : {}),
+          }}
+          {...rest}
+        />
+      )}
+      {validationError && (
+        <span style={{ display: "block", marginTop: 4, fontSize: 12, color: "#ef4444", fontFamily: "'DM Sans', sans-serif" }}>
+          ⚠ {validationError}
+        </span>
+      )}
+    </div>
+  );
+};
 
 const inputStyle = {
   width: "100%", boxSizing: "border-box", padding: "10px 14px",
@@ -1794,6 +1813,14 @@ const CMSEventRegistrations = ({ state, toast }) => {
     const { name, email, phone, eventTitle } = regForm;
     if (!name.trim() || !email.trim() || !eventTitle.trim()) {
       toast("Name, email and program are required", "error");
+      return;
+    }
+    if (!isValidEmail(email)) {
+      toast("Please enter a valid email address (e.g. john@example.com)", "error");
+      return;
+    }
+    if (phone && !isValidPhone(phone)) {
+      toast("Please enter a valid phone number (e.g. +2348012345678)", "error");
       return;
     }
     setRegSubmitting(true);
@@ -4402,6 +4429,13 @@ const UsherAddUser = ({ state, dispatch, toast }) => {
     e.preventDefault();
     const missing = fields.filter(f => f.required && !values[f.field_key]);
     if (missing.length) return toast(`Missing required fields: ${missing.map(f => f.label).join(", ")}`, "error");
+    // Format validation
+    const emailField = fields.find(f => f.type === "email");
+    if (emailField && values[emailField.field_key] && !isValidEmail(values[emailField.field_key]))
+      return toast("Please enter a valid email address (e.g. john@example.com)", "error");
+    const phoneField = fields.find(f => f.type === "tel" || f.field_key === "phone");
+    if (phoneField && values[phoneField.field_key] && !isValidPhone(values[phoneField.field_key]))
+      return toast("Please enter a valid phone number (e.g. +2348012345678)", "error");
 
     setSubmitting(true);
     try {
