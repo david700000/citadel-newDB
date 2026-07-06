@@ -365,8 +365,8 @@
       const settings = await res.json();
       const channelId = (settings.youtube_live_url || '').trim();
       
-      // If no channel ID is set, or it doesn't look like a valid ID (UC...), hide section
-      if (!channelId || channelId.length < 10) return; 
+      // If no channel ID is set, or it doesn't look like a valid ID (UC...), or the admin disabled it, hide section
+      if (!channelId || channelId.length < 10 || settings.youtube_live_enabled === 'false') return; 
 
       // YouTube automatically resolves this to the currently active livestream for the channel
       const embedSrc = `https://www.youtube.com/embed/live_stream?channel=${channelId}&autoplay=0&rel=0&modestbranding=1`;

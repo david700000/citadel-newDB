@@ -2651,6 +2651,7 @@ const CMSSettings = ({ token, toast }) => {
   const [birthdayMessage, setBirthdayMessage] = useState("");
   const [autoLogoutMinutes, setAutoLogoutMinutes] = useState("10");
   const [youtubeLiveUrl, setYoutubeLiveUrl] = useState("");
+  const [youtubeLiveEnabled, setYoutubeLiveEnabled] = useState("true");
   const [savingYoutube, setSavingYoutube] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -2688,6 +2689,9 @@ const CMSSettings = ({ token, toast }) => {
           setWelcomeMessage(data.welcome_message || "");
           setBirthdayMessage(data.birthday_message || "");
           setYoutubeLiveUrl(data.youtube_live_url || "");
+          if (data.youtube_live_enabled !== undefined) {
+            setYoutubeLiveEnabled(data.youtube_live_enabled);
+          }
           if (data.auto_logout_minutes) setAutoLogoutMinutes(String(data.auto_logout_minutes));
         }
       } catch (err) {
@@ -2773,8 +2777,7 @@ const CMSSettings = ({ token, toast }) => {
   const handleSaveYoutubeUrl = async () => {
     setSavingYoutube(true);
     try {
-      // Accept both full YouTube URLs and video IDs, normalise to just the video/live URL
-      const res = await fetch(API_URLS.SETTINGS, {
+      const res1 = fetch(API_URLS.SETTINGS, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -2782,10 +2785,21 @@ const CMSSettings = ({ token, toast }) => {
         },
         body: JSON.stringify({ key: "youtube_live_url", value: youtubeLiveUrl.trim() })
       });
-      if (res.ok) {
-        toast("YouTube livestream URL saved! It will show on the church website.", "success");
+      const res2 = fetch(API_URLS.SETTINGS, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
+        body: JSON.stringify({ key: "youtube_live_enabled", value: youtubeLiveEnabled })
+      });
+
+      const [r1, r2] = await Promise.all([res1, res2]);
+
+      if (r1.ok && r2.ok) {
+        toast("YouTube livestream settings saved! The website has been updated.", "success");
       } else {
-        toast("Failed to save YouTube URL", "error");
+        toast("Failed to save YouTube settings", "error");
       }
     } catch (err) {
       toast("Server connection failed", "error");
@@ -2875,19 +2889,37 @@ const CMSSettings = ({ token, toast }) => {
           <br /><br />
           <strong>How to find your Channel ID:</strong> Go to <a href="https://studio.youtube.com" target="_blank" rel="noopener" style={{color:"#ef4444"}}>YouTube Studio</a> → Settings → Channel → Advanced Settings → copy the <em>Channel ID</em> (starts with <code style={{background:"#f3f4f6",padding:"2px 6px",borderRadius:4}}>UC...</code>).
         </p>
+
+        <div style={{ marginBottom: 20 }}>
+          <label style={{ display: "flex", alignItems: "center", gap: 8, cursor: "pointer", fontFamily: "'DM Sans', sans-serif", fontSize: 14, fontWeight: 500, color: "#374151" }}>
+            <input 
+              type="checkbox" 
+              checked={youtubeLiveEnabled === "true"} 
+              onChange={(e) => setYoutubeLiveEnabled(e.target.checked ? "true" : "false")}
+              style={{ width: 18, height: 18, accentColor: "#ef4444", cursor: "pointer" }}
+            />
+            Show "Watch Live" section on the website (turn off when service is over)
+          </label>
+        </div>
+
         <Input
           label="YouTube Channel ID"
           value={youtubeLiveUrl}
           onChange={setYoutubeLiveUrl}
           placeholder="e.g. UCxxxxxxxxxxxxxxxxxxxxxxxx"
         />
-        {youtubeLiveUrl && (
+        {youtubeLiveUrl && youtubeLiveEnabled === "true" && (
           <p style={{ margin: "4px 0 12px", fontSize: 11, color: "#059669", fontFamily: "'DM Sans', sans-serif" }}>
-            ✓ Channel set. Every livestream will show automatically when you go live on YouTube.
+            ✓ Channel set and Active. Livestreams will be shown.
+          </p>
+        )}
+        {youtubeLiveEnabled === "false" && (
+          <p style={{ margin: "4px 0 12px", fontSize: 11, color: "#ef4444", fontFamily: "'DM Sans', sans-serif" }}>
+            ✕ Disabled. The live stream section is currently hidden from the website.
           </p>
         )}
         <Btn onClick={handleSaveYoutubeUrl} variant="primary" style={{ background: "#ef4444" }} disabled={savingYoutube}>
-          {savingYoutube ? "Saving..." : "Save Channel ID"}
+          {savingYoutube ? "Saving..." : "Save Settings"}
         </Btn>
       </div>
 
