@@ -4730,13 +4730,17 @@ const processMonthlyLedger = (logs, searchQuery = "") => {
       monthlyLedger.push(monthGroup);
     }
 
-    if (l.type === "income") monthGroup.totalIncome += l.amount;
-    else if (l.type === "expense") monthGroup.totalExpense += l.amount;
+    if (!l.voided) {
+      if (l.type === "income") monthGroup.totalIncome += l.amount;
+      else if (l.type === "expense") monthGroup.totalExpense += l.amount;
+    }
 
     monthGroup.transactions.push(l);
 
-    if (l.type === "income") runningBalance += l.amount;
-    else if (l.type === "expense") runningBalance -= l.amount;
+    if (!l.voided) {
+      if (l.type === "income") runningBalance += l.amount;
+      else if (l.type === "expense") runningBalance -= l.amount;
+    }
   });
 
   monthlyLedger.forEach(m => {
@@ -5819,6 +5823,14 @@ const FinancialDashboard = ({ state, dispatch, toast, admin }) => {
   const [voidReason, setVoidReason] = useState("");
   const [voiding, setVoiding] = useState(false);
 
+  // Edit modal state
+  const [editModal, setEditModal] = useState(null); // holds the log object being edited
+  const [editCategory, setEditCategory] = useState("");
+  const [editAmount, setEditAmount] = useState("");
+  const [editDescription, setEditDescription] = useState("");
+  const [editDate, setEditDate] = useState("");
+  const [editingLog, setEditingLog] = useState(false);
+
   const nav = [
     { key: "overview", label: "Ledger & Overview", icon: "dashboard" },
     { key: "log", label: "Log Transaction", icon: "plus" },
@@ -5834,8 +5846,8 @@ const FinancialDashboard = ({ state, dispatch, toast, admin }) => {
   const monthlyLedger = processMonthlyLedger(logs, searchQuery);
 
   // Auto-calculations
-  const totalIncome = logs.filter(l => l.type === "income").reduce((sum, l) => sum + l.amount, 0);
-  const totalExpense = logs.filter(l => l.type === "expense").reduce((sum, l) => sum + l.amount, 0);
+  const totalIncome = logs.filter(l => l.type === "income" && !l.voided).reduce((sum, l) => sum + l.amount, 0);
+  const totalExpense = logs.filter(l => l.type === "expense" && !l.voided).reduce((sum, l) => sum + l.amount, 0);
   const balance = totalIncome - totalExpense;
 
   // Handlers
@@ -5953,6 +5965,49 @@ const FinancialDashboard = ({ state, dispatch, toast, admin }) => {
       toast("Connection error", "error");
     } finally {
       setVoiding(false);
+    }
+  };
+
+  const openEditModal = (log) => {
+    setEditModal(log);
+    setEditCategory(log.category);
+    setEditAmount(log.amount);
+    setEditDescription(log.description || "");
+    setEditDate(new Date(log.date).toISOString().split("T")[0]);
+  };
+
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
+    if (!editCategory || !editAmount) return toast("Section and amount required", "error");
+    if (isNaN(editAmount) || parseFloat(editAmount) <= 0) return toast("Amount must be a positive number", "error");
+
+    setEditingLog(true);
+    try {
+      const res = await fetch(`${API_URLS.FINANCIAL}/${editModal.id || editModal._id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${state.session.token}` },
+        body: JSON.stringify({
+          category: editCategory,
+          amount: parseFloat(editAmount),
+          description: editDescription,
+          date: editDate
+        })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        // Replace the old log with the voided version, and unshift the new log
+        const filteredLogs = logs.filter(l => (l.id || l._id) !== (data.oldLog.id || data.oldLog._id));
+        dispatch({ type: "SYNC_DATA", key: "financial", data: [data.newLog, data.oldLog, ...filteredLogs] });
+        toast("Record edited successfully", "success");
+        setEditModal(null);
+      } else {
+        const err = await res.json();
+        toast(err.error || "Failed to edit record", "error");
+      }
+    } catch (err) {
+      toast("Connection error", "error");
+    } finally {
+      setEditingLog(false);
     }
   };
 
@@ -6124,7 +6179,7 @@ const FinancialDashboard = ({ state, dispatch, toast, admin }) => {
               ))}
             </div>
 
-            <FinancialCharts logs={logs} />
+            <FinancialCharts logs={logs.filter(l => !l.voided)} />
 
             <div style={{ display: "flex", gap: 24, marginTop: 24, alignItems: "flex-start", flexWrap: "wrap" }}>
               <div style={{ flex: 1, minWidth: 340 }}>
@@ -6156,24 +6211,35 @@ const FinancialDashboard = ({ state, dispatch, toast, admin }) => {
                             </tr>
 
                             {m.transactions.map(l => (
-                              <tr key={l.id || l._id} style={{ borderBottom: "1px solid #f3f4f6" }}>
-                                <td style={tdStyle}>{new Date(l.date).toLocaleDateString()}</td>
-                                <td style={tdStyle}><Badge label={l.type} /></td>
-                                <td style={tdStyle}>{l.category}</td>
-                                <td style={{ ...tdStyle, fontWeight: 700, color: l.type === "income" ? "#059669" : "#dc2626" }}>
+                              <tr key={l.id || l._id} style={{ borderBottom: "1px solid #f3f4f6", textDecoration: l.voided ? "line-through" : "none", color: l.voided ? "#9ca3af" : "inherit" }}>
+                                <td style={{...tdStyle, color: l.voided ? "#9ca3af" : tdStyle.color}}>{new Date(l.date).toLocaleDateString()}</td>
+                                <td style={tdStyle}><Badge label={l.type} color={l.voided ? "#9ca3af" : undefined} /></td>
+                                <td style={{...tdStyle, color: l.voided ? "#9ca3af" : tdStyle.color}}>{l.category}</td>
+                                <td style={{ ...tdStyle, fontWeight: 700, color: l.voided ? "#9ca3af" : (l.type === "income" ? "#059669" : "#dc2626") }}>
                                   {l.type === "income" ? "+" : "-"}₦{l.amount.toLocaleString()}
                                 </td>
-                                <td style={{ ...tdStyle, maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{l.description || "—"}</td>
-                                <td style={tdStyle}>{l.logged_by_name}</td>
+                                <td style={{ ...tdStyle, color: l.voided ? "#9ca3af" : tdStyle.color, maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                  {l.voided && l.void_reason ? `[Voided: ${l.void_reason}] ` : ""}{l.description || "—"}
+                                </td>
+                                <td style={{...tdStyle, color: l.voided ? "#9ca3af" : tdStyle.color}}>{l.logged_by_name}</td>
                                 <td style={tdStyle}>
-                                  {l.acknowledgements && l.acknowledgements.length > 0
-                                    ? <span style={{ fontSize: 11, color: "#059669", fontWeight: 700 }}>✓ {l.acknowledgements.length}</span>
-                                    : <span style={{ fontSize: 11, color: "#f59e0b", fontWeight: 600 }}>Pending</span>}
+                                  {l.voided ? <span style={{ fontSize: 11, color: "#9ca3af" }}>—</span> : (
+                                    l.acknowledgements && l.acknowledgements.length > 0
+                                      ? <span style={{ fontSize: 11, color: "#059669", fontWeight: 700 }}>✓ {l.acknowledgements.length}</span>
+                                      : <span style={{ fontSize: 11, color: "#f59e0b", fontWeight: 600 }}>Pending</span>
+                                  )}
                                 </td>
                                 <td style={tdStyle}>
-                                  <button onClick={() => openVoidModal("ledger", l.id || l._id)} style={{ background: "none", border: "none", color: "#ef4444", cursor: "pointer", padding: 4 }}>
-                                    <Icon name="trash" size={14} />
-                                  </button>
+                                  {!l.voided && (
+                                    <div style={{display: "flex", gap: 8}}>
+                                      <button onClick={() => openEditModal(l)} style={{ background: "none", border: "none", color: "#3b82f6", cursor: "pointer", padding: 4 }}>
+                                        <Icon name="settings" size={14} />
+                                      </button>
+                                      <button onClick={() => openVoidModal("ledger", l.id || l._id)} style={{ background: "none", border: "none", color: "#ef4444", cursor: "pointer", padding: 4 }}>
+                                        <Icon name="trash" size={14} />
+                                      </button>
+                                    </div>
+                                  )}
                                 </td>
                               </tr>
                             ))}
@@ -6439,6 +6505,45 @@ const FinancialDashboard = ({ state, dispatch, toast, admin }) => {
             </div>
           </Page>
         )}
+
+      <Modal isOpen={!!voidModal} onClose={() => setVoidModal(null)} title="Void / Delete Record">
+        <p style={{ fontSize: 13, color: "#4b5563", marginBottom: 16, fontFamily: "'DM Sans',sans-serif", lineHeight: 1.5 }}>
+          You are about to void this record. It will remain in the ledger as struck-out for audit purposes, but will be removed from all calculations and balances.
+        </p>
+        <Input label="Reason for Voiding (Required)" value={voidReason} onChange={setVoidReason} placeholder="e.g. Logged incorrect amount" required />
+        <div style={{ display: "flex", gap: 12, marginTop: 24 }}>
+          <Btn onClick={() => setVoidModal(null)} variant="ghost" style={{ flex: 1, justifyContent: "center" }}>Cancel</Btn>
+          <Btn onClick={handleVoidSubmit} variant="primary" style={{ flex: 1, justifyContent: "center", background: "#ef4444" }} disabled={voiding}>
+            {voiding ? "Voiding..." : "Confirm Void"}
+          </Btn>
+        </div>
+      </Modal>
+
+      <Modal isOpen={!!editModal} onClose={() => setEditModal(null)} title={`Edit ${editModal?.type === 'income' ? 'Income' : 'Expense'} Record`}>
+        <p style={{ fontSize: 13, color: "#4b5563", marginBottom: 16, fontFamily: "'DM Sans',sans-serif", lineHeight: 1.5 }}>
+          Editing will void the current record and issue a new corrected record to preserve the audit trail.
+        </p>
+        <form onSubmit={handleEditSubmit}>
+          <div style={{ marginBottom: 12 }}>
+            <Input label="Section / Category" value={editCategory} onChange={setEditCategory} type="dropdown" options={editModal?.type === "income" ? incomeCategoryOptions : expenseCategoryOptions} required />
+          </div>
+          <div style={{ marginBottom: 12 }}>
+            <Input label="Amount (₦)" value={editAmount} onChange={setEditAmount} type="text" inputMode="decimal" required />
+          </div>
+          <div style={{ marginBottom: 12 }}>
+            <Input label="Date" value={editDate} onChange={setEditDate} type="date" required />
+          </div>
+          <div style={{ marginBottom: 20 }}>
+            <Input label="Description / Notes" value={editDescription} onChange={setEditDescription} />
+          </div>
+          <div style={{ display: "flex", gap: 12 }}>
+            <Btn type="button" onClick={() => setEditModal(null)} variant="ghost" style={{ flex: 1, justifyContent: "center" }}>Cancel</Btn>
+            <Btn type="submit" variant="primary" style={{ flex: 1, justifyContent: "center", background: "#3b82f6" }} disabled={editingLog}>
+              {editingLog ? "Saving..." : "Save Edit"}
+            </Btn>
+          </div>
+        </form>
+      </Modal>
 
       </main>
     </div>

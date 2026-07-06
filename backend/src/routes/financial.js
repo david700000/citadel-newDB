@@ -48,10 +48,10 @@ async function queueFinancialNotification() {
 
 // ─── GENERAL LEDGER ROUTES ───────────────────────────────────────────────────
 
-// GET /financial - Get all active (non-voided) transactions (finance admin, Leader, CMS root)
+// GET /financial - Get all transactions including voided (finance admin, Leader, CMS root)
 router.get("/", requireRoleOrCMS("finance_admin", "leader"), async (req, res) => {
   try {
-    const logs = await FinancialLog.find({ voided: { $ne: true } }).sort({ date: -1 });
+    const logs = await FinancialLog.find().sort({ date: -1 });
     res.json(logs);
   } catch (err) {
     res.status(500).json({ error: err.message });
@@ -177,6 +177,60 @@ router.patch("/:id/void", requireRole("finance_admin"), async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+// PUT /financial/:id - Edit a transaction (finance admin)
+// Edits are handled by voiding the old record and creating a new one to preserve audit trail
+router.put("/:id", requireRole("finance_admin"), async (req, res) => {
+  try {
+    const { category, amount, description, date } = req.body;
+    
+    if (!category || !amount) {
+      return res.status(400).json({ error: "Category and amount are required" });
+    }
+    if (isNaN(amount) || parseFloat(amount) <= 0) {
+      return res.status(400).json({ error: "Amount must be a positive number" });
+    }
+
+    const oldLog = await FinancialLog.findById(req.params.id);
+    if (!oldLog) return res.status(404).json({ error: "Financial record not found" });
+    if (oldLog.voided) return res.status(400).json({ error: "Cannot edit a voided record" });
+
+    // Ensure they have sufficient funds if it's an expense and amount increased
+    if (oldLog.type === "expense") {
+      const netBalance = await getCurrentNetBalance();
+      // Add back the old amount, subtract new amount
+      const adjustedBalance = netBalance + oldLog.amount - parseFloat(amount);
+      if (adjustedBalance < 0) {
+        return res.status(400).json({ error: `Insufficient funds for this edit. Adjusted balance would be negative.` });
+      }
+    }
+
+    // 1. Void the old record
+    oldLog.voided = true;
+    oldLog.void_reason = "Edited";
+    oldLog.voided_by = req.user.id;
+    oldLog.voided_by_name = req.user.name || "finance admin";
+    oldLog.voided_at = new Date();
+    await oldLog.save();
+
+    // 2. Create the new record
+    const newLog = await FinancialLog.create({
+      type: oldLog.type,
+      category,
+      amount: parseFloat(amount),
+      description: description || "",
+      date: date ? new Date(date) : new Date(),
+      logged_by: req.user.id,
+      logged_by_name: req.user.name || "finance admin",
+      acknowledgements: [] // Reset acknowledgements since it's fundamentally a new amount/category
+    });
+
+    res.json({ success: true, message: "Record edited successfully", oldLog, newLog });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 
 
 // ─── FINANCIAL SECTIONS (DEPARTMENTS) ROUTES ────────────────────────────────
