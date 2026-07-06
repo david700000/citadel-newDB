@@ -6645,7 +6645,8 @@ const FinancialDashboard = ({ state, dispatch, toast, admin }) => {
           </Page>
         )}
 
-      <Modal isOpen={!!voidModal} onClose={() => setVoidModal(null)} title="Void / Delete Record">
+      {!!voidModal && (
+      <Modal onClose={() => setVoidModal(null)} title="Void / Delete Record">
         <p style={{ fontSize: 13, color: "#4b5563", marginBottom: 16, fontFamily: "'DM Sans',sans-serif", lineHeight: 1.5 }}>
           You are about to void this record. It will remain in the ledger as struck-out for audit purposes, but will be removed from all calculations and balances.
         </p>
@@ -6657,8 +6658,10 @@ const FinancialDashboard = ({ state, dispatch, toast, admin }) => {
           </Btn>
         </div>
       </Modal>
+      )}
 
-      <Modal isOpen={!!editModal} onClose={() => setEditModal(null)} title={`Edit ${editModal?.type === 'income' ? 'Income' : 'Expense'} Record`}>
+      {!!editModal && (
+      <Modal onClose={() => setEditModal(null)} title={`Edit ${editModal?.type === 'income' ? 'Income' : 'Expense'} Record`}>
         <p style={{ fontSize: 13, color: "#4b5563", marginBottom: 16, fontFamily: "'DM Sans',sans-serif", lineHeight: 1.5 }}>
           Editing will void the current record and issue a new corrected record to preserve the audit trail.
         </p>
@@ -6696,6 +6699,7 @@ const FinancialDashboard = ({ state, dispatch, toast, admin }) => {
           </div>
         </form>
       </Modal>
+      )}
 
       </main>
     </div>
