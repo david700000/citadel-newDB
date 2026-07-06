@@ -2483,6 +2483,7 @@ const CMSEventRegistrations = ({ state, toast }) => {
 // ════════════════════════════════════════════════════════════════════════════════
 const CMSDashboard = ({ state, dispatch, toast }) => {
   const [active, setActive] = useState("dashboard");
+  const [userFilterTag, setUserFilterTag] = useState("all");
 
   const nav = [
     { key: "dashboard", label: "Dashboard", icon: "dashboard" },
@@ -2502,10 +2503,10 @@ const CMSDashboard = ({ state, dispatch, toast }) => {
     <div style={{ display: "flex", minHeight: "100vh", background: "#f8fafc" }}>
       <Sidebar nav={nav} active={active} setActive={setActive} role="cms" adminName={state.session?.admin?.name} onLogout={() => dispatch({ type: "LOGOUT" })} />
       <main style={{ marginLeft: 240, flex: 1, minHeight: "100vh" }}>
-        {active === "dashboard" && <CMSHome state={state} token={state.session.token} toast={toast} />}
+        {active === "dashboard" && <CMSHome state={state} token={state.session.token} toast={toast} setActive={setActive} setUserFilterTag={setUserFilterTag} />}
         {active === "website_content" && <CMSWebsiteContent state={state} toast={toast} />}
         {active === "event_regs" && <CMSEventRegistrations state={state} toast={toast} />}
-        {active === "users" && <CMSUsers state={state} dispatch={dispatch} toast={toast} />}
+        {active === "users" && <CMSUsers state={state} dispatch={dispatch} toast={toast} initialFilter={userFilterTag} />}
         {active === "add_user" && <UsherAddUser state={state} dispatch={dispatch} toast={toast} />}
         {active === "forms" && <CMSForms state={state} dispatch={dispatch} toast={toast} />}
         {active === "admins" && <CMSAdmins state={state} dispatch={dispatch} toast={toast} />}
@@ -3014,7 +3015,7 @@ const CMSSettings = ({ token, toast }) => {
   );
 };
 
-const CMSHome = ({ state, token, toast }) => {
+const CMSHome = ({ state, token, toast, setActive, setUserFilterTag }) => {
   const firstTimers = state.users.filter(u => u.tag === "first_timer").length;
   const members = state.users.filter(u => u.tag === "member").length;
   const workers = state.users.filter(u => u.tag === "worker").length;
@@ -3185,12 +3186,12 @@ const CMSHome = ({ state, token, toast }) => {
       }
     >
       <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 28 }}>
-        <StatCard label="Total Users" value={state.users.length} icon="users" accent />
-        <StatCard label="First-Timers" value={firstTimers} icon="bell" />
-        <StatCard label="Members" value={members} icon="users" />
-        <StatCard label="Workers" value={workers} icon="church" />
-        <StatCard label="Active Admins" value={activeAdmins} icon="admins" />
-        <StatCard label="Present Today" value={todayAttendance} icon="attendance" />
+        <StatCard label="Total Users" value={state.users.length} icon="users" accent onClick={() => { setActive("users"); setUserFilterTag("all"); }} />
+        <StatCard label="First-Timers" value={firstTimers} icon="bell" onClick={() => { setActive("users"); setUserFilterTag("first_timer"); }} />
+        <StatCard label="Members" value={members} icon="users" onClick={() => { setActive("users"); setUserFilterTag("member"); }} />
+        <StatCard label="Workers" value={workers} icon="church" onClick={() => { setActive("users"); setUserFilterTag("worker"); }} />
+        <StatCard label="Active Admins" value={activeAdmins} icon="admins" onClick={() => setActive("admins")} />
+        <StatCard label="Present Today" value={todayAttendance} icon="attendance" onClick={() => setActive("attendance")} />
       </div>
       <div style={{ background: "#fff", borderRadius: 14, padding: 24, boxShadow: "0 2px 12px rgba(0,0,0,0.06)" }}>
         <h3 style={{ margin: "0 0 16px", fontFamily: "'DM Sans', sans-serif", fontWeight: 700, color: "#0B1F3B" }}>Recent Registrations</h3>
@@ -3220,9 +3221,13 @@ const CMSHome = ({ state, token, toast }) => {
   );
 };
 
-const CMSUsers = ({ state, dispatch, toast }) => {
-  const [filter, setFilter] = useState("all");
+const CMSUsers = ({ state, dispatch, toast, initialFilter = "all" }) => {
+  const [filter, setFilter] = useState(initialFilter);
   const [searchQuery, setSearchQuery] = useState("");
+
+  useEffect(() => {
+    setFilter(initialFilter);
+  }, [initialFilter]);
   const [editUser, setEditUser] = useState(null);
   const [editTag, setEditTag] = useState("");
   const [editDept, setEditDept] = useState("");
@@ -3973,7 +3978,7 @@ const CMSAttendance = ({ state }) => {
   const groupedLogs = [];
   const groups = {};
   state.attendance.forEach(a => {
-    const dStr = a.date ? new Date(a.date).toISOString().split('T')[0] : "Unknown";
+    const dStr = a.date ? (typeof a.date === "string" ? a.date.slice(0, 10) : new Date(a.date).toISOString().split('T')[0]) : "Unknown";
     const key = `${a.event_name}||${dStr}`;
     if (!groups[key]) {
       groups[key] = {
@@ -4784,6 +4789,7 @@ const exportFinancialCSV = (logs, toast) => {
 const LeaderDashboard = ({ state, dispatch, admin, toast }) => {
   const [active, setActive] = useState("overview");
   const [searchQuery, setSearchQuery] = useState("");
+  const [userFilterTag, setUserFilterTag] = useState("all");
   const [filterDate, setFilterDate] = useState("");
   const [viewUser, setViewUser] = useState(null);
   const [selectedLog, setSelectedLog] = useState(null);
@@ -4842,12 +4848,13 @@ const LeaderDashboard = ({ state, dispatch, admin, toast }) => {
   const workers = state.users.filter(u => u.tag === "worker").length;
 
   const filteredUsers = state.users.filter(u => {
+    const matchesTag = userFilterTag === "all" || u.tag === userFilterTag;
     const matchesSearch = !searchQuery ||
       (u.full_name && u.full_name.toLowerCase().includes(searchQuery.toLowerCase())) ||
       (u.email && u.email.toLowerCase().includes(searchQuery.toLowerCase())) ||
       (u.tag && u.tag.toLowerCase().includes(searchQuery.toLowerCase())) ||
       (u.department && u.department.toLowerCase().includes(searchQuery.toLowerCase()));
-    return matchesSearch;
+    return matchesTag && matchesSearch;
   });
 
   // Filter messages: only show messages created during/after the current session start
@@ -4948,7 +4955,7 @@ const LeaderDashboard = ({ state, dispatch, admin, toast }) => {
   const groupedLogs = [];
   const groups = {};
   state.attendance.forEach(a => {
-    const dStr = a.date ? (typeof a.date === "string" ? a.date.slice(0, 10) : new Date(a.date).toISOString().slice(0, 10)) : "Unknown";
+    const dStr = a.date ? (typeof a.date === "string" ? a.date.slice(0, 10) : new Date(a.date).toISOString().split('T')[0]) : "Unknown";
     const key = `${a.event_name}||${dStr}`;
     if (!groups[key]) {
       groups[key] = { event_name: a.event_name, date: dStr, present: 0, absent: 0, records: [] };
@@ -4971,10 +4978,10 @@ const LeaderDashboard = ({ state, dispatch, admin, toast }) => {
               You have view-only access. No edits can be made from this dashboard.
             </div>
             <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 24 }}>
-              <StatCard label="Total Users" value={state.users.length} icon="users" accent onClick={() => setActive("users")} />
-              <StatCard label="First-Timers" value={firstTimers} icon="bell" onClick={() => setActive("users")} />
-              <StatCard label="Members" value={members} icon="users" onClick={() => setActive("users")} />
-              <StatCard label="Workers" value={workers} icon="church" onClick={() => setActive("users")} />
+              <StatCard label="Total Users" value={state.users.length} icon="users" accent onClick={() => { setActive("users"); setUserFilterTag("all"); }} />
+              <StatCard label="First-Timers" value={firstTimers} icon="bell" onClick={() => { setActive("users"); setUserFilterTag("first_timer"); }} />
+              <StatCard label="Members" value={members} icon="users" onClick={() => { setActive("users"); setUserFilterTag("member"); }} />
+              <StatCard label="Workers" value={workers} icon="church" onClick={() => { setActive("users"); setUserFilterTag("worker"); }} />
               <StatCard label="Total Messages" value={state.messages.filter(m => new Date(m.created_at).getTime() > sessionStartTime.current).length} icon="messages" onClick={() => setActive("messages")} />
               <StatCard label="Attendance Records" value={state.attendance.length} icon="attendance" onClick={() => setActive("attendance")} />
             </div>
@@ -5178,7 +5185,26 @@ const LeaderDashboard = ({ state, dispatch, admin, toast }) => {
         )}
 
         {active === "users" && (
-          <Page title="All Users" subtitle="View only" actions={<div style={{ minWidth: 200, maxWidth: 300, marginBottom: -16 }}><SearchInput value={searchQuery} onChange={setSearchQuery} placeholder="Search users..." /></div>}>
+          <Page
+            title={userFilterTag === "all" ? "All Users" : userFilterTag === "first_timer" ? "First-Timers" : userFilterTag === "member" ? "Members" : "Workers"}
+            subtitle={`View only · ${filteredUsers.length} record${filteredUsers.length !== 1 ? "s" : ""}`}
+            actions={<div style={{ minWidth: 200, maxWidth: 300, marginBottom: -16 }}><SearchInput value={searchQuery} onChange={setSearchQuery} placeholder="Search users..." /></div>}
+          >
+            <div style={{ display: "flex", gap: 8, marginBottom: 16, flexWrap: "wrap" }}>
+              {[
+                { key: "all", label: "All Users" },
+                { key: "first_timer", label: "First-Timers" },
+                { key: "member", label: "Members" },
+                { key: "worker", label: "Workers" },
+              ].map(f => (
+                <button key={f.key} onClick={() => setUserFilterTag(f.key)} style={{
+                  padding: "6px 14px", borderRadius: 99, border: "none", cursor: "pointer", fontFamily: "'DM Sans', sans-serif", fontSize: 13, fontWeight: 600,
+                  background: userFilterTag === f.key ? "#6366f1" : "#f3f4f6",
+                  color: userFilterTag === f.key ? "#fff" : "#374151",
+                  transition: "all 0.15s"
+                }}>{f.label}</button>
+              ))}
+            </div>
             <Table
               headers={["Name", "Email", "Phone", "Tag", "Department", "Joined"]}
               onRowClick={(i) => setViewUser(filteredUsers[i])}
@@ -5220,7 +5246,7 @@ const LeaderDashboard = ({ state, dispatch, admin, toast }) => {
         {/* VIEW 5: FINANCIAL REVIEW (READ-ONLY WITH GRAPHS) */}
         {active === "financial_review" && (
           <Page title="Financial Audit Logs" subtitle="Review financial trends and history" actions={<Btn onClick={handleExportCSV} variant="accent"><Icon name="forms" size={16} /> Export CSV</Btn>}>
-            <div style={{ display: "flex", gap: 16, flexWrap: "wrap", marginBottom: 24 }}>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 16, marginBottom: 24 }}>
               <StatCard label="Total Income" value={`₦${totalIncome.toLocaleString()}`} icon="check" />
               <StatCard label="Total Expenses" value={`₦${totalExpense.toLocaleString()}`} icon="x" />
               <StatCard label="Net Balance" value={`₦${balance.toLocaleString()}`} icon="dashboard" accent />
@@ -6022,7 +6048,7 @@ const FinancialDashboard = ({ state, dispatch, toast, admin }) => {
                 { label: "Total Expenses", val: `₦${totalExpense.toLocaleString()}`, color: "#dc2626", border: "#dc2626", sub: `${logs.filter(l => l.type === "expense").length} entries` },
                 { label: "Net Balance", val: `₦${balance.toLocaleString()}`, color: balance >= 0 ? "#059669" : "#dc2626", border: "#0B1F3B", sub: "Current surplus/deficit" },
               ].map((c, i) => (
-                <div key={i} style={{ background: "#fff", borderRadius: 12, padding: "18px 22px", border: "1px solid #e5e7eb", borderLeft: `4px solid ${c.border}`, boxShadow: "0 1px 6px rgba(0,0,0,0.05)", display: "flex", flexDirection: "column", justifyContent: "center", overflow: "hidden" }}>
+                <div key={i} style={{ background: "#fff", borderRadius: 12, padding: "18px 22px", border: "1px solid #e5e7eb", borderLeft: `4px solid ${c.border}`, boxShadow: "0 1px 6px rgba(0,0,0,0.05)", display: "flex", flexDirection: "column", justifyContent: "center", overflow: "hidden", cursor: "pointer", transition: "transform 0.15s" }} onMouseOver={e => e.currentTarget.style.transform = "translateY(-2px)"} onMouseOut={e => e.currentTarget.style.transform = "translateY(0)"}>
                   <div style={{ fontSize: 11, fontWeight: 600, color: "#9ca3af", fontFamily: "'DM Sans',sans-serif", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 6 }}>{c.label}</div>
                   <div style={{ fontSize: 24, fontWeight: 800, color: c.color, fontFamily: "'DM Sans',sans-serif", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{c.val}</div>
                   <div style={{ fontSize: 11, color: "#9ca3af", marginTop: 4, fontFamily: "'DM Sans',sans-serif" }}>{c.sub}</div>
