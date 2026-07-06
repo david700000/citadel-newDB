@@ -4723,52 +4723,88 @@ const processMonthlyLedger = (logs, searchQuery = "") => {
   })).filter(m => m.transactions.length > 0);
 };
 
-const exportFinancialCSV = (logs, toast) => {
-  if (logs.length === 0) return toast("No logs available to export", "error");
+const printFinancialReport = (logs, toast) => {
+  if (logs.length === 0) return toast("No logs available to print", "error");
   const monthlyLedger = processMonthlyLedger(logs);
 
-  const escapeCsvValue = (val) => {
-    const stringified = String(val === null || val === undefined ? "" : val);
-    return `"${stringified.replace(/"/g, '""')}"`;
-  };
+  const printWindow = window.open("", "_blank");
+  if (!printWindow) {
+    alert("Please allow popups to print the report");
+    return;
+  }
 
-  const headers = ["Date", "Type", "Section/Department", "Amount (Naira)", "Description", "Logged By", "Acknowledgements"];
-  const csvRows = [];
+  const churchName = import.meta.env.VITE_CHURCH_NAME || "Church";
+  const dateStr = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
 
+  let rowsHtml = "";
   monthlyLedger.forEach(m => {
-    csvRows.push([m.month, "", "", `Opening Balance: ${m.openingBalance}`, "", "", ""]);
+    rowsHtml += `
+      <tr style="background: #f8fafc;">
+        <td colspan="7" style="padding: 10px 12px; font-weight: 800; color: #0b1f3b;">
+          ${m.month} <span style="float: right;">Opening Balance: ₦${m.openingBalance.toLocaleString()}</span>
+        </td>
+      </tr>
+    `;
 
     m.transactions.forEach(l => {
-      csvRows.push([
-        new Date(l.date).toLocaleDateString(),
-        l.type.toUpperCase(),
-        l.category,
-        l.amount,
-        l.description || "",
-        l.logged_by_name,
-        l.acknowledgements ? l.acknowledgements.map(a => a.leader_name).join("; ") : ""
-      ]);
+      const typeColor = l.type === "income" ? "#047857" : "#b91c1c";
+      rowsHtml += `
+        <tr style="border-bottom: 1px solid #e5e7eb;">
+          <td style="padding: 10px; font-size: 13px; color: #4b5563;">${new Date(l.date).toLocaleDateString()}</td>
+          <td style="padding: 10px; font-size: 13px; font-weight: 700; color: ${typeColor}; text-transform: uppercase;">${l.type}</td>
+          <td style="padding: 10px; font-size: 13px; color: #111827;">${l.category}</td>
+          <td style="padding: 10px; font-size: 13px; font-weight: 600; color: ${typeColor};">₦${l.amount.toLocaleString()}</td>
+          <td style="padding: 10px; font-size: 13px; color: #4b5563;">${l.description || "—"}</td>
+          <td style="padding: 10px; font-size: 13px; color: #4b5563;">${l.logged_by_name}</td>
+          <td style="padding: 10px; font-size: 12px; color: #6b7280;">${l.acknowledgements ? l.acknowledgements.map(a => a.leader_name).join("<br>") : ""}</td>
+        </tr>
+      `;
     });
 
-    csvRows.push(["Monthly Totals", `Income: +${m.totalIncome}`, `Expense: -${m.totalExpense}`, `Closing Balance: ${m.closingBalance}`, "", "", ""]);
-    csvRows.push(["", "", "", "", "", "", ""]);
+    rowsHtml += `
+      <tr>
+        <td colspan="7" style="padding: 12px; font-weight: 700; font-size: 13px; border-bottom: 2px solid #0b1f3b;">
+          Monthly Totals: <span style="color: #047857;">Income: +₦${m.totalIncome.toLocaleString()}</span> | 
+          <span style="color: #b91c1c;">Expense: -₦${m.totalExpense.toLocaleString()}</span>
+          <span style="float: right; font-weight: 800; font-size: 14px;">Closing Balance: ₦${m.closingBalance.toLocaleString()}</span>
+        </td>
+      </tr>
+      <tr><td colspan="7" style="height: 20px;"></td></tr>
+    `;
   });
 
-  const csvContent = [
-    headers.map(escapeCsvValue).join(","),
-    ...csvRows.map(row => row.map(escapeCsvValue).join(","))
-  ].join("\r\n");
-
-  const blob = new Blob(["\ufeff" + csvContent], { type: "text/csv;charset=utf-8;" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.setAttribute("href", url);
-  link.setAttribute("download", `Citadel_Financial_Report_${new Date().toISOString().split("T")[0]}.csv`);
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-  URL.revokeObjectURL(url);
-  toast("CSV downloaded successfully!", "success");
+  const printContent = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <title>${churchName} - Financial Report</title>
+      <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 40px; margin: 0; }
+        .header { border-bottom: 2px solid #111827; padding-bottom: 20px; margin-bottom: 30px; }
+        .title { font-size: 24px; font-weight: 800; margin: 0 0 8px 0; color: #0b1f3b; }
+        .meta { font-size: 14px; color: #4b5563; margin-bottom: 16px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th { background: #f1f5f9; padding: 12px 10px; font-size: 12px; font-weight: 700; color: #475569; text-transform: uppercase; text-align: left; border-bottom: 2px solid #cbd5e1; }
+        @media print { body { padding: 20px; } tr { page-break-inside: avoid; } }
+      </style>
+    </head>
+    <body>
+      <div class="header">
+        <div class="title">${churchName} - Financial Audit Report</div>
+        <div class="meta">Generated: <strong>${dateStr}</strong></div>
+      </div>
+      <table>
+        <thead>
+          <tr><th>Date</th><th>Type</th><th>Section</th><th>Amount</th><th>Description</th><th>Logged By</th><th>Acknowledgements</th></tr>
+        </thead>
+        <tbody>${rowsHtml}</tbody>
+      </table>
+      <script>window.onload = function() { window.print(); setTimeout(function() { window.close(); }, 500); };</script>
+    </body>
+    </html>
+  `;
+  printWindow.document.write(printContent);
+  printWindow.document.close();
 };
 
 // ════════════════════════════════════════════════════════════════════════════════
@@ -4937,7 +4973,7 @@ const LeaderDashboard = ({ state, dispatch, admin, toast }) => {
     }
   };
 
-  const handleExportCSV = () => exportFinancialCSV(logs, toast);
+  const handlePrintFinancial = () => printFinancialReport(logs, toast);
 
   // Group attendance records by event & date
   const groupedLogs = [];
@@ -5233,7 +5269,7 @@ const LeaderDashboard = ({ state, dispatch, admin, toast }) => {
 
         {/* VIEW 5: FINANCIAL REVIEW (READ-ONLY WITH GRAPHS) */}
         {active === "financial_review" && (
-          <Page title="Financial Audit Logs" subtitle="Review financial trends and history">
+          <Page title="Financial Audit Logs" subtitle="Review financial trends and history" actions={<Btn onClick={handlePrintFinancial} variant="accent"><Icon name="print" size={16} /> Print Report (PDF)</Btn>}>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 16, marginBottom: 24 }}>
               <StatCard label="Total Income" value={`₦${totalIncome.toLocaleString()}`} icon="check" />
               <StatCard label="Total Expenses" value={`₦${totalExpense.toLocaleString()}`} icon="x" />
@@ -5996,7 +6032,7 @@ const FinancialDashboard = ({ state, dispatch, toast, admin }) => {
     }
   };
 
-  const handleExportCSV = () => exportFinancialCSV(logs, toast);
+  const handlePrintFinancial = () => printFinancialReport(logs, toast);
 
 
   const incomeCategoryOptions = sections.length > 0 ? [...sections.map(s => s.name), "Others"] : ["Offering", "Tithes", "Donation", "Building", "Others"];
@@ -6037,7 +6073,7 @@ const FinancialDashboard = ({ state, dispatch, toast, admin }) => {
         {active === "add_user" && <UsherAddUser state={state} dispatch={dispatch} toast={toast} />}
 
         {active === "overview" && (
-          <Page title="Finance Dashboard" subtitle="Manage church revenues and expenses">
+          <Page title="Finance Dashboard" subtitle="Manage church revenues and expenses" actions={<Btn onClick={handlePrintFinancial} variant="accent"><Icon name="print" size={16} /> Print Report (PDF)</Btn>}>
 
             {/* KPI Cards */}
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 16, marginBottom: 24 }}>
@@ -6468,33 +6504,76 @@ const CMSServiceReviews = ({ state, dispatch, toast, role }) => {
     }
   };
 
-  const handleExport = async () => {
+  const handlePrintReviews = async () => {
     const queryParams = new URLSearchParams({
       service_type: serviceType,
       date_from: dateFrom,
       date_to: dateTo,
+      limit: 1000 // Print all
     });
     try {
-      const res = await fetch(`${API_URLS.SERVICE_REVIEWS_EXPORT}?${queryParams.toString()}`, {
+      const res = await fetch(`${API_URLS.SERVICE_REVIEWS}?${queryParams.toString()}`, {
         credentials: "include",
       });
-      if (!res.ok) {
-        const err = await res.json();
-        toast(err.error || "Export failed", "error");
-        return;
+      if (res.ok) {
+        const data = await res.json();
+        const reviewsToPrint = data.reviews || [];
+        if (reviewsToPrint.length === 0) return toast("No reviews to print", "error");
+
+        const printWindow = window.open("", "_blank");
+        if (!printWindow) return alert("Please allow popups");
+
+        const churchName = import.meta.env.VITE_CHURCH_NAME || "Church";
+        
+        const rowsHtml = reviewsToPrint.map(r => {
+          const ratingColor = r.overall_average >= 8 ? "#047857" : r.overall_average >= 5 ? "#d97706" : "#b91c1c";
+          return `
+            <tr style="border-bottom: 1px solid #e5e7eb;">
+              <td style="padding: 10px; font-size: 13px;">${new Date(r.createdAt || r.date).toLocaleDateString()}</td>
+              <td style="padding: 10px; font-size: 13px;">${r.service_title || "—"}</td>
+              <td style="padding: 10px; font-size: 13px; text-transform: capitalize;">${r.service_type ? r.service_type.replace(/_/g, ' ') : "—"}</td>
+              <td style="padding: 10px; font-size: 13px;">${r.submitted_by_name || "—"}</td>
+              <td style="padding: 10px; font-size: 13px; font-weight: 700; color: ${ratingColor};">${r.overall_average || 0}/10</td>
+            </tr>
+          `;
+        }).join("");
+
+        const printContent = `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <title>${churchName} - Service Reviews Report</title>
+            <style>
+              body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; padding: 40px; margin: 0; }
+              .header { border-bottom: 2px solid #111827; padding-bottom: 20px; margin-bottom: 30px; }
+              .title { font-size: 24px; font-weight: 800; margin: 0 0 8px 0; color: #0b1f3b; }
+              table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+              th { background: #f1f5f9; padding: 12px 10px; font-size: 12px; font-weight: 700; color: #475569; text-transform: uppercase; text-align: left; border-bottom: 2px solid #cbd5e1; }
+              @media print { body { padding: 20px; } tr { page-break-inside: avoid; } }
+            </style>
+          </head>
+          <body>
+            <div class="header">
+              <div class="title">${churchName} - Service Reviews</div>
+              <div style="font-size: 14px; color: #4b5563;">Total Reviews: <strong>${reviewsToPrint.length}</strong></div>
+            </div>
+            <table>
+              <thead>
+                <tr><th>Date</th><th>Service Title</th><th>Type</th><th>Reviewer</th><th>Overall Rating</th></tr>
+              </thead>
+              <tbody>${rowsHtml}</tbody>
+            </table>
+            <script>window.onload = function() { window.print(); setTimeout(function() { window.close(); }, 500); };</script>
+          </body>
+          </html>
+        `;
+        printWindow.document.write(printContent);
+        printWindow.document.close();
+      } else {
+        toast("Failed to generate print view", "error");
       }
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `service-reviews-${new Date().toISOString().slice(0, 10)}.csv`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-      toast("CSV exported successfully", "success");
     } catch (err) {
-      toast("Export failed. Please try again.", "error");
+      toast("Error generating print view", "error");
     }
   };
 
@@ -6608,6 +6687,11 @@ const CMSServiceReviews = ({ state, dispatch, toast, role }) => {
               Clear Filters
             </Btn>
           )}
+          <div style={{ flex: "1 1 150px", marginBottom: 16 }}>
+            <Btn onClick={handlePrintReviews} variant="accent" style={{ minHeight: 40, width: "100%", justifyContent: "center" }}>
+              <Icon name="print" size={16} /> Print PDF
+            </Btn>
+          </div>
         </div>
       </div>
 
