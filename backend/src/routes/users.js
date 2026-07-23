@@ -2,7 +2,7 @@ const express = require("express");
 const User = require("../models/User");
 const Message = require("../models/Message");
 const Setting = require("../models/Setting");
-const { requireCMS, requireAuth } = require("../middleware/auth");
+const { requireCMS, requireAuth, requireRole } = require("../middleware/auth");
 const { sendViaChannels, welcomeMessage } = require("../services/messaging");
 
 const router = express.Router();
