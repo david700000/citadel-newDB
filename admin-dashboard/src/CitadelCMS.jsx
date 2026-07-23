@@ -525,6 +525,9 @@ const UserDetailsModal = ({ user, onClose, onEdit }) => {
           </div>
         </div>
 
+        {user.department && <div style={{ marginBottom: 12, fontSize: 14, fontFamily: "'DM Sans', sans-serif" }}><span style={{ color: "#6b7280", width: 100, display: "inline-block" }}>Department:</span> <strong style={{ color: "#111827" }}>{user.department}</strong></div>}
+        {user.age_range && <div style={{ marginBottom: 12, fontSize: 14, fontFamily: "'DM Sans', sans-serif" }}><span style={{ color: "#6b7280", width: 100, display: "inline-block" }}>Age Range:</span> <strong style={{ color: "#111827" }}>{user.age_range}</strong></div>}
+
         {user.extra_fields && Object.keys(user.extra_fields).filter(k => !/birth|dob/i.test(k)).length > 0 && (
           <div style={{ borderTop: "1px solid #e5e7eb", paddingTop: 16 }}>
             <h5 style={{ margin: "0 0 12px", fontSize: 12, fontWeight: 700, color: "#6b7280", textTransform: "uppercase", letterSpacing: "0.05em", fontFamily: "'DM Sans', sans-serif" }}>Additional Information</h5>
@@ -2177,7 +2180,7 @@ const CMSEventRegistrations = ({ state, toast }) => {
           rows={tabList.map(r => [
             <div style={{ fontWeight: 700, color: "#0B1F3B", cursor: "pointer" }} onClick={() => setSelectedUser(r)}>{r.name}</div>,
             r.email,
-            r.created_at ? new Date(r.created_at).toLocaleDateString() : "—",
+            r.created_at ? new Date(r.created_at).toLocaleDateString('en-GB') : "—",
             (dbEvent && dbEvent.eventDays && dbEvent.eventDays.trim()) ? (
               selectedDayTab === "all" ? (
                 <span style={{ fontSize: 13, fontWeight: 600, color: "#475569" }}>
@@ -3250,7 +3253,7 @@ const CMSHome = ({ state, token, toast, setActive, setUserFilterTag }) => {
           <tr><th>Date</th><th>Type</th><th>Category</th><th>Amount (₦)</th><th>Status</th><th>Notes</th></tr>
           ${data.financialLogs.map(l => `
             <tr class="${l.voided ? 'voided' : ''}">
-              <td>${new Date(l.date).toLocaleDateString()}</td>
+              <td>${new Date(l.date).toLocaleDateString('en-GB')}</td>
               <td>${l.type.toUpperCase()}</td>
               <td>${l.category}</td>
               <td>${l.amount.toLocaleString()}</td>
@@ -3283,7 +3286,7 @@ const CMSHome = ({ state, token, toast, setActive, setUserFilterTag }) => {
               <td>${u.email}</td>
               <td>${u.phone || '-'}</td>
               <td>${u.tag}</td>
-              <td>${new Date(u.created_at).toLocaleDateString()}</td>
+              <td>${new Date(u.created_at).toLocaleDateString('en-GB')}</td>
             </tr>
           `).join('')}
         </table>
@@ -3359,7 +3362,7 @@ const CMSHome = ({ state, token, toast, setActive, setUserFilterTag }) => {
             }}>
               {u.fcm_tokens && u.fcm_tokens.length > 0 ? "● Active" : "○ Inactive"}
             </span>,
-            new Date(u.created_at).toLocaleDateString()
+            new Date(u.created_at).toLocaleDateString('en-GB')
           ])}
         />
       </div>
@@ -4445,7 +4448,7 @@ const MediaDashboard = ({ state, dispatch, toast, admin }) => {
           <Page title="First-Timers" subtitle={`${firstTimers.length} registered`}>
             <Table
               headers={["Name", "Email", "Phone", "Joined"]}
-              rows={firstTimers.map(u => [u.full_name, u.email, u.phone, new Date(u.created_at).toLocaleDateString()])}
+              rows={firstTimers.map(u => [u.full_name, u.email, u.phone, new Date(u.created_at).toLocaleDateString('en-GB')])}
             />
           </Page>
         )}
@@ -4912,7 +4915,7 @@ const printFinancialReport = (logs, toast) => {
       const typeColor = l.type === "income" ? "#047857" : "#b91c1c";
       rowsHtml += `
         <tr style="border-bottom: 1px solid #e5e7eb;">
-          <td style="padding: 10px; font-size: 13px; color: #4b5563;">${new Date(l.date).toLocaleDateString()}</td>
+          <td style="padding: 10px; font-size: 13px; color: #4b5563;">${new Date(l.date).toLocaleDateString('en-GB')}</td>
           <td style="padding: 10px; font-size: 13px; font-weight: 700; color: ${typeColor}; text-transform: uppercase;">${l.type}</td>
           <td style="padding: 10px; font-size: 13px; color: #111827;">${l.category}</td>
           <td style="padding: 10px; font-size: 13px; font-weight: 600; color: ${typeColor};">₦${l.amount.toLocaleString()}</td>
@@ -5394,7 +5397,7 @@ const LeaderDashboard = ({ state, dispatch, admin, toast }) => {
             <Table
               headers={["Name", "Email", "Phone", "Tag", "Department", "Joined"]}
               onRowClick={(i) => setViewUser(filteredUsers[i])}
-              rows={filteredUsers.map(u => [u.full_name, u.email, u.phone, <Badge label={u.tag} />, u.department || "—", new Date(u.created_at).toLocaleDateString()])}
+              rows={filteredUsers.map(u => [u.full_name, u.email, u.phone, <Badge label={u.tag} />, u.department || "—", new Date(u.created_at).toLocaleDateString('en-GB')])}
             />
           </Page>
         )}
@@ -5465,7 +5468,7 @@ const LeaderDashboard = ({ state, dispatch, admin, toast }) => {
                       </tr>
                       {m.transactions.map((l) => (
                         <tr key={l.id || l._id} style={{ borderBottom: "1px solid #f3f4f6" }}>
-                          <td style={tdStyle}>{new Date(l.date).toLocaleDateString()}</td>
+                          <td style={tdStyle}>{new Date(l.date).toLocaleDateString('en-GB')}</td>
                           <td style={tdStyle}><Badge label={l.type} /></td>
                           <td style={tdStyle}>{l.category}</td>
                           <td style={{ ...tdStyle, fontWeight: 700, color: l.type === "income" ? "#059669" : "#dc2626" }}>
@@ -5530,7 +5533,7 @@ const LeaderDashboard = ({ state, dispatch, admin, toast }) => {
                       <tr><td colSpan={7} style={{ padding: 30, textAlign: "center", color: "#9ca3af" }}>All caught up! No ledger items pending your acknowledgement.</td></tr>
                     ) : logs.filter(l => !l.acknowledgements || !l.acknowledgements.some(ack => ack.leader_id === admin.id)).map((l) => (
                       <tr key={l.id || l._id} style={{ borderBottom: "1px solid #f3f4f6" }}>
-                        <td style={tdStyle}>{new Date(l.date).toLocaleDateString()}</td>
+                        <td style={tdStyle}>{new Date(l.date).toLocaleDateString('en-GB')}</td>
                         <td style={tdStyle}><Badge label={l.type} /></td>
                         <td style={tdStyle}>{l.category}</td>
                         <td style={{ ...tdStyle, fontWeight: 700, color: l.type === "income" ? "#059669" : "#dc2626" }}>
@@ -5607,7 +5610,7 @@ const LeaderDashboard = ({ state, dispatch, admin, toast }) => {
                       <tr><td colSpan={6} style={{ padding: 30, textAlign: "center", color: "#9ca3af" }}>All caught up! No fund requests pending approval.</td></tr>
                     ) : fundRequests.filter(r => r.status === "pending").map((r) => (
                       <tr key={r.id || r._id} style={{ borderBottom: "1px solid #f3f4f6" }}>
-                        <td style={tdStyle}>{new Date(r.createdAt).toLocaleDateString()}</td>
+                        <td style={tdStyle}>{new Date(r.createdAt).toLocaleDateString('en-GB')}</td>
                         <td style={tdStyle}>
                           <div style={{ fontWeight: 600, color: "#0B1F3B" }}>{r.title}</div>
                           <div style={{ fontSize: 12, color: "#6b7280" }}>{r.description}</div>
@@ -5929,7 +5932,8 @@ const FinancialDashboard = ({ state, dispatch, toast, admin }) => {
   // Income states
   const [incomeCategory, setIncomeCategory] = useState("General");
   const [incomeSubCategory, setIncomeSubCategory] = useState("");
-  const [incomeAmount, setIncomeAmount] = useState("");
+  const [incomeCashAmount, setIncomeCashAmount] = useState("");
+  const [incomeTransferAmount, setIncomeTransferAmount] = useState("");
   const [incomeDescription, setIncomeDescription] = useState("");
   const [incomeDate, setIncomeDate] = useState(new Date().toISOString().split("T")[0]);
   const [loggingIncome, setLoggingIncome] = useState(false);
@@ -5937,7 +5941,8 @@ const FinancialDashboard = ({ state, dispatch, toast, admin }) => {
   // Expense states
   const [expenseCategory, setExpenseCategory] = useState("General");
   const [expenseSubCategory, setExpenseSubCategory] = useState("");
-  const [expenseAmount, setExpenseAmount] = useState("");
+  const [expenseCashAmount, setExpenseCashAmount] = useState("");
+  const [expenseTransferAmount, setExpenseTransferAmount] = useState("");
   const [expenseDescription, setExpenseDescription] = useState("");
   const [expenseDate, setExpenseDate] = useState(new Date().toISOString().split("T")[0]);
   const [loggingExpense, setLoggingExpense] = useState(false);
@@ -5965,7 +5970,8 @@ const FinancialDashboard = ({ state, dispatch, toast, admin }) => {
   // Edit modal state
   const [editModal, setEditModal] = useState(null); // holds the log object being edited
   const [editCategory, setEditCategory] = useState("");
-  const [editAmount, setEditAmount] = useState("");
+  const [editCashAmount, setEditCashAmount] = useState("");
+  const [editTransferAmount, setEditTransferAmount] = useState("");
   const [editDescription, setEditDescription] = useState("");
   const [editDate, setEditDate] = useState("");
   const [editingLog, setEditingLog] = useState(false);
@@ -5992,8 +5998,11 @@ const FinancialDashboard = ({ state, dispatch, toast, admin }) => {
   // Handlers
   const handleLogIncome = async (e) => {
     e.preventDefault();
-    if (!incomeCategory || !incomeAmount) return toast("Income section and amount required", "error");
-    if (isNaN(incomeAmount) || parseFloat(incomeAmount) <= 0) return toast("Amount must be a positive number", "error");
+    const cashAmt     = parseFloat(incomeCashAmount)     || 0;
+    const transferAmt = parseFloat(incomeTransferAmount) || 0;
+    const totalAmt    = cashAmt + transferAmt;
+    if (!incomeCategory) return toast("Income section is required", "error");
+    if (totalAmt <= 0) return toast("Enter at least a cash or transfer amount", "error");
 
     setLoggingIncome(true);
     try {
@@ -6006,7 +6015,8 @@ const FinancialDashboard = ({ state, dispatch, toast, admin }) => {
         body: JSON.stringify({
           type: "income",
           category: incomeCategory,
-          amount: parseFloat(incomeAmount),
+          cash_amount: cashAmt,
+          transfer_amount: transferAmt,
           description: incomeSubCategory ? `[${incomeSubCategory}] ${incomeDescription}`.trim() : incomeDescription,
           date: incomeDate
         })
@@ -6015,7 +6025,8 @@ const FinancialDashboard = ({ state, dispatch, toast, admin }) => {
         const data = await res.json();
         dispatch({ type: "SYNC_DATA", key: "financial", data: [data, ...logs] });
         setIncomeSubCategory("");
-        setIncomeAmount("");
+        setIncomeCashAmount("");
+        setIncomeTransferAmount("");
         setIncomeDescription("");
         toast("Income logged successfully & Leaders notified!", "success");
       } else {
@@ -6031,9 +6042,12 @@ const FinancialDashboard = ({ state, dispatch, toast, admin }) => {
 
   const handleLogExpense = async (e) => {
     e.preventDefault();
-    if (!expenseCategory || !expenseAmount) return toast("Expense section and amount required", "error");
-    if (isNaN(expenseAmount) || parseFloat(expenseAmount) <= 0) return toast("Amount must be a positive number", "error");
-    if (parseFloat(expenseAmount) > balance) return toast(`Insufficient balance — available: ₦${balance.toLocaleString()}`, "error");
+    const cashAmt     = parseFloat(expenseCashAmount)     || 0;
+    const transferAmt = parseFloat(expenseTransferAmount) || 0;
+    const totalAmt    = cashAmt + transferAmt;
+    if (!expenseCategory) return toast("Expense section is required", "error");
+    if (totalAmt <= 0) return toast("Enter at least a cash or transfer amount", "error");
+    if (totalAmt > balance) return toast(`Insufficient balance — available: ₦${balance.toLocaleString()}`, "error");
 
     setLoggingExpense(true);
     try {
@@ -6046,7 +6060,8 @@ const FinancialDashboard = ({ state, dispatch, toast, admin }) => {
         body: JSON.stringify({
           type: "expense",
           category: expenseCategory,
-          amount: parseFloat(expenseAmount),
+          cash_amount: cashAmt,
+          transfer_amount: transferAmt,
           description: expenseSubCategory ? `[${expenseSubCategory}] ${expenseDescription}`.trim() : expenseDescription,
           date: expenseDate
         })
@@ -6055,7 +6070,8 @@ const FinancialDashboard = ({ state, dispatch, toast, admin }) => {
         const data = await res.json();
         dispatch({ type: "SYNC_DATA", key: "financial", data: [data, ...logs] });
         setExpenseSubCategory("");
-        setExpenseAmount("");
+        setExpenseCashAmount("");
+        setExpenseTransferAmount("");
         setExpenseDescription("");
         toast("Expense logged successfully & Leaders notified!", "success");
       } else {
@@ -6110,26 +6126,32 @@ const FinancialDashboard = ({ state, dispatch, toast, admin }) => {
   const openEditModal = (log) => {
     setEditModal(log);
     setEditCategory(log.category);
-    // Store as string so comparison is consistent with what the user types
-    setEditAmount(String(log.amount));
+    // Pre-fill with existing breakdown if available, else split total evenly as cash
+    setEditCashAmount(log.cash_amount != null && log.cash_amount > 0 ? String(log.cash_amount) : String(log.amount));
+    setEditTransferAmount(log.transfer_amount != null && log.transfer_amount > 0 ? String(log.transfer_amount) : "");
     setEditDescription(log.description || "");
     setEditDate(new Date(log.date).toISOString().split("T")[0]);
   };
 
   const handleEditSubmit = async (e) => {
     e.preventDefault();
-    if (!editCategory || !editAmount) return toast("Section and amount required", "error");
-    if (isNaN(editAmount) || parseFloat(editAmount) <= 0) return toast("Amount must be a positive number", "error");
+    const newCashAmt     = parseFloat(editCashAmount)     || 0;
+    const newTransferAmt = parseFloat(editTransferAmount) || 0;
+    const newTotalAmt    = newCashAmt + newTransferAmt;
+    if (!editCategory) return toast("Section is required", "error");
+    if (newTotalAmt <= 0) return toast("Enter at least a cash or transfer amount", "error");
 
     // ── No-change guard: if nothing was actually modified, just close ──
     const origCategory = editModal.category;
-    const origAmount   = String(editModal.amount);
+    const origTotal    = editModal.amount;
     const origDesc     = editModal.description || "";
     const origDate     = new Date(editModal.date).toISOString().split("T")[0];
 
     const nothingChanged =
       editCategory === origCategory &&
-      parseFloat(editAmount) === parseFloat(origAmount) &&
+      newTotalAmt === origTotal &&
+      newCashAmt === (editModal.cash_amount || origTotal) &&
+      newTransferAmt === (editModal.transfer_amount || 0) &&
       editDescription === origDesc &&
       editDate === origDate;
 
@@ -6146,7 +6168,8 @@ const FinancialDashboard = ({ state, dispatch, toast, admin }) => {
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${state.session.token}` },
         body: JSON.stringify({
           category: editCategory,
-          amount: parseFloat(editAmount),
+          cash_amount: newCashAmt,
+          transfer_amount: newTransferAmt,
           description: editDescription,
           date: editDate
         })
@@ -6368,39 +6391,139 @@ const FinancialDashboard = ({ state, dispatch, toast, admin }) => {
                               </td>
                             </tr>
 
-                            {m.transactions.map(l => (
-                              <tr key={l.id || l._id} style={{ borderBottom: "1px solid #f3f4f6", textDecoration: l.voided ? "line-through" : "none", color: l.voided ? "#9ca3af" : "inherit" }}>
-                                <td style={{...tdStyle, color: l.voided ? "#9ca3af" : tdStyle.color}}>{new Date(l.date).toLocaleDateString()}</td>
-                                <td style={tdStyle}><Badge label={l.type} color={l.voided ? "#9ca3af" : undefined} /></td>
-                                <td style={{...tdStyle, color: l.voided ? "#9ca3af" : tdStyle.color}}>{l.category}</td>
-                                <td style={{ ...tdStyle, fontWeight: 700, color: l.voided ? "#9ca3af" : (l.type === "income" ? "#059669" : "#dc2626") }}>
-                                  {l.type === "income" ? "+" : "-"}₦{l.amount.toLocaleString()}
-                                </td>
-                                <td style={{ ...tdStyle, color: l.voided ? "#9ca3af" : tdStyle.color, maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                                  {l.voided && l.void_reason ? `[Voided: ${l.void_reason}] ` : ""}{l.description || "—"}
-                                </td>
-                                <td style={{...tdStyle, color: l.voided ? "#9ca3af" : tdStyle.color}}>{l.logged_by_name}</td>
-                                <td style={tdStyle}>
-                                  {l.voided ? <span style={{ fontSize: 11, color: "#9ca3af" }}>—</span> : (
-                                    l.acknowledgements && l.acknowledgements.length > 0
-                                      ? <span style={{ fontSize: 11, color: "#059669", fontWeight: 700 }}>✓ {l.acknowledgements.length}</span>
-                                      : <span style={{ fontSize: 11, color: "#f59e0b", fontWeight: 600 }}>Pending</span>
-                                  )}
-                                </td>
-                                <td style={tdStyle}>
-                                  {!l.voided && (
-                                    <div style={{display: "flex", gap: 8}}>
-                                      <button onClick={() => openEditModal(l)} style={{ background: "none", border: "none", color: "#3b82f6", cursor: "pointer", padding: 4 }}>
-                                        <Icon name="settings" size={14} />
-                                      </button>
-                                      <button onClick={() => openVoidModal("ledger", l.id || l._id)} style={{ background: "none", border: "none", color: "#ef4444", cursor: "pointer", padding: 4 }}>
-                                        <Icon name="trash" size={14} />
-                                      </button>
-                                    </div>
-                                  )}
-                                </td>
-                              </tr>
-                            ))}
+                            {(() => {
+                              // Build a lookup: oldLogId -> newLog (the replacement record)
+                              const editedFromMap = {};
+                              m.transactions.forEach(t => {
+                                if (t.edited_from) editedFromMap[t.edited_from] = t;
+                              });
+
+                              return m.transactions.map(l => {
+                                const lid = l.id || l._id;
+                                // If this is a replacement log (edited_from set), skip — rendered as part of its predecessor's pair
+                                if (l.edited_from) return null;
+
+                                const isEditedOld = l.voided && l.void_reason === "Edited";
+                                const pairNew = isEditedOld ? editedFromMap[lid] : null;
+
+                                if (isEditedOld && pairNew) {
+                                  // ── Before/After edit pair ──
+                                  const balBefore = l.type === "income" ? balance - pairNew.amount + l.amount : balance + pairNew.amount - l.amount;
+                                  const balAfter  = balance;
+                                  const amtColor  = l.type === "income" ? "#059669" : "#dc2626";
+                                  const fmtBreakdown = (rec) => {
+                                    if (!rec.cash_amount && !rec.transfer_amount) return null;
+                                    const parts = [];
+                                    if (rec.cash_amount > 0) parts.push(`💵 ₦${rec.cash_amount.toLocaleString()}`);
+                                    if (rec.transfer_amount > 0) parts.push(`🏦 ₦${rec.transfer_amount.toLocaleString()}`);
+                                    return parts.join(" + ");
+                                  };
+                                  return (
+                                    <Fragment key={lid}>
+                                      {/* BEFORE row */}
+                                      <tr style={{ background: "#fff7ed", borderLeft: "4px solid #f97316", borderBottom: "1px solid #fed7aa" }}>
+                                        <td style={{ ...tdStyle, color: "#9a3412", fontSize: 11 }}>{new Date(l.date).toLocaleDateString('en-GB')}</td>
+                                        <td style={tdStyle}><Badge label={l.type} color="#d97706" /></td>
+                                        <td style={{ ...tdStyle, color: "#9a3412" }}>{l.category}</td>
+                                        <td style={{ ...tdStyle, fontWeight: 700, color: "#9a3412" }}>
+                                          <span style={{ textDecoration: "line-through" }}>{l.type === "income" ? "+" : "-"}₦{l.amount.toLocaleString()}</span>
+                                          {fmtBreakdown(l) && <div style={{ fontSize: 10, color: "#b45309", fontWeight: 400, marginTop: 2 }}>{fmtBreakdown(l)}</div>}
+                                        </td>
+                                        <td style={{ ...tdStyle, color: "#9a3412", maxWidth: 140, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{l.description || "—"}</td>
+                                        <td style={{ ...tdStyle, color: "#9a3412" }}>{l.logged_by_name}</td>
+                                        <td colSpan={2} style={{ ...tdStyle, textAlign: "right" }}>
+                                          <span style={{ fontSize: 10, fontWeight: 700, background: "#f97316", color: "#fff", borderRadius: 4, padding: "2px 7px", letterSpacing: "0.04em" }}>BEFORE</span>
+                                        </td>
+                                      </tr>
+                                      {/* Balance connector row */}
+                                      <tr style={{ background: "#f0f9ff", borderBottom: "1px solid #bae6fd" }}>
+                                        <td colSpan={8} style={{ padding: "6px 18px", fontFamily: "'DM Sans',sans-serif", fontSize: 12 }}>
+                                          <span style={{ color: "#6b7280", marginRight: 8 }}>Edited by {l.voided_by_name} • {new Date(l.voided_at).toLocaleDateString('en-GB')}</span>
+                                          <span style={{ fontWeight: 700, color: "#0369a1" }}>
+                                            {(() => {
+                                              const oldEffect = l.type === "income" ? l.amount : -l.amount;
+                                              const newEffect = pairNew.type === "income" ? pairNew.amount : -pairNew.amount;
+                                              const balBefore = balance - newEffect + oldEffect;
+                                              return `Balance before: ₦${balBefore.toLocaleString()} → Balance after: ₦${balance.toLocaleString()}`;
+                                            })()}
+                                          </span>
+                                        </td>
+                                      </tr>
+                                      {/* AFTER row */}
+                                      <tr style={{ background: "#f0fdf4", borderLeft: "4px solid #22c55e", borderBottom: "2px solid #bbf7d0" }}>
+                                        <td style={{ ...tdStyle, color: "#14532d", fontSize: 11 }}>{new Date(pairNew.date).toLocaleDateString('en-GB')}</td>
+                                        <td style={tdStyle}><Badge label={pairNew.type} /></td>
+                                        <td style={{ ...tdStyle, color: "#14532d" }}>{pairNew.category}</td>
+                                        <td style={{ ...tdStyle, fontWeight: 700, color: amtColor }}>
+                                          {pairNew.type === "income" ? "+" : "-"}₦{pairNew.amount.toLocaleString()}
+                                          {fmtBreakdown(pairNew) && <div style={{ fontSize: 10, color: "#15803d", fontWeight: 400, marginTop: 2 }}>{fmtBreakdown(pairNew)}</div>}
+                                        </td>
+                                        <td style={{ ...tdStyle, color: "#14532d", maxWidth: 140, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{pairNew.description || "—"}</td>
+                                        <td style={{ ...tdStyle, color: "#14532d" }}>{pairNew.logged_by_name}</td>
+                                        <td style={tdStyle}>
+                                          {pairNew.acknowledgements && pairNew.acknowledgements.length > 0
+                                            ? <span style={{ fontSize: 11, color: "#059669", fontWeight: 700 }}>✓ {pairNew.acknowledgements.length}</span>
+                                            : <span style={{ fontSize: 11, color: "#f59e0b", fontWeight: 600 }}>Pending</span>}
+                                        </td>
+                                        <td style={tdStyle}>
+                                          <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                                            <span style={{ fontSize: 10, fontWeight: 700, background: "#22c55e", color: "#fff", borderRadius: 4, padding: "2px 7px", letterSpacing: "0.04em" }}>AFTER</span>
+                                            <button onClick={() => openEditModal(pairNew)} style={{ background: "none", border: "none", color: "#3b82f6", cursor: "pointer", padding: 4 }}>
+                                              <Icon name="settings" size={14} />
+                                            </button>
+                                            <button onClick={() => openVoidModal("ledger", pairNew.id || pairNew._id)} style={{ background: "none", border: "none", color: "#ef4444", cursor: "pointer", padding: 4 }}>
+                                              <Icon name="trash" size={14} />
+                                            </button>
+                                          </div>
+                                        </td>
+                                      </tr>
+                                    </Fragment>
+                                  );
+                                }
+
+                                // ── Normal row (active or plain voided) ──
+                                return (
+                                  <tr key={lid} style={{ borderBottom: "1px solid #f3f4f6", textDecoration: l.voided ? "line-through" : "none", color: l.voided ? "#9ca3af" : "inherit" }}>
+                                    <td style={{...tdStyle, color: l.voided ? "#9ca3af" : tdStyle.color}}>{new Date(l.date).toLocaleDateString('en-GB')}</td>
+                                    <td style={tdStyle}><Badge label={l.type} color={l.voided ? "#9ca3af" : undefined} /></td>
+                                    <td style={{...tdStyle, color: l.voided ? "#9ca3af" : tdStyle.color}}>{l.category}</td>
+                                    <td style={{ ...tdStyle, fontWeight: 700, color: l.voided ? "#9ca3af" : (l.type === "income" ? "#059669" : "#dc2626") }}>
+                                      {l.type === "income" ? "+" : "-"}₦{l.amount.toLocaleString()}
+                                      {(l.cash_amount > 0 || l.transfer_amount > 0) && !l.voided && (
+                                        <div style={{ fontSize: 10, color: "#6b7280", fontWeight: 400, marginTop: 2 }}>
+                                          {l.cash_amount > 0 && `💵₦${l.cash_amount.toLocaleString()}`}
+                                          {l.cash_amount > 0 && l.transfer_amount > 0 && " + "}
+                                          {l.transfer_amount > 0 && `🏦₦${l.transfer_amount.toLocaleString()}`}
+                                        </div>
+                                      )}
+                                    </td>
+                                    <td style={{ ...tdStyle, color: l.voided ? "#9ca3af" : tdStyle.color, maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                                      {l.voided && l.void_reason && l.void_reason !== "Edited" ? `[Voided: ${l.void_reason}] ` : ""}{l.description || "—"}
+                                    </td>
+                                    <td style={{...tdStyle, color: l.voided ? "#9ca3af" : tdStyle.color}}>{l.logged_by_name}</td>
+                                    <td style={tdStyle}>
+                                      {l.voided ? <span style={{ fontSize: 11, color: "#9ca3af" }}>—</span> : (
+                                        l.acknowledgements && l.acknowledgements.length > 0
+                                          ? <span style={{ fontSize: 11, color: "#059669", fontWeight: 700 }}>✓ {l.acknowledgements.length}</span>
+                                          : <span style={{ fontSize: 11, color: "#f59e0b", fontWeight: 600 }}>Pending</span>
+                                      )}
+                                    </td>
+                                    <td style={tdStyle}>
+                                      {!l.voided && (
+                                        <div style={{display: "flex", gap: 8}}>
+                                          <button onClick={() => openEditModal(l)} style={{ background: "none", border: "none", color: "#3b82f6", cursor: "pointer", padding: 4 }}>
+                                            <Icon name="settings" size={14} />
+                                          </button>
+                                          <button onClick={() => openVoidModal("ledger", lid)} style={{ background: "none", border: "none", color: "#ef4444", cursor: "pointer", padding: 4 }}>
+                                            <Icon name="trash" size={14} />
+                                          </button>
+                                        </div>
+                                      )}
+                                    </td>
+                                  </tr>
+                                );
+                              });
+                            })()}
 
                             <tr style={{ background: "#f8fafc", borderBottom: "3px solid #e5e7eb" }}>
                               <td colSpan={3} style={{ padding: "12px 18px", fontWeight: 600, color: "#4b5563", fontFamily: "'DM Sans',sans-serif", textAlign: "right" }}>Monthly Totals:</td>
@@ -6439,13 +6562,34 @@ const FinancialDashboard = ({ state, dispatch, toast, admin }) => {
                       </div>
                     </div>
 
+                    {/* Cash + Transfer breakdown */}
                     <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
-                      <div style={{ flex: "1 1 200px" }}>
-                        <Input label="Amount (₦)" value={incomeAmount} onChange={setIncomeAmount} type="text" placeholder="0.00" inputMode="decimal" required />
+                      <div style={{ flex: "1 1 140px" }}>
+                        <Input label="Cash Amount (₦)" value={incomeCashAmount} onChange={setIncomeCashAmount} type="text" placeholder="0.00" inputMode="decimal" />
                       </div>
-                      <div style={{ flex: "1 1 200px" }}>
-                        <Input label="Date" value={incomeDate} onChange={setIncomeDate} type="date" required style={{ minHeight: "43px" }} />
+                      <div style={{ flex: "1 1 140px" }}>
+                        <Input label="Transfer Amount (₦)" value={incomeTransferAmount} onChange={setIncomeTransferAmount} type="text" placeholder="0.00" inputMode="decimal" />
                       </div>
+                    </div>
+
+                    {/* Live total strip */}
+                    {(() => {
+                      const cash = parseFloat(incomeCashAmount) || 0;
+                      const xfer = parseFloat(incomeTransferAmount) || 0;
+                      const total = cash + xfer;
+                      return total > 0 ? (
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: "#ecfdf5", border: "1.5px solid #6ee7b7", borderRadius: 10, padding: "10px 16px", marginBottom: 16 }}>
+                          <div style={{ display: "flex", gap: 20 }}>
+                            {cash > 0 && <span style={{ fontSize: 12, color: "#065f46", fontFamily: "'DM Sans',sans-serif" }}>💵 Cash: <strong>₦{cash.toLocaleString()}</strong></span>}
+                            {xfer > 0 && <span style={{ fontSize: 12, color: "#065f46", fontFamily: "'DM Sans',sans-serif" }}>🏦 Transfer: <strong>₦{xfer.toLocaleString()}</strong></span>}
+                          </div>
+                          <span style={{ fontSize: 14, fontWeight: 800, color: "#059669", fontFamily: "'DM Sans',sans-serif" }}>Total: ₦{total.toLocaleString()}</span>
+                        </div>
+                      ) : null;
+                    })()}
+
+                    <div style={{ marginBottom: 0 }}>
+                      <Input label="Date" value={incomeDate} onChange={setIncomeDate} type="date" required style={{ minHeight: "43px" }} />
                     </div>
 
                     <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#374151", fontFamily: "'DM Sans',sans-serif", marginBottom: 8 }}>Notes (optional)</label>
@@ -6473,13 +6617,35 @@ const FinancialDashboard = ({ state, dispatch, toast, admin }) => {
                       </div>
                     </div>
 
+                    {/* Cash + Transfer breakdown */}
                     <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
-                      <div style={{ flex: "1 1 200px" }}>
-                        <Input label="Amount (₦)" value={expenseAmount} onChange={setExpenseAmount} type="text" placeholder="0.00" inputMode="decimal" required />
+                      <div style={{ flex: "1 1 140px" }}>
+                        <Input label="Cash Amount (₦)" value={expenseCashAmount} onChange={setExpenseCashAmount} type="text" placeholder="0.00" inputMode="decimal" />
                       </div>
-                      <div style={{ flex: "1 1 200px" }}>
-                        <Input label="Date" value={expenseDate} onChange={setExpenseDate} type="date" required style={{ minHeight: "43px" }} />
+                      <div style={{ flex: "1 1 140px" }}>
+                        <Input label="Transfer Amount (₦)" value={expenseTransferAmount} onChange={setExpenseTransferAmount} type="text" placeholder="0.00" inputMode="decimal" />
                       </div>
+                    </div>
+
+                    {/* Live total strip */}
+                    {(() => {
+                      const cash = parseFloat(expenseCashAmount) || 0;
+                      const xfer = parseFloat(expenseTransferAmount) || 0;
+                      const total = cash + xfer;
+                      const overBudget = total > balance;
+                      return total > 0 ? (
+                        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", background: overBudget ? "#fef2f2" : "#fef9f0", border: `1.5px solid ${overBudget ? "#fca5a5" : "#fde68a"}`, borderRadius: 10, padding: "10px 16px", marginBottom: 16 }}>
+                          <div style={{ display: "flex", gap: 20 }}>
+                            {cash > 0 && <span style={{ fontSize: 12, color: overBudget ? "#991b1b" : "#92400e", fontFamily: "'DM Sans',sans-serif" }}>💵 Cash: <strong>₦{cash.toLocaleString()}</strong></span>}
+                            {xfer > 0 && <span style={{ fontSize: 12, color: overBudget ? "#991b1b" : "#92400e", fontFamily: "'DM Sans',sans-serif" }}>🏦 Transfer: <strong>₦{xfer.toLocaleString()}</strong></span>}
+                          </div>
+                          <span style={{ fontSize: 14, fontWeight: 800, color: overBudget ? "#dc2626" : "#d97706", fontFamily: "'DM Sans',sans-serif" }}>{overBudget ? "⚠ Over budget! " : ""}Total: ₦{total.toLocaleString()}</span>
+                        </div>
+                      ) : null;
+                    })()}
+
+                    <div style={{ marginBottom: 0 }}>
+                      <Input label="Date" value={expenseDate} onChange={setExpenseDate} type="date" required style={{ minHeight: "43px" }} />
                     </div>
 
                     <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#374151", fontFamily: "'DM Sans',sans-serif", marginBottom: 8 }}>Notes (optional)</label>
@@ -6621,7 +6787,7 @@ const FinancialDashboard = ({ state, dispatch, toast, admin }) => {
                           <tr><td colSpan={6} style={{ padding: 40, textAlign: "center", color: "#9ca3af", fontFamily: "'DM Sans',sans-serif" }}>No fund requests submitted yet.</td></tr>
                         ) : fundRequests.map(r => (
                           <tr key={r.id || r._id} style={{ borderBottom: "1px solid #f3f4f6" }}>
-                            <td style={tdStyle}>{new Date(r.createdAt).toLocaleDateString()}</td>
+                            <td style={tdStyle}>{new Date(r.createdAt).toLocaleDateString('en-GB')}</td>
                             <td style={tdStyle}>
                               <div style={{ fontWeight: 700, color: "#0B1F3B", fontSize: 13 }}>{r.title}</div>
                               <div style={{ fontSize: 12, color: "#6b7280", marginTop: 2 }}>{r.description}</div>
@@ -6681,6 +6847,21 @@ const FinancialDashboard = ({ state, dispatch, toast, admin }) => {
 
       {!!editModal && (
       <Modal onClose={() => setEditModal(null)} title={`Edit ${editModal?.type === 'income' ? 'Income' : 'Expense'} Record`}>
+        {/* Original record snapshot */}
+        <div style={{ background: "#fff7ed", border: "1.5px solid #fed7aa", borderRadius: 10, padding: "12px 16px", marginBottom: 16 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: "#9a3412", fontFamily: "'DM Sans',sans-serif", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>Original Record (Before)</div>
+          <div style={{ display: "flex", gap: 20, flexWrap: "wrap" }}>
+            <span style={{ fontSize: 13, color: "#7c2d12", fontFamily: "'DM Sans',sans-serif" }}>📅 {new Date(editModal.date).toLocaleDateString('en-GB')}</span>
+            <span style={{ fontSize: 13, color: "#7c2d12", fontFamily: "'DM Sans',sans-serif" }}>📂 {editModal.category}</span>
+            <span style={{ fontSize: 13, fontWeight: 800, color: editModal.type === "income" ? "#059669" : "#dc2626", fontFamily: "'DM Sans',sans-serif" }}>
+              {editModal.type === "income" ? "+" : "-"}₦{editModal.amount.toLocaleString()}
+            </span>
+            {editModal.cash_amount > 0 && <span style={{ fontSize: 11, color: "#92400e", fontFamily: "'DM Sans',sans-serif" }}>💵 Cash: ₦{editModal.cash_amount.toLocaleString()}</span>}
+            {editModal.transfer_amount > 0 && <span style={{ fontSize: 11, color: "#92400e", fontFamily: "'DM Sans',sans-serif" }}>🏦 Transfer: ₦{editModal.transfer_amount.toLocaleString()}</span>}
+          </div>
+          {editModal.description && <div style={{ fontSize: 12, color: "#9a3412", marginTop: 6, fontFamily: "'DM Sans',sans-serif", fontStyle: "italic" }}>{editModal.description}</div>}
+        </div>
+
         <p style={{ fontSize: 13, color: "#4b5563", marginBottom: 16, fontFamily: "'DM Sans',sans-serif", lineHeight: 1.5 }}>
           Editing will void the current record and issue a new corrected record to preserve the audit trail.
         </p>
@@ -6701,9 +6882,46 @@ const FinancialDashboard = ({ state, dispatch, toast, admin }) => {
               })()}
             </select>
           </div>
-          <div style={{ marginBottom: 12 }}>
-            <Input label="Amount (₦)" value={editAmount} onChange={setEditAmount} type="text" inputMode="decimal" required />
+
+          {/* Cash + Transfer fields */}
+          <div style={{ display: "flex", gap: 12, marginBottom: 4 }}>
+            <div style={{ flex: 1 }}>
+              <Input label="Cash Amount (₦)" value={editCashAmount} onChange={setEditCashAmount} type="text" inputMode="decimal" placeholder="0.00" />
+            </div>
+            <div style={{ flex: 1 }}>
+              <Input label="Transfer Amount (₦)" value={editTransferAmount} onChange={setEditTransferAmount} type="text" inputMode="decimal" placeholder="0.00" />
+            </div>
           </div>
+
+          {/* Live total + balance preview */}
+          {(() => {
+            const newCash  = parseFloat(editCashAmount)     || 0;
+            const newXfer  = parseFloat(editTransferAmount) || 0;
+            const newTotal = newCash + newXfer;
+            const oldTotal = editModal.amount;
+            const diff = newTotal - oldTotal;
+            const balAfter = editModal.type === "income" ? balance + diff : balance - diff;
+            if (newTotal <= 0) return null;
+            return (
+              <div style={{ marginBottom: 12 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#f0f9ff", border: "1.5px solid #7dd3fc", borderRadius: 10, padding: "10px 14px", marginBottom: 8 }}>
+                  <div style={{ display: "flex", gap: 16 }}>
+                    {newCash > 0 && <span style={{ fontSize: 12, color: "#0369a1", fontFamily: "'DM Sans',sans-serif" }}>💵 ₦{newCash.toLocaleString()}</span>}
+                    {newXfer > 0 && <span style={{ fontSize: 12, color: "#0369a1", fontFamily: "'DM Sans',sans-serif" }}>🏦 ₦{newXfer.toLocaleString()}</span>}
+                  </div>
+                  <span style={{ fontWeight: 800, fontSize: 14, color: "#0369a1", fontFamily: "'DM Sans',sans-serif" }}>New Total: ₦{newTotal.toLocaleString()}</span>
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, fontSize: 12, fontFamily: "'DM Sans',sans-serif", color: "#6b7280", paddingLeft: 4 }}>
+                  <span>Balance:</span>
+                  <span style={{ fontWeight: 700, color: "#9a3412" }}>₦{balance.toLocaleString()}</span>
+                  <span>→</span>
+                  <span style={{ fontWeight: 700, color: balAfter >= 0 ? "#059669" : "#dc2626" }}>₦{balAfter.toLocaleString()}</span>
+                  {diff !== 0 && <span style={{ fontSize: 11, color: diff > 0 ? "#059669" : "#dc2626" }}>({diff > 0 ? "+" : ""}₦{diff.toLocaleString()})</span>}
+                </div>
+              </div>
+            );
+          })()}
+
           <div style={{ marginBottom: 12 }}>
             <Input label="Date" value={editDate} onChange={setEditDate} type="date" required />
           </div>
@@ -6843,7 +7061,7 @@ const CMSServiceReviews = ({ state, dispatch, toast, role }) => {
           const ratingColor = r.overall_average >= 8 ? "#047857" : r.overall_average >= 5 ? "#d97706" : "#b91c1c";
           return `
             <tr style="border-bottom: 1px solid #e5e7eb;">
-              <td style="padding: 10px; font-size: 13px;">${new Date(r.createdAt || r.date).toLocaleDateString()}</td>
+              <td style="padding: 10px; font-size: 13px;">${new Date(r.createdAt || r.date).toLocaleDateString('en-GB')}</td>
               <td style="padding: 10px; font-size: 13px;">${r.service_title || "—"}</td>
               <td style="padding: 10px; font-size: 13px; text-transform: capitalize;">${r.service_type ? r.service_type.replace(/_/g, ' ') : "—"}</td>
               <td style="padding: 10px; font-size: 13px;">${r.submitted_by_name || "—"}</td>
@@ -7022,7 +7240,7 @@ const CMSServiceReviews = ({ state, dispatch, toast, role }) => {
             rows={reviews.map(r => {
               const scoreColor = getScoreColor(r.overall_average);
               const columns = [
-                new Date(r.service_date).toLocaleDateString(),
+                new Date(r.service_date).toLocaleDateString('en-GB'),
                 <div style={{ fontWeight: 600, color: "#0B1F3B" }}>{r.full_name}</div>,
                 <Badge label={r.role} />,
                 serviceTypeLabel(r.service_type),
@@ -7101,7 +7319,7 @@ const CMSServiceReviews = ({ state, dispatch, toast, role }) => {
                 <div style={{ display: "flex", gap: 8, marginTop: 4, flexWrap: "wrap" }}>
                   <Badge label={selectedReview.role} />
                   <span style={{ fontSize: 12, color: "#6b7280", fontFamily: "'DM Sans', sans-serif" }}>
-                    Service: <strong>{serviceTypeLabel(selectedReview.service_type)}</strong> ({new Date(selectedReview.service_date).toLocaleDateString()})
+                    Service: <strong>{serviceTypeLabel(selectedReview.service_type)}</strong> ({new Date(selectedReview.service_date).toLocaleDateString('en-GB')})
                   </span>
                 </div>
               </div>

@@ -68,7 +68,7 @@ router.post("/register/first-timer", async (req, res) => {
 // ─── POST /users/register/member-worker ──────────────────────────────────────
 router.post("/register/member-worker", async (req, res) => {
   try {
-    const { full_name, email, phone, role_type, department, date_of_birth, fcm_token, ...extra } = req.body;
+    const { full_name, email, phone, role_type, department, birth_month, birth_day, age_range, fcm_token, ...extra } = req.body;
     if (!full_name) return res.status(400).json({ error: "Full name is required" });
     if (email && !isValidEmail(email)) return res.status(400).json({ error: "Please enter a valid email address" });
     if (phone && !isValidPhone(phone)) return res.status(400).json({ error: "Please enter a valid phone number" });
@@ -80,7 +80,9 @@ router.post("/register/member-worker", async (req, res) => {
       phone: phone || undefined,
       tag,
       department: tag === "worker" ? department : undefined,
-      date_of_birth: date_of_birth ? new Date(date_of_birth) : undefined,
+      birth_month: birth_month ? parseInt(birth_month, 10) : undefined,
+      birth_day: birth_day ? parseInt(birth_day, 10) : undefined,
+      age_range: age_range || undefined,
       extra_fields: extra || {},
       fcm_tokens: fcm_token ? [fcm_token] : []
     });
@@ -175,18 +177,21 @@ router.get("/:id", requireAuth, async (req, res) => {
   }
 });
 
-// ─── PATCH /users/:id ────────────────────────────────────────────────────────
-router.patch("/:id", requireCMS, async (req, res) => {
+// ─── PUT /users/:id ──────────────────────────────────────────────────────────
+router.put("/:id", requireRole("pastor"), async (req, res) => {
   try {
-    const { full_name, email, phone, tag, department, date_of_birth, extra_fields } = req.body;
-    
-    const update = {};
-    if (full_name) update.full_name = full_name.trim();
-    if (email) update.email = email.toLowerCase().trim();
+    const { full_name, email, phone, tag, department, birth_month, birth_day, age_range, extra_fields } = req.body;
+
+    let update = {};
+    if (full_name) update.full_name = full_name;
+    if (email !== undefined) update.email = email;
     if (phone) update.phone = phone;
     if (tag) update.tag = tag;
     if (department !== undefined) update.department = department;
-    if (date_of_birth !== undefined) update.date_of_birth = date_of_birth ? new Date(date_of_birth) : null;
+    
+    if (birth_month !== undefined) update.birth_month = birth_month ? parseInt(birth_month, 10) : null;
+    if (birth_day !== undefined) update.birth_day = birth_day ? parseInt(birth_day, 10) : null;
+    if (age_range !== undefined) update.age_range = age_range || null;
     if (extra_fields) update.extra_fields = extra_fields;
 
     const user = await User.findByIdAndUpdate(

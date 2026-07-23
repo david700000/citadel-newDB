@@ -71,20 +71,28 @@ router.get("/all-logs", requireCMS, async (req, res) => {
 // POST /financial - Log a transaction (finance admin)
 router.post("/", requireRole("finance_admin"), async (req, res) => {
   try {
-    const { type, category, amount, description, date } = req.body;
-    if (!type || !category || !amount) {
-      return res.status(400).json({ error: "Type, category, and amount are required" });
+    const { type, category, cash_amount, transfer_amount, description, date } = req.body;
+
+    const cashAmt     = parseFloat(cash_amount)     || 0;
+    const transferAmt = parseFloat(transfer_amount) || 0;
+    const totalAmount = cashAmt + transferAmt;
+
+    if (!type || !category) {
+      return res.status(400).json({ error: "Type and category are required" });
     }
     if (!["income", "expense"].includes(type)) {
       return res.status(400).json({ error: "Type must be income or expense" });
     }
-    if (isNaN(amount) || parseFloat(amount) <= 0) {
-      return res.status(400).json({ error: "Amount must be a positive number" });
+    if (cashAmt < 0 || transferAmt < 0) {
+      return res.status(400).json({ error: "Cash and transfer amounts cannot be negative" });
+    }
+    if (totalAmount <= 0) {
+      return res.status(400).json({ error: "At least one of cash amount or transfer amount must be a positive number" });
     }
 
     if (type === "expense") {
       const netBalance = await getCurrentNetBalance();
-      if (parseFloat(amount) > netBalance) {
+      if (totalAmount > netBalance) {
         return res.status(400).json({ error: `Insufficient funds. Current net balance is ₦${netBalance.toLocaleString()}` });
       }
     }
@@ -92,7 +100,9 @@ router.post("/", requireRole("finance_admin"), async (req, res) => {
     const log = await FinancialLog.create({
       type,
       category,
-      amount: parseFloat(amount),
+      amount: totalAmount,
+      cash_amount: cashAmt,
+      transfer_amount: transferAmt,
       description: description || "",
       date: date ? new Date(date) : new Date(),
       logged_by: req.user.id,
@@ -182,13 +192,20 @@ router.patch("/:id/void", requireRole("finance_admin"), async (req, res) => {
 // Edits are handled by voiding the old record and creating a new one to preserve audit trail
 router.put("/:id", requireRole("finance_admin"), async (req, res) => {
   try {
-    const { category, amount, description, date } = req.body;
-    
-    if (!category || !amount) {
-      return res.status(400).json({ error: "Category and amount are required" });
+    const { category, cash_amount, transfer_amount, description, date } = req.body;
+
+    const cashAmt     = parseFloat(cash_amount)     || 0;
+    const transferAmt = parseFloat(transfer_amount) || 0;
+    const totalAmount = cashAmt + transferAmt;
+
+    if (!category) {
+      return res.status(400).json({ error: "Category is required" });
     }
-    if (isNaN(amount) || parseFloat(amount) <= 0) {
-      return res.status(400).json({ error: "Amount must be a positive number" });
+    if (cashAmt < 0 || transferAmt < 0) {
+      return res.status(400).json({ error: "Cash and transfer amounts cannot be negative" });
+    }
+    if (totalAmount <= 0) {
+      return res.status(400).json({ error: "At least one of cash amount or transfer amount must be a positive number" });
     }
 
     const oldLog = await FinancialLog.findById(req.params.id);
@@ -199,7 +216,7 @@ router.put("/:id", requireRole("finance_admin"), async (req, res) => {
     if (oldLog.type === "expense") {
       const netBalance = await getCurrentNetBalance();
       // Add back the old amount, subtract new amount
-      const adjustedBalance = netBalance + oldLog.amount - parseFloat(amount);
+      const adjustedBalance = netBalance + oldLog.amount - totalAmount;
       if (adjustedBalance < 0) {
         return res.status(400).json({ error: `Insufficient funds for this edit. Adjusted balance would be negative.` });
       }
@@ -213,16 +230,19 @@ router.put("/:id", requireRole("finance_admin"), async (req, res) => {
     oldLog.voided_at = new Date();
     await oldLog.save();
 
-    // 2. Create the new record
+    // 2. Create the new record, linking back to the old one via edited_from
     const newLog = await FinancialLog.create({
       type: oldLog.type,
       category,
-      amount: parseFloat(amount),
+      amount: totalAmount,
+      cash_amount: cashAmt,
+      transfer_amount: transferAmt,
       description: description || "",
       date: date ? new Date(date) : new Date(),
       logged_by: req.user.id,
       logged_by_name: req.user.name || "finance admin",
-      acknowledgements: [] // Reset acknowledgements since it's fundamentally a new amount/category
+      acknowledgements: [], // Reset acknowledgements since it's fundamentally a new amount/category
+      edited_from: String(oldLog._id)  // Link to the original voided record for audit trail pairing
     });
 
     res.json({ success: true, message: "Record edited successfully", oldLog, newLog });
@@ -230,6 +250,7 @@ router.put("/:id", requireRole("finance_admin"), async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
 
 
 

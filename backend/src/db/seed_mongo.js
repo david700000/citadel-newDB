@@ -21,7 +21,9 @@ async function seed() {
             { form_type: 'member_worker', field_key: 'phone', label: 'Phone Number', type: 'text', options: [], required: true, worker_only: false, sort_order: 3 },
             { form_type: 'member_worker', field_key: 'role_type', label: 'I am a', type: 'dropdown', options: ["Member", "Worker"], required: true, worker_only: false, sort_order: 4 },
             { form_type: 'member_worker', field_key: 'department', label: 'Department', type: 'dropdown', options: ["Media", "Ushering", "Security", "Choir"], required: true, worker_only: true, sort_order: 5 },
-            { form_type: 'member_worker', field_key: 'date_of_birth', label: 'Date of Birth', type: 'date', options: [], required: true, worker_only: false, sort_order: 6 }
+            { form_type: 'member_worker', field_key: 'birth_month', label: 'Birth Month', type: 'dropdown', options: ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"], required: true, worker_only: false, sort_order: 6 },
+            { form_type: 'member_worker', field_key: 'birth_day', label: 'Birth Day', type: 'dropdown', options: Array.from({length: 31}, (_, i) => String(i + 1)), required: true, worker_only: false, sort_order: 7 },
+            { form_type: 'member_worker', field_key: 'age_range', label: 'Age Range', type: 'dropdown', options: ["Under 18", "18-24", "25-34", "35-44", "45-54", "55-64", "65+"], required: true, worker_only: false, sort_order: 8 }
         ];
 
         for (const f of fields) {

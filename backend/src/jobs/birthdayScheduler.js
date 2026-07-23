@@ -41,27 +41,16 @@ async function fireBirthdayGreetings({ checkDate = null } = {}) {
 
     console.log(`[Birthday] Checking today's birthdays: ${todayMonth}/${todayDay}/${currentYear}`);
 
-    // Only look at ungreeted members/workers
-    const candidates = await User.find({
+    // Only look at ungreeted members/workers whose birthday is today
+    const birthdayUsers = await User.find({
       tag: { $in: ["member", "worker"] },
+      birth_month: todayMonth,
+      birth_day: todayDay,
       $or: [
         { birthday_greeted_year: { $exists: false } },
         { birthday_greeted_year: { $ne: currentYear } }
       ]
-    }).select("full_name email phone fcm_tokens date_of_birth extra_fields birthday_greeted_year");
-
-    // Filter to only today's birthdays
-    const birthdayUsers = candidates.filter((u) => {
-      let dob = u.date_of_birth;
-      if (!dob && u.extra_fields) {
-        const ef = u.extra_fields instanceof Map ? Object.fromEntries(u.extra_fields) : u.extra_fields;
-        const dobKey = Object.keys(ef || {}).find(k => /birth|dob/i.test(k));
-        if (dobKey && ef[dobKey]) dob = new Date(ef[dobKey]);
-      }
-      if (!dob) return false;
-      const d = new Date(dob);
-      return d.getMonth() + 1 === todayMonth && d.getDate() === todayDay;
-    });
+    }).select("full_name email phone fcm_tokens birth_month birth_day extra_fields birthday_greeted_year");
 
     if (birthdayUsers.length === 0) {
       console.log("[Birthday] No birthdays today.");
