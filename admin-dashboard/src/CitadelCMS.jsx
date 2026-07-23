@@ -921,6 +921,7 @@ const LoginPage = ({ onLogin, toast }) => {
 const RegisterPage = ({ formType, formFields, onSubmit, onBack }) => {
   const [values, setValues] = useState({});
   const [submitting, setSubmitting] = useState(false);
+  const [fcmToken, setFcmToken] = useState(null);
   const [permission, setPermission] = useState(() => {
     if (typeof window === "undefined") return "default";
     if (!("Notification" in window)) return "default";
@@ -938,6 +939,12 @@ const RegisterPage = ({ formType, formFields, onSubmit, onBack }) => {
       if (typeof window !== "undefined" && "Notification" in window) {
         const p = await Notification.requestPermission();
         setPermission(p);
+        if (p === 'granted') {
+          // Start fetching token in the background immediately so it's ready by submit time
+          requestForToken().then(token => {
+            if (token) setFcmToken(token);
+          }).catch(console.warn);
+        }
       } else {
         alert("Push notifications are not supported in this browser. Proceeding to registration.");
         setPermission("granted");
@@ -953,17 +960,19 @@ const RegisterPage = ({ formType, formFields, onSubmit, onBack }) => {
     if (missing.length) return;
 
     setSubmitting(true);
-    // Attempt to get FCM Token immediately without blocking mobile users if it hangs
-    let fcmToken = null;
-    try {
-      const timeoutPromise = new Promise((resolve) => setTimeout(() => resolve(null), 2500));
-      fcmToken = await Promise.race([requestForToken(), timeoutPromise]);
-    } catch (err) {
-      console.warn("Push registration timed out or skipped:", err);
+    // Use the early token if we have it, else try one last time with a generous timeout
+    let finalToken = fcmToken;
+    if (!finalToken && permission === 'granted') {
+      try {
+        const timeoutPromise = new Promise((resolve) => setTimeout(() => resolve(null), 8000));
+        finalToken = await Promise.race([requestForToken(), timeoutPromise]);
+      } catch (err) {
+        console.warn("Push registration timed out or skipped:", err);
+      }
     }
 
     try {
-      await onSubmit({ ...values, fcm_token: fcmToken }, formType);
+      await onSubmit({ ...values, fcm_token: finalToken }, formType);
     } finally {
       setSubmitting(false);
     }
