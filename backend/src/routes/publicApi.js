@@ -11,6 +11,37 @@ const router = express.Router();
 // ─── ALIAS FOR FORM FIELDS (Frontend uses /api/form-fields) ───
 router.use("/form-fields", formFieldsRouter);
 
+// ─── TEMPORARY MIGRATION ENDPOINT ───
+router.get("/migrate-fields", async (req, res) => {
+    try {
+        const FormField = require("../models/FormField");
+        await FormField.deleteMany({ field_key: "date_of_birth" });
+        await FormField.deleteMany({ field_key: "select_date" });
+
+        const addIfMissing = async (field) => {
+            const exists = await FormField.findOne({ form_type: field.form_type, field_key: field.field_key });
+            if (!exists) await FormField.create(field);
+        };
+
+        const newFields = [
+            { form_type: 'member_worker', field_key: 'birth_month', label: 'Birth Month', type: 'dropdown', options: ['1','2','3','4','5','6','7','8','9','10','11','12'], required: true, sort_order: 10, worker_only: false, active: true },
+            { form_type: 'member_worker', field_key: 'birth_day', label: 'Birth Day', type: 'dropdown', options: Array.from({length: 31}, (_, i) => String(i + 1)), required: true, sort_order: 11, worker_only: false, active: true },
+            { form_type: 'member_worker', field_key: 'age_range', label: 'Age Range', type: 'dropdown', options: ['Under 18', '18-24', '25-34', '35-44', '45-54', '55-64', '65+'], required: true, sort_order: 12, worker_only: false, active: true },
+            { form_type: 'first_timer', field_key: 'address', label: 'Residential Address', type: 'text', options: [], required: true, sort_order: 5, worker_only: false, active: true },
+            { form_type: 'member_worker', field_key: 'address', label: 'Residential Address', type: 'text', options: [], required: true, sort_order: 5, worker_only: false, active: true }
+        ];
+
+        for (const f of newFields) {
+            await addIfMissing(f);
+        }
+
+        res.json({ success: true, message: "Migration complete!" });
+    } catch (err) {
+        console.error("Migration error:", err);
+        res.status(500).json({ error: err.message });
+    }
+});
+
 // ─── SITE DATA: GET ───
 router.get("/data", async (req, res) => {
     try {
