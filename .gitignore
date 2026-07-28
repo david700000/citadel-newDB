@@ -7,3 +7,4 @@ scratch/
 check_db.js
 backend/check_db.js
 .env.example
+frontend/
