@@ -495,14 +495,14 @@ const UserDetailsModal = ({ user, onClose, onEdit }) => {
                     .find(([k]) => /birth|dob/i.test(k))?.[1]);
                 if (!dobVal) return "Not provided";
                 const d = new Date(dobVal);
-                return isNaN(d.getTime()) ? String(dobVal) : d.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+                return isNaN(d.getTime()) ? String(dobVal) : d.toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
               })()}
             </span>
           </div>
           <div>
             <span style={{ display: "block", fontSize: 11, fontWeight: 600, color: "#6b7280", fontFamily: "'DM Sans', sans-serif", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4 }}>Registered Date</span>
             <span style={{ display: "block", fontSize: 14, fontWeight: 500, color: "#111827", fontFamily: "'DM Sans', sans-serif" }}>
-              {user.created_at ? new Date(user.created_at).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }) : "—"}
+              {user.created_at ? new Date(user.created_at).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" }) : "—"}
             </span>
           </div>
           <div style={{ gridColumn: "span 2" }}>
@@ -704,7 +704,7 @@ const AttendanceDetailsModal = ({ eventLog, users, onClose, onEdit }) => {
       <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
         <div style={{ borderBottom: "1px solid #e5e7eb", paddingBottom: 12 }}>
           <div style={{ fontSize: 14, color: "#6b7280", fontFamily: "'DM Sans', sans-serif" }}>
-            Date: <strong>{new Date(eventLog.date).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })}</strong>
+            Date: <strong>{new Date(eventLog.date).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" })}</strong>
           </div>
           <div style={{ display: "flex", gap: 16, marginTop: 8 }}>
             <span style={{ fontSize: 13, color: "#047857", fontWeight: 600, fontFamily: "'DM Sans', sans-serif" }}>● Present: {eventLog.present}</span>
@@ -1915,7 +1915,7 @@ const CMSEventRegistrations = ({ state, toast }) => {
     `).join("");
 
     const churchName = import.meta.env.VITE_CHURCH_NAME || "Church";
-    const dateStr = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+    const dateStr = new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
 
     const printContent = `
       <!DOCTYPE html>
@@ -3456,7 +3456,7 @@ const CMSUsers = ({ state, dispatch, toast, initialFilter = "all" }) => {
     `).join("");
 
     const churchName = import.meta.env.VITE_CHURCH_NAME || "Church";
-    const dateStr = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+    const dateStr = new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
 
     const printContent = `
       <!DOCTYPE html>
@@ -4159,7 +4159,7 @@ const CMSAttendance = ({ state }) => {
         onRowClick={(i) => setSelectedLog(groupedLogs[i])}
         rows={groupedLogs.map(g => [
           g.event_name,
-          new Date(g.date).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }),
+          new Date(g.date).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" }),
           g.present,
           g.absent,
           g.present + g.absent
@@ -4781,7 +4781,7 @@ const UsherDashboard = ({ state, dispatch, toast, admin }) => {
               onRowClick={(i) => setSelectedLog(groupedLogs[i])}
               rows={groupedLogs.map(g => [
                 g.event_name,
-                new Date(g.date).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }),
+                new Date(g.date).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" }),
                 <span style={{ color: "#047857", fontWeight: 700 }}>{g.present}</span>,
                 <span style={{ color: "#b91c1c", fontWeight: 700 }}>{g.absent}</span>,
                 g.present + g.absent
@@ -4908,7 +4908,7 @@ const printFinancialReport = (logs, toast) => {
   }
 
   const churchName = import.meta.env.VITE_CHURCH_NAME || "Church";
-  const dateStr = new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+  const dateStr = new Date().toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" });
 
   let rowsHtml = "";
   monthlyLedger.forEach(m => {
@@ -5417,7 +5417,7 @@ const LeaderDashboard = ({ state, dispatch, admin, toast }) => {
               onRowClick={(i) => setSelectedLog(groupedLogs[i])}
               rows={groupedLogs.map(g => [
                 g.event_name,
-                new Date(g.date).toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" }),
+                new Date(g.date).toLocaleDateString("en-GB", { day: "numeric", month: "long", year: "numeric" }),
                 <span style={{ color: "#047857", fontWeight: 700 }}>{g.present}</span>,
                 <span style={{ color: "#b91c1c", fontWeight: 700 }}>{g.absent}</span>,
                 g.present + g.absent

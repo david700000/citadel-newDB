@@ -4,7 +4,6 @@
   "description": "Citadel of Truth and Mercy Assembly Website",
   "main": "backend/src/index.js",
   "scripts": {
-    "postinstall": "npm install --prefix backend",
     "start": "node backend/src/index.js",
     "dev": "node backend/src/index.js",
     "build": "npm install --prefix admin-dashboard && npm run build --prefix admin-dashboard",
