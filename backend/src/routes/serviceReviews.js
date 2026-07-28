@@ -58,6 +58,13 @@ router.post("/", async (req, res) => {
       improvement_suggestions,
     } = req.body;
 
+    if (!highlight || !highlight.trim()) {
+      return res.status(400).json({ error: "Service highlight comment is required." });
+    }
+    if (!improvement_suggestions || !improvement_suggestions.trim()) {
+      return res.status(400).json({ error: "Areas of improvement comment is required." });
+    }
+
     // Validate required string fields
     const cleanName = sanitizeStr(full_name, 120) || "Anonymous";
 

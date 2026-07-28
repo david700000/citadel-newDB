@@ -489,7 +489,10 @@ const UserDetailsModal = ({ user, onClose, onEdit }) => {
             <span style={{ display: "block", fontSize: 11, fontWeight: 600, color: "#6b7280", fontFamily: "'DM Sans', sans-serif", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 4 }}>Date of Birth</span>
             <span style={{ display: "block", fontSize: 14, fontWeight: 500, color: "#111827", fontFamily: "'DM Sans', sans-serif" }}>
               {(() => {
-                // Look in top-level field first, then search extra_fields for any DOB-like key
+                if (user.birth_month && user.birth_day) {
+                  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+                  return `${user.birth_day} ${months[user.birth_month - 1] || user.birth_month}`;
+                }
                 const dobVal = user.date_of_birth ||
                   (user.extra_fields && Object.entries(user.extra_fields)
                     .find(([k]) => /birth|dob/i.test(k))?.[1]);
@@ -7651,6 +7654,8 @@ const ServiceReviewFormPage = ({ onBack, inline = false, onSuccess = null }) => 
     if (!form.service_type) { setError("Please select the service type."); return; }
     const unrated = SERVICE_REVIEW_SECTIONS.flatMap(s => s.fields).filter(f => !form[f.field]);
     if (unrated.length > 0) { setError(`Please rate all ${totalFields} items. ${unrated.length} remaining.`); return; }
+    if (!form.highlight || !form.highlight.trim()) { setError("Please provide a service highlight."); return; }
+    if (!form.improvement_suggestions || !form.improvement_suggestions.trim()) { setError("Please provide areas of improvement."); return; }
     setError("");
     setSubmitting(true);
     try {
@@ -7905,9 +7910,9 @@ const ServiceReviewFormPage = ({ onBack, inline = false, onSuccess = null }) => 
             boxShadow: "0 1px 3px rgba(0,0,0,0.05)",
             animation: "fadeUp .4s .3s ease both",
           }}>
-            <h3 style={{ margin: "0 0 20px", fontSize: 15, fontWeight: 700, color: "#0B1F3B", borderBottom: "1px solid #f3f4f6", paddingBottom: 10 }}>Comments (Optional)</h3>
+            <h3 style={{ margin: "0 0 20px", fontSize: 15, fontWeight: 700, color: "#0B1F3B", borderBottom: "1px solid #f3f4f6", paddingBottom: 10 }}>Comments</h3>
             <div style={{ marginBottom: 16 }}>
-              <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 6 }}>Service Highlight</label>
+              <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 6 }}>Service Highlight <span style={{ color: "#ef4444" }}>*</span></label>
               <textarea
                 value={form.highlight}
                 onChange={e => setField("highlight", e.target.value)}
@@ -7921,7 +7926,7 @@ const ServiceReviewFormPage = ({ onBack, inline = false, onSuccess = null }) => 
               />
             </div>
             <div>
-              <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 6 }}>Areas of Improvement</label>
+              <label style={{ display: "block", fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 6 }}>Areas of Improvement <span style={{ color: "#ef4444" }}>*</span></label>
               <textarea
                 value={form.improvement_suggestions}
                 onChange={e => setField("improvement_suggestions", e.target.value)}
