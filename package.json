@@ -2,10 +2,11 @@
   "name": "citadel-church-website",
   "version": "1.0.0",
   "description": "Citadel of Truth and Mercy Assembly Website",
-  "main": "backend/server.js",
+  "main": "backend/src/index.js",
   "scripts": {
-    "start": "node backend/server.js",
-    "dev": "node backend/server.js",
+    "postinstall": "npm install --prefix backend",
+    "start": "node backend/src/index.js",
+    "dev": "node backend/src/index.js",
     "build": "npm install --prefix admin-dashboard && npm run build --prefix admin-dashboard",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
