@@ -2,7 +2,7 @@
   // ─── CONFIGURATION ───
   const API_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
     ? 'http://localhost:3000' 
-    : 'https://citadel-newdb.onrender.com'; 
+    : 'https://citadel-newdb-516a.onrender.com'; 
 
   // ─── WARM-UP PING (Render free tier cold-start) ───
   fetch(`${API_URL}/health`, { method: 'GET', cache: 'no-store' }).catch(() => {});

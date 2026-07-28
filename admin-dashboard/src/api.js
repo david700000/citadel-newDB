@@ -1,7 +1,7 @@
 const BASE_URL = import.meta.env.VITE_BACKEND_URL || 
   (typeof window !== 'undefined' && (window.location.port === '3000' || window.location.hostname.includes('citadel.local') || window.location.hostname.includes('onrender.com')) 
     ? '' 
-    : (window.location.hostname.includes('netlify.app') ? 'https://citadel-newdb.onrender.com' : 'http://localhost:3000'));
+    : (window.location.hostname.includes('netlify.app') ? 'https://citadel-newdb-516a.onrender.com' : 'http://localhost:3000'));
 
 export const API_URLS = {
   BASE: BASE_URL,

@@ -3,7 +3,7 @@
   // Update this URL with your Render backend URL once deployed
   const API_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
     ? 'http://localhost:3000' 
-    : 'https://citadel-newdb.onrender.com'; 
+    : 'https://citadel-newdb-516a.onrender.com'; 
 
   // ─── WARM-UP PING (Render free tier cold-start) ───
   // Fire immediately in parallel so the server wakes while the page renders.
@@ -21,6 +21,11 @@
   // Preloader is hidden once critical above-the-fold images load (not all images)
   const preloaderStart = Date.now();
   const MIN_PRELOADER_MS = 400; // minimum display time (reduced from 1000ms)
+
+  // ─── HARD PRELOADER TIMEOUT ───
+  // If the API never responds (server change, CORS, cold-start hang), force-hide
+  // the preloader after 7 seconds so users are never permanently stuck.
+  const preloaderMaxTimer = setTimeout(hidePreloader, 7000);
 
   // ─── NAV SCROLL EFFECT ───
   const nav = document.getElementById('mainNav');
@@ -134,7 +139,11 @@
   // ─── DYNAMIC DATA FETCHING ───
   async function loadData() {
     try {
-      const response = await fetch(`${API_URL}/api/data`);
+      // 10-second timeout per fetch so a hung connection doesn't block the preloader forever
+      const controller = new AbortController();
+      const fetchTimer = setTimeout(() => controller.abort(), 10000);
+      const response = await fetch(`${API_URL}/api/data`, { signal: controller.signal });
+      clearTimeout(fetchTimer);
       if (!response.ok) throw new Error('Data fetch failed');
       const data = await response.json();
 
@@ -344,6 +353,9 @@
 
       await Promise.all([...heroPromises, ...imgPromises]);
 
+      // Clear the hard max-timer since we finished successfully
+      clearTimeout(preloaderMaxTimer);
+
       // Minimum display time so preloader doesn't flash away instantly
       const elapsed = Date.now() - preloaderStart;
       const delay   = Math.max(0, MIN_PRELOADER_MS - elapsed);
@@ -352,6 +364,7 @@
     } catch (err) {
       console.error(err);
       // Hide preloader even on error so site doesn't stay stuck
+      clearTimeout(preloaderMaxTimer);
       const elapsed = Date.now() - preloaderStart;
       setTimeout(hidePreloader, Math.max(0, 600 - elapsed));
     }

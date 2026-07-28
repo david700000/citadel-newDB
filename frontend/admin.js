@@ -2,7 +2,7 @@
   // ─── CONFIG ───
   const API_URL = (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
     ? 'http://localhost:3000'
-    : 'https://citadel-newdb.onrender.com';
+    : 'https://citadel-newdb-516a.onrender.com';
 
   // ─── STATE ───
   let authToken     = localStorage.getItem('adminToken');

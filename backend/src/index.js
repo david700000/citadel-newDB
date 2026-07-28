@@ -17,6 +17,7 @@ const financialRouter = require("./routes/financial");
 const reportsRouter = require("./routes/reports");
 const databaseRouter = require("./routes/database");
 const serviceReviewsRouter = require("./routes/serviceReviews");
+const publicApiRouter = require("./routes/publicApi");
 
 // Scheduler
 const { initScheduler } = require("./jobs/reminderScheduler");
@@ -71,6 +72,7 @@ app.use("/financial",       financialRouter);
 app.use("/reports",         reportsRouter);
 app.use("/database",        databaseRouter);
 app.use("/service-reviews", serviceReviewsRouter);
+app.use("/api",             publicApiRouter);
 
 // ─── ERROR HANDLER ────────────────────────────────────────────────────────────
 app.use((err, req, res, next) => {
