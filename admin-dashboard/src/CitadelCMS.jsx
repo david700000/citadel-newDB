@@ -3856,9 +3856,9 @@ const CMSForms = ({ state, dispatch, toast }) => {
   const isEventFieldsActive = activeTab === "event_fields";
   const canAddField = formType !== "event_design" && formType !== "event_fields";
 
-  // Auto-seed default fields when an event form is opened for the first time (no fields yet)
+  // Auto-seed default fields when an event form is opened
   const seedingRef = useRef({});
-  const autoSeedDefaults = async (eventFormType) => {
+  const autoSeedDefaults = async (eventFormType, existingFields) => {
     if (seedingRef.current[eventFormType]) return; // already seeded this session
     seedingRef.current[eventFormType] = true;
     const defaults = [
@@ -3868,6 +3868,8 @@ const CMSForms = ({ state, dispatch, toast }) => {
       { label: "Phone Number", field_key: "phone", type: "text", required: true, sort_order: 3 },
     ];
     for (const f of defaults) {
+      if (existingFields.some(existing => existing.field_key === f.field_key)) continue;
+      
       try {
         const res = await fetch(API_URLS.FORMS, {
           method: 'POST',
@@ -3884,11 +3886,15 @@ const CMSForms = ({ state, dispatch, toast }) => {
 
   useEffect(() => {
     if (formType && formType.startsWith('event_') && formType !== 'event_fields' && formType !== 'event_design') {
-      if ((state.formFields[formType] || []).length === 0) {
-        autoSeedDefaults(formType);
+      const currentFields = state.formFields[formType] || [];
+      const hasAllDefaults = ['first_name', 'last_name', 'email', 'phone'].every(k => 
+        currentFields.some(f => f.field_key === k)
+      );
+      if (!hasAllDefaults) {
+        autoSeedDefaults(formType, currentFields);
       }
     }
-  }, [formType]);
+  }, [formType, state.formFields]);
 
   return (
     <Page title="Form Builder" subtitle="Manage dynamic registration fields and pages"
