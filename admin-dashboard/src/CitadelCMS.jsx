@@ -3757,17 +3757,16 @@ const CMSForms = ({ state, dispatch, toast }) => {
     if (targetIndex < 0 || targetIndex >= fields.length) return;
 
     const list = [...fields];
-    const current = { ...list[index] };
-    const target = { ...list[targetIndex] };
-
-    const currentSort = typeof current.sort_order === "number" ? current.sort_order : index;
-    const targetSort = typeof target.sort_order === "number" ? target.sort_order : targetIndex;
-
-    current.sort_order = targetSort;
-    target.sort_order = currentSort;
+    const current = list[index];
+    const target = list[targetIndex];
 
     list[index] = target;
     list[targetIndex] = current;
+
+    // Assign sequential sort_order to the entire list to guarantee correct arrangement
+    list.forEach((f, i) => {
+      f.sort_order = i;
+    });
 
     // Collect all fields from the other form types to preserve them during reorder sync
     const allOtherFields = Object.entries(state.formFields)
@@ -3777,24 +3776,16 @@ const CMSForms = ({ state, dispatch, toast }) => {
     dispatch({ type: "SYNC_DATA", key: "formFields", data: [...allOtherFields, ...list] });
 
     try {
-      await Promise.all([
-        fetch(`${API_URLS.FORMS}/${current.id || current._id}`, {
+      await Promise.all(list.map(f => 
+        fetch(`${API_URLS.FORMS}/${f.id || f._id}`, {
           method: 'PATCH',
           headers: {
             'Content-Type': 'application/json',
             'Authorization': `Bearer ${state.session.token}`
           },
-          body: JSON.stringify({ sort_order: targetSort })
-        }),
-        fetch(`${API_URLS.FORMS}/${target.id || target._id}`, {
-          method: 'PATCH',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${state.session.token}`
-          },
-          body: JSON.stringify({ sort_order: currentSort })
+          body: JSON.stringify({ sort_order: f.sort_order })
         })
-      ]);
+      ));
     } catch (err) {
       toast("Failed to sync reorder on server", "error");
     }
@@ -3832,13 +3823,15 @@ const CMSForms = ({ state, dispatch, toast }) => {
       const payloadOptions = newField.type === "dropdown" && newField.options
         ? newField.options.split(",").map(o => o.trim()).filter(Boolean)
         : [];
+      const newSortOrder = (state.formFields[formType] || []).length;
+      
       const res = await fetch(API_URLS.FORMS, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${state.session.token}`
         },
-        body: JSON.stringify({ ...newField, options: payloadOptions, form_type: formType, active: true })
+        body: JSON.stringify({ ...newField, options: payloadOptions, form_type: formType, active: true, sort_order: newSortOrder })
       });
       if (res.ok) {
         const addedField = await res.json();
