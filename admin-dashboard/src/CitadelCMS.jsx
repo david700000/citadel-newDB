@@ -3856,46 +3856,6 @@ const CMSForms = ({ state, dispatch, toast }) => {
   const isEventFieldsActive = activeTab === "event_fields";
   const canAddField = formType !== "event_design" && formType !== "event_fields";
 
-  // Auto-seed default fields when an event form is opened
-  const seedingRef = useRef({});
-  const autoSeedDefaults = async (eventFormType, existingFields) => {
-    if (seedingRef.current[eventFormType]) return; // already seeded this session
-    seedingRef.current[eventFormType] = true;
-    const defaults = [
-      { label: "First Name", field_key: "first_name", type: "text", required: true, sort_order: 0 },
-      { label: "Last Name", field_key: "last_name", type: "text", required: true, sort_order: 1 },
-      { label: "Email Address", field_key: "email", type: "text", required: true, sort_order: 2 },
-      { label: "Phone Number", field_key: "phone", type: "text", required: true, sort_order: 3 },
-    ];
-    for (const f of defaults) {
-      if (existingFields.some(existing => existing.field_key === f.field_key)) continue;
-      
-      try {
-        const res = await fetch(API_URLS.FORMS, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${state.session.token}` },
-          body: JSON.stringify({ ...f, form_type: eventFormType, active: true })
-        });
-        if (res.ok) {
-          const added = await res.json();
-          dispatch({ type: "ADD_FIELD", formType: eventFormType, field: { ...added, id: added._id } });
-        }
-      } catch (_) {}
-    }
-  };
-
-  useEffect(() => {
-    if (formType && formType.startsWith('event_') && formType !== 'event_fields' && formType !== 'event_design') {
-      const currentFields = state.formFields[formType] || [];
-      const hasAllDefaults = ['first_name', 'last_name', 'email', 'phone'].every(k => 
-        currentFields.some(f => f.field_key === k)
-      );
-      if (!hasAllDefaults) {
-        autoSeedDefaults(formType, currentFields);
-      }
-    }
-  }, [formType, state.formFields]);
-
   return (
     <Page title="Form Builder" subtitle="Manage dynamic registration fields and pages"
       actions={canAddField ? <Btn onClick={() => setShowAdd(true)} variant="accent"><Icon name="plus" size={16} /> Add Field</Btn> : null}
