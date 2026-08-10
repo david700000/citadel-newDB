@@ -3856,6 +3856,40 @@ const CMSForms = ({ state, dispatch, toast }) => {
   const isEventFieldsActive = activeTab === "event_fields";
   const canAddField = formType !== "event_design" && formType !== "event_fields";
 
+  // Auto-seed default fields when an event form is opened for the first time (no fields yet)
+  const seedingRef = React.useRef({});
+  const autoSeedDefaults = async (eventFormType) => {
+    if (seedingRef.current[eventFormType]) return; // already seeded this session
+    seedingRef.current[eventFormType] = true;
+    const defaults = [
+      { label: "First Name", field_key: "first_name", type: "text", required: true, sort_order: 0 },
+      { label: "Last Name", field_key: "last_name", type: "text", required: true, sort_order: 1 },
+      { label: "Email Address", field_key: "email", type: "text", required: true, sort_order: 2 },
+      { label: "Phone Number", field_key: "phone", type: "text", required: true, sort_order: 3 },
+    ];
+    for (const f of defaults) {
+      try {
+        const res = await fetch(API_URLS.FORMS, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${state.session.token}` },
+          body: JSON.stringify({ ...f, form_type: eventFormType, active: true })
+        });
+        if (res.ok) {
+          const added = await res.json();
+          dispatch({ type: "ADD_FIELD", formType: eventFormType, field: { ...added, id: added._id } });
+        }
+      } catch (_) {}
+    }
+  };
+
+  useEffect(() => {
+    if (formType && formType.startsWith('event_') && formType !== 'event_fields' && formType !== 'event_design') {
+      if ((state.formFields[formType] || []).length === 0) {
+        autoSeedDefaults(formType);
+      }
+    }
+  }, [formType]);
+
   return (
     <Page title="Form Builder" subtitle="Manage dynamic registration fields and pages"
       actions={canAddField ? <Btn onClick={() => setShowAdd(true)} variant="accent"><Icon name="plus" size={16} /> Add Field</Btn> : null}
@@ -3922,14 +3956,14 @@ const CMSForms = ({ state, dispatch, toast }) => {
           <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
             <Btn onClick={() => setFormType("event_fields")} variant="ghost" small>← Back to Events</Btn>
             <div style={{ fontFamily: "'DM Sans', sans-serif", fontWeight: 700, fontSize: 15, color: "#0B1F3B" }}>
-              {webData.events.find(e => toEventSlug(e.title) === formType)?.title || formType} — Custom Fields
+              {webData.events.find(e => toEventSlug(e.title) === formType)?.title || formType} — Form Fields
             </div>
             <Btn onClick={() => setShowAdd(true)} variant="accent" small><Icon name="plus" size={14} /> Add Field</Btn>
           </div>
           <div style={{ background: "#fff", borderRadius: 14, boxShadow: "0 2px 12px rgba(0,0,0,0.06)", overflow: "hidden" }}>
             {fields.length === 0 ? (
               <div style={{ padding: 40, textAlign: "center", color: "#9ca3af", fontFamily: "'DM Sans', sans-serif" }}>
-                No custom fields yet for this event.<br />Click <strong>Add Field</strong> above to get started.
+                Setting up default form fields...
               </div>
             ) : fields.map((f, i) => (
               <div key={f.id} style={{
