@@ -2043,8 +2043,13 @@ const CMSEventRegistrations = ({ state, toast }) => {
           .title { font-size: 24px; font-weight: 800; margin: 0 0 8px 0; color: #0b1f3b; }
           .meta { font-size: 14px; color: #4b5563; margin-bottom: 16px; }
           table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-          th { background: #f1f5f9; padding: 12px 10px; font-size: 12px; font-weight: 700; color: #475569; text-transform: uppercase; text-align: left; border-bottom: 2px solid #cbd5e1; }
-          @media print { body { padding: 20px; } tr { page-break-inside: avoid; } }
+          th, td { white-space: nowrap; font-size: 10px !important; padding: 8px 6px !important; }
+          th { background: #f1f5f9; font-weight: 700; color: #475569; text-transform: uppercase; text-align: left; border-bottom: 2px solid #cbd5e1; }
+          @media print { 
+            body { padding: 10px; } 
+            @page { size: landscape; margin: 10mm; }
+            tr { page-break-inside: avoid; } 
+          }
         </style>
       </head>
       <body>
@@ -2129,7 +2134,7 @@ const CMSEventRegistrations = ({ state, toast }) => {
         }
       >
         {/* Banner Cover & Logo configuration for this event */}
-        {dbEvent && (
+        {state.session?.admin?.role === "cms" && dbEvent && (
           <div style={{ background: "#fff", borderRadius: 14, padding: 24, boxShadow: "0 2px 12px rgba(0,0,0,0.06)", marginBottom: 24 }}>
             <h3 style={{ margin: "0 0 16px 0", fontSize: 15, fontWeight: 700, color: "#0B1F3B", fontFamily: "'DM Sans', sans-serif" }}>Registration Form Design & Page Assets</h3>
             
@@ -2203,6 +2208,23 @@ const CMSEventRegistrations = ({ state, toast }) => {
 
             </div>
 
+            {/* Email Template */}
+            <div style={{ background: "#f8fafc", borderRadius: 10, padding: 16, border: "1px solid #e5e7eb", marginBottom: 20 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: "#374151", marginBottom: 10, textTransform: "uppercase", letterSpacing: "0.05em" }}>Confirmation Email Message</div>
+              <textarea
+                value={dbEvent.emailTemplateText || ""}
+                onChange={e => setWebData(prev => {
+                  const u = prev.events.map(ev => ev.title === selectedEvent ? { ...ev, emailTemplateText: e.target.value } : ev);
+                  return { ...prev, events: u };
+                })}
+                placeholder="We are thrilled to welcome you..."
+                style={{ width: "100%", boxSizing: "border-box", padding: 12, border: "1px solid #d1d5db", borderRadius: 8, fontSize: 13, fontFamily: "'DM Sans', sans-serif", minHeight: 80, resize: "vertical" }}
+              />
+              <div style={{ fontSize: 11, color: "#6b7280", marginTop: 6, lineHeight: 1.4 }}>
+                Customize the main paragraph of the email sent to registrants. Use variables: <strong>{'{name}'}</strong>, <strong>{'{phone}'}</strong>, <strong>{'{eventTitle}'}</strong>. Leave blank for default.
+              </div>
+            </div>
+
             <Btn onClick={() => handleSaveAssets(selectedEvent)} variant="accent" disabled={updatingAssets}>
               {updatingAssets ? "Saving Settings..." : "Save Event Page Settings"}
             </Btn>
@@ -2244,6 +2266,62 @@ const CMSEventRegistrations = ({ state, toast }) => {
                 {day}
               </button>
             ))}
+          </div>
+        )}
+
+        {/* ─── ATTENDANCE DAY TOGGLE ─── */}
+        {state.session?.admin?.role === "cms" && (
+          <div style={{ background: "#fff", borderRadius: 14, padding: "20px 24px", boxShadow: "0 2px 12px rgba(0,0,0,0.06)", marginBottom: 20, border: "2px solid #e5e7eb" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", gap: 12 }}>
+            <div>
+              <div style={{ fontSize: 13, fontWeight: 800, color: "#0B1F3B", fontFamily: "'DM Sans', sans-serif", marginBottom: 2 }}>
+                📅 Active Attendance Day
+              </div>
+              <div style={{ fontSize: 12, color: "#6b7280", fontFamily: "'DM Sans', sans-serif" }}>
+                The scanner will only accept check-ins for the active day below.
+              </div>
+            </div>
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+              {["Day 1", "Day 2", "Day 3", "None"].map(day => {
+                const isActive = (webData.global?.activeAttendanceDay || "Day 1") === day;
+                return (
+                  <button
+                    key={day}
+                    onClick={async () => {
+                      const updated = { ...webData, global: { ...webData.global, activeAttendanceDay: day } };
+                      setWebData(updated);
+                      try {
+                        const res = await fetch(API_URLS.WEBSITE_DATA, {
+                          method: "POST",
+                          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+                          body: JSON.stringify(updated)
+                        });
+                        if (res.ok) toast(`Switched to ${day}`, "success");
+                        else toast("Failed to update day", "error");
+                      } catch { toast("Connection error", "error"); }
+                    }}
+                    style={{
+                      padding: "10px 20px",
+                      borderRadius: 10,
+                      border: isActive ? "none" : "1.5px solid #e5e7eb",
+                      background: isActive
+                        ? day === "None" ? "#ef4444" : "#0B1F3B"
+                        : "#f8fafc",
+                      color: isActive ? "#fff" : "#6b7280",
+                      fontWeight: 700,
+                      fontSize: 13,
+                      cursor: "pointer",
+                      fontFamily: "'DM Sans', sans-serif",
+                      transition: "all 0.2s",
+                      boxShadow: isActive ? "0 4px 12px rgba(0,0,0,0.15)" : "none"
+                    }}
+                  >
+                    {day === "None" ? "🔒 Close" : day}
+                  </button>
+                );
+              })}
+            </div>
+            </div>
           </div>
         )}
 
@@ -2461,7 +2539,37 @@ const CMSEventRegistrations = ({ state, toast }) => {
               )}
             </div>
 
-            <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 24 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", marginTop: 24, alignItems: "center" }}>
+              <Btn
+                onClick={() => {
+                  const isMultiDay = dbEvent && dbEvent.eventDays && dbEvent.eventDays.trim();
+                  const day = isMultiDay ? (webData.global?.activeAttendanceDay || "Day 1") : null;
+                  
+                  handleToggleAttendance(selectedUser._id, day);
+                  
+                  // Optimistically update the modal view
+                  setSelectedUser(prev => {
+                    const records = prev.attendanceRecords || [];
+                    let newRecords = [...records];
+                    
+                    if (isMultiDay) {
+                      if (newRecords.includes(day)) {
+                        newRecords = newRecords.filter(d => d !== day);
+                      } else {
+                        newRecords.push(day);
+                      }
+                    } else {
+                      if (prev.attended) newRecords = [];
+                      else newRecords = ["Present"];
+                    }
+                    
+                    return { ...prev, attendanceRecords: newRecords, attended: newRecords.length > 0 };
+                  });
+                }}
+                variant="accent"
+              >
+                Mark/Unmark Attendance {(dbEvent && dbEvent.eventDays && dbEvent.eventDays.trim()) ? `(${webData.global?.activeAttendanceDay || "Day 1"})` : ""}
+              </Btn>
               <Btn onClick={() => setSelectedUser(null)} variant="primary">Close</Btn>
             </div>
           </div>

@@ -602,7 +602,10 @@ app.post('/api/register-event', async (req, res) => {
         // Send confirmation email (HTML card)
         try {
             const siteDoc = await SiteData.findOne();
-            const customText = siteDoc?.global?.registrationEmailContent;
+            
+            // Find the specific event to see if it has a custom email template
+            const eventDoc = siteDoc?.events?.find(e => e.title === eventTitle);
+            const customText = eventDoc?.emailTemplateText || siteDoc?.global?.registrationEmailContent;
 
             // Build the custom message or use a default
             let bodyMessage = customText
@@ -697,9 +700,7 @@ app.post('/api/register-event', async (req, res) => {
                 </tr>
               </table>
 
-              <p style="color:#64748b;font-size:13px;line-height:1.7;margin:0;">
-                This confirmation was sent to <strong style="color:#0B1F3B;">${email}</strong>. If you have any questions, please contact us.
-              </p>
+
             </td>
           </tr>
 
