@@ -612,6 +612,11 @@ app.post('/api/register-event', async (req, res) => {
                     .replace(/{phone}/g, phone)
                 : `We are thrilled to have you join us for <strong>${eventTitle}</strong>! Your spot is confirmed and we can't wait to see you there.`;
 
+            const logoUrl = siteDoc?.global?.logoImage || '';
+            const logoHtml = logoUrl
+                ? `<img src="${logoUrl}" alt="Citadel Logo" width="80" height="80" style="width:80px;height:80px;object-fit:contain;margin-bottom:12px;display:block;margin-left:auto;margin-right:auto;">`
+                : `<div style="display:inline-block;background:#F4C430;border-radius:50%;width:64px;height:64px;line-height:64px;text-align:center;font-size:28px;margin-bottom:16px;">✝</div>`;
+
             const htmlEmail = `<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -619,70 +624,81 @@ app.post('/api/register-event', async (req, res) => {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Registration Confirmed</title>
 </head>
-<body style="margin:0;padding:0;background:#f4f6fb;font-family:'Segoe UI',Arial,sans-serif;">
-  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f6fb;padding:40px 0;">
+<body style="margin:0;padding:0;background:#f0f4f8;font-family:'Segoe UI',Arial,sans-serif;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background:#f0f4f8;padding:40px 0;">
     <tr>
       <td align="center">
-        <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;border-radius:16px;overflow:hidden;box-shadow:0 8px 32px rgba(0,0,0,0.12);">
+        <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;border-radius:20px;overflow:hidden;box-shadow:0 8px 40px rgba(0,0,0,0.14);">
 
-          <!-- Header Banner -->
+          <!-- Header Banner (dark) -->
           <tr>
             <td style="background:linear-gradient(135deg,#0B1F3B 0%,#1a3a6e 60%,#0B1F3B 100%);padding:36px 40px;text-align:center;">
-              <div style="display:inline-block;background:#F4C430;border-radius:50%;width:64px;height:64px;line-height:64px;text-align:center;font-size:28px;margin-bottom:16px;">✝</div>
+              ${logoHtml}
               <h1 style="color:#ffffff;margin:0 0 4px;font-size:26px;font-weight:800;letter-spacing:-0.5px;">Citadel of Truth</h1>
-              <p style="color:rgba(255,255,255,0.65);margin:0;font-size:13px;letter-spacing:0.05em;text-transform:uppercase;">and Mercy Assembly</p>
+              <p style="color:#ffffff;margin:0;font-size:13px;letter-spacing:0.05em;text-transform:uppercase;">and Mercy Assembly</p>
             </td>
           </tr>
 
-          <!-- Red Accent Bar -->
+          <!-- Red-to-Gold Accent Bar -->
           <tr>
-            <td style="background:linear-gradient(90deg,#c0392b,#e74c3c,#F4C430);height:5px;"></td>
+            <td style="background:linear-gradient(90deg,#c0392b,#e74c3c,#F4C430);height:6px;"></td>
           </tr>
 
-          <!-- Body -->
+          <!-- White Body -->
           <tr>
             <td style="background:#ffffff;padding:40px 40px 32px;">
-              <h2 style="color:#0B1F3B;margin:0 0 8px;font-size:22px;font-weight:700;">🎉 Registration Confirmed!</h2>
-              <p style="color:#475569;font-size:15px;line-height:1.7;margin:0 0 24px;">${bodyMessage}</p>
+              <h2 style="color:#0B1F3B;margin:0 0 8px;font-size:22px;font-weight:800;">🎉 Registration Confirmed!</h2>
+              <p style="color:#334155;font-size:15px;line-height:1.8;margin:0 0 28px;">${bodyMessage}</p>
 
-              <!-- Ticket Card -->
-              <table width="100%" cellpadding="0" cellspacing="0" style="background:linear-gradient(135deg,#0B1F3B,#1a3a6e);border-radius:14px;overflow:hidden;margin-bottom:28px;">
+              <!-- Ticket Card (dark) -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="background:linear-gradient(135deg,#0B1F3B,#1e3a6e);border-radius:16px;overflow:hidden;margin-bottom:28px;">
                 <tr>
                   <td style="padding:24px 28px;">
-                    <p style="color:rgba(255,255,255,0.6);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.1em;margin:0 0 6px;">Event</p>
-                    <p style="color:#F4C430;font-size:18px;font-weight:800;margin:0 0 20px;">${eventTitle}</p>
+                    <p style="color:#ffffff;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.12em;margin:0 0 6px;">Event</p>
+                    <p style="color:#F4C430;font-size:20px;font-weight:800;margin:0 0 20px;">${eventTitle}</p>
 
                     <table width="100%" cellpadding="0" cellspacing="0">
                       <tr>
                         <td width="50%" style="vertical-align:top;">
-                          <p style="color:rgba(255,255,255,0.6);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;margin:0 0 4px;">Registered Name</p>
-                          <p style="color:#ffffff;font-size:15px;font-weight:600;margin:0;">${name}</p>
+                          <p style="color:#ffffff;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;margin:0 0 4px;">Registered Name</p>
+                          <p style="color:#ffffff;font-size:16px;font-weight:700;margin:0;">${name}</p>
                         </td>
                         <td width="50%" style="vertical-align:top;text-align:right;">
-                          <p style="color:rgba(255,255,255,0.6);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;margin:0 0 4px;">Your Entry Pass</p>
+                          <p style="color:#ffffff;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;margin:0 0 4px;">Your Entry Pass</p>
                           <p style="color:#F4C430;font-size:22px;font-weight:900;letter-spacing:2px;margin:0;">${phone}</p>
                         </td>
                       </tr>
                     </table>
                   </td>
                 </tr>
-                <!-- Red dashed divider -->
+                <!-- Dashed divider -->
                 <tr>
                   <td style="padding:0 28px;">
-                    <div style="border-top:2px dashed rgba(192,57,43,0.6);"></div>
+                    <div style="border-top:2px dashed rgba(231,76,60,0.7);"></div>
                   </td>
                 </tr>
                 <tr>
-                  <td style="padding:16px 28px;background:rgba(0,0,0,0.2);">
-                    <p style="color:rgba(255,255,255,0.8);font-size:13px;margin:0;text-align:center;">
-                      📱 Your mobile number <strong style="color:#F4C430;">${phone}</strong> is your registration number. Present it at the entrance.
+                  <td style="padding:14px 28px;background:rgba(0,0,0,0.25);">
+                    <p style="color:#ffffff;font-size:13px;margin:0;text-align:center;line-height:1.6;">
+                      📱 Your mobile number <strong style="color:#F4C430;">${phone}</strong> is your registration number.<br>Present it at the entrance.
+                    </p>
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Light info box -->
+              <table width="100%" cellpadding="0" cellspacing="0" style="background:#fef9ec;border:1px solid #F4C430;border-radius:10px;margin-bottom:24px;">
+                <tr>
+                  <td style="padding:14px 18px;">
+                    <p style="color:#92400e;font-size:13px;margin:0;line-height:1.6;">
+                      ⚠️ <strong>Important:</strong> Please save your mobile number as your pass. You will need to present it at the entrance on each day of the event.
                     </p>
                   </td>
                 </tr>
               </table>
 
               <p style="color:#64748b;font-size:13px;line-height:1.7;margin:0;">
-                A confirmation email has been sent to <strong>${email}</strong>. If you have any questions, please contact us.
+                This confirmation was sent to <strong style="color:#0B1F3B;">${email}</strong>. If you have any questions, please contact us.
               </p>
             </td>
           </tr>
@@ -690,8 +706,8 @@ app.post('/api/register-event', async (req, res) => {
           <!-- Footer -->
           <tr>
             <td style="background:#0B1F3B;padding:24px 40px;text-align:center;">
-              <p style="color:rgba(255,255,255,0.5);font-size:12px;margin:0;">Citadel of Truth and Mercy Assembly &mdash; God bless you!</p>
-              <p style="color:rgba(255,255,255,0.3);font-size:11px;margin:6px 0 0;">This is an automated message, please do not reply directly to this email.</p>
+              <p style="color:#ffffff;font-size:12px;margin:0;">Citadel of Truth and Mercy Assembly &mdash; God bless you! 🙏</p>
+              <p style="color:rgba(255,255,255,0.5);font-size:11px;margin:6px 0 0;">This is an automated message. Please do not reply directly to this email.</p>
             </td>
           </tr>
 
