@@ -121,7 +121,7 @@ router.post("/invite", requireCMS, async (req, res) => {
 
     // Send Invitation Email
     const churchName = process.env.CHURCH_NAME || "Citadel of Truth and Mercy Assembly";
-    const loginUrl = (process.env.FRONTEND_URL || "https://citadeloftruthandmercyassembly.netlify.app").replace(/\/$/, '') + '/admin';
+    const loginUrl = (process.env.FRONTEND_URL || "https://citadeloftruth.com").replace(/\/$/, '') + '/admin';
     
     try {
       const roleLabel = role.replace(/_/g, " ").replace(/\b\w/g, c => c.toUpperCase());

@@ -5,6 +5,7 @@ const EventRegistrationSchema = new mongoose.Schema({
     email: { type: String, required: true },
     phone: { type: String },
     eventTitle: { type: String, required: true },
+    registrationNumber: { type: String }, // unique ID for attendance tracking
     attended: { type: Boolean, default: false },
     attendanceRecords: { type: [String], default: [] },
     customFields: { type: mongoose.Schema.Types.Mixed, default: {} }

@@ -122,7 +122,7 @@ const Admin = require("./src/models/Admin");
 
 const authenticateToken = async (req, res, next) => {
     let token = req.cookies?.sessionId;
-    
+
     // Fallback to Header Authorization
     if (!token) {
         const header = req.headers['authorization'] || '';
@@ -329,8 +329,8 @@ app.get('/api/migrate-fields', async (req, res) => {
         };
 
         const newFields = [
-            { form_type: 'member_worker', field_key: 'birth_month', label: 'Birth Month', type: 'dropdown', options: ['1','2','3','4','5','6','7','8','9','10','11','12'], required: true, sort_order: 10, worker_only: false, active: true },
-            { form_type: 'member_worker', field_key: 'birth_day', label: 'Birth Day', type: 'dropdown', options: Array.from({length: 31}, (_, i) => String(i + 1)), required: true, sort_order: 11, worker_only: false, active: true },
+            { form_type: 'member_worker', field_key: 'birth_month', label: 'Birth Month', type: 'dropdown', options: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12'], required: true, sort_order: 10, worker_only: false, active: true },
+            { form_type: 'member_worker', field_key: 'birth_day', label: 'Birth Day', type: 'dropdown', options: Array.from({ length: 31 }, (_, i) => String(i + 1)), required: true, sort_order: 11, worker_only: false, active: true },
             { form_type: 'member_worker', field_key: 'age_range', label: 'Age Range', type: 'dropdown', options: ['Under 18', '18-24', '25-34', '35-44', '45-54', '55-64', '65+'], required: true, sort_order: 12, worker_only: false, active: true },
             { form_type: 'first_timer', field_key: 'address', label: 'Residential Address', type: 'text', options: [], required: true, sort_order: 5, worker_only: false, active: true },
             { form_type: 'member_worker', field_key: 'address', label: 'Residential Address', type: 'text', options: [], required: true, sort_order: 5, worker_only: false, active: true }
@@ -368,13 +368,13 @@ app.post('/api/data', authenticateToken, async (req, res) => {
         let siteDoc = await SiteData.findOne();
         const prevRaw = siteDoc || { hero: [], events: [], sermons: [], gallery: [], global: {} };
         const newData = {
-            hero:    req.body.hero    ?? prevRaw.hero    ?? [],
-            events:  req.body.events  ?? prevRaw.events  ?? [],
+            hero: req.body.hero ?? prevRaw.hero ?? [],
+            events: req.body.events ?? prevRaw.events ?? [],
             sermons: req.body.sermons ?? prevRaw.sermons ?? [],
             gallery: req.body.gallery ?? prevRaw.gallery ?? [],
-            global:  req.body.global  ?? prevRaw.global  ?? {}
+            global: req.body.global ?? prevRaw.global ?? {}
         };
-        
+
         if (siteDoc) {
             siteDoc.hero = newData.hero;
             siteDoc.events = newData.events;
@@ -436,14 +436,14 @@ app.post('/api/upload-frame', authenticateToken, upload.single('frame'), async (
     try {
         if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
         const url = req.file.path;
-        
+
         // Save the frame URL to Settings database
         await Setting.findOneAndUpdate(
             { key: 'selfie_frame_url' },
             { value: url },
             { new: true, upsert: true }
         );
-        
+
         res.json({ url });
     } catch (err) {
         console.error('Frame upload error:', err);
@@ -474,7 +474,7 @@ app.post('/api/users', authenticateToken, async (req, res) => {
         res.json({ success: true, id: user._id, email: user.email, role: user.role });
 
         // Send welcome email with credentials
-        const dashboardUrl = (process.env.FRONTEND_URL || 'https://citadeloftruthandmercyassembly.netlify.app') + '/admin';
+        const dashboardUrl = (process.env.FRONTEND_URL || 'https://citadeloftruth.com') + '/admin';
         const roleLabel = user.role === 'superadmin' ? 'Super Admin' : 'Admin';
         sendMail({
             to: user.email,
@@ -582,8 +582,44 @@ app.post('/api/register-event', async (req, res) => {
         return res.status(400).json({ error: 'Name, email, and event title are required' });
     }
     try {
+        // Check for duplicate registration for this event
+        const query = { eventTitle, $or: [{ email }] };
+        if (phone) {
+            query.$or.push({ phone });
+        }
+
+        const existing = await EventRegistration.findOne(query);
+        if (existing) {
+            return res.status(400).json({ error: 'This email or phone number is already registered for this event.' });
+        }
+
+        // Generate a short unique registration number (e.g., PIC26-A3X9)
+        const generateRegNo = () => {
+            const prefix = eventTitle.substring(0, 3).toUpperCase();
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            let randomStr = '';
+            for (let i = 0; i < 5; i++) {
+                randomStr += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return `${prefix}-${randomStr}`;
+        };
+
+        let registrationNumber = generateRegNo();
+        let isUnique = false;
+        let attempts = 0;
+
+        while (!isUnique && attempts < 5) {
+            const existingReg = await EventRegistration.findOne({ registrationNumber, eventTitle });
+            if (!existingReg) {
+                isUnique = true;
+            } else {
+                registrationNumber = generateRegNo();
+                attempts++;
+            }
+        }
+
         // Save to database (including any dynamic form fields from CMS)
-        const reg = await EventRegistration.create({ name, email, phone, eventTitle, customFields: customFields || {} });
+        const reg = await EventRegistration.create({ name, email, phone, eventTitle, registrationNumber, customFields: customFields || {} });
 
         res.json({ success: true, message: 'Successfully registered for the event!', data: reg });
     } catch (err) {
@@ -726,8 +762,8 @@ app.get('/api/ping', (req, res) => {
 
 // ─── ERROR HANDLER ───
 app.use((err, req, res, next) => {
-  console.error("Unhandled error:", err);
-  res.status(500).json({ error: err.message || "Internal server error" });
+    console.error("Unhandled error:", err);
+    res.status(500).json({ error: err.message || "Internal server error" });
 });
 
 // ─── START ───

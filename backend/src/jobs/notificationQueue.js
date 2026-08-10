@@ -28,7 +28,7 @@ async function processPendingNotifications() {
 
         const leaders = await Admin.find({ role: "leader", status: "active" });
         const churchName = process.env.CHURCH_NAME || "Citadel of Truth and Mercy Assembly";
-        const appUrl = (process.env.FRONTEND_URL || "https://citadeloftruthandmercyassembly.netlify.app").replace(/\/$/, '') + '/admin';
+        const appUrl = (process.env.FRONTEND_URL || "https://citadeloftruth.com").replace(/\/$/, '') + '/admin';
 
         console.log(`[NotificationQueue] Sending secure batched alert email to ${leaders.length} leaders.`);
 

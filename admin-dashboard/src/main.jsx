@@ -1,3 +1,4 @@
+// v2 - sort_order fix
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './CitadelCMS.jsx'

@@ -7753,7 +7753,7 @@ const ServiceReviewFormPage = ({ onBack, inline = false, onSuccess = null }) => 
   useEffect(() => {
     if (!submitted || inline) return;
     const t = setInterval(() => setCountdown(c => c - 1), 1000);
-    const r = setTimeout(() => { window.location.href = "https://citadeloftruthandmercyassembly.netlify.app/"; }, 6000);
+    const r = setTimeout(() => { window.location.href = "https://citadeloftruth.com/"; }, 6000);
     return () => { clearInterval(t); clearTimeout(r); };
   }, [submitted, inline]);
 
@@ -7862,7 +7862,7 @@ const ServiceReviewFormPage = ({ onBack, inline = false, onSuccess = null }) => 
                 </span>
               </div>
               <button
-                onClick={() => { window.location.href = "https://citadeloftruthandmercyassembly.netlify.app/"; }}
+                onClick={() => { window.location.href = "https://citadeloftruth.com/"; }}
                 style={{
                   marginTop: 20, background: "#0B1F3B", color: "#fff", border: "none",
                   borderRadius: 12, padding: "12px 28px", fontSize: 14, fontWeight: 700,
@@ -8652,7 +8652,7 @@ export default function App() {
               });
               if (res.ok) {
                 dispatch({ type: "REGISTER_USER", values, formType });
-                setRedirectUrl("https://citadeloftruthandmercyassembly.netlify.app/");
+                setRedirectUrl("https://citadeloftruth.com/");
                 setPublicForm("success");
                 // showToast(data.message || "Registration successful! Welcome 🎉", "success");
               } else {

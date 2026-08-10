@@ -143,7 +143,43 @@ router.post("/register-event", async (req, res) => {
         return res.status(400).json({ error: "Name, email, and event title are required" });
     }
     try {
-        const reg = await EventRegistration.create({ name, email, phone, eventTitle, customFields: customFields || {} });
+        // Check for duplicate registration for this event
+        const query = { eventTitle, $or: [{ email }] };
+        if (phone) {
+            query.$or.push({ phone });
+        }
+        
+        const existing = await EventRegistration.findOne(query);
+        if (existing) {
+            return res.status(400).json({ error: "This email or phone number is already registered for this event." });
+        }
+
+        // Generate a short unique registration number (e.g., PIC26-A3X9)
+        const generateRegNo = () => {
+            const prefix = eventTitle.substring(0, 3).toUpperCase();
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            let randomStr = '';
+            for (let i = 0; i < 5; i++) {
+                randomStr += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return `${prefix}-${randomStr}`;
+        };
+
+        let registrationNumber = generateRegNo();
+        let isUnique = false;
+        let attempts = 0;
+        
+        while (!isUnique && attempts < 5) {
+            const existingReg = await EventRegistration.findOne({ registrationNumber, eventTitle });
+            if (!existingReg) {
+                isUnique = true;
+            } else {
+                registrationNumber = generateRegNo();
+                attempts++;
+            }
+        }
+
+        const reg = await EventRegistration.create({ name, email, phone, eventTitle, registrationNumber, customFields: customFields || {} });
         res.json({ success: true, message: "Successfully registered for the event!", data: reg });
     } catch (err) {
         console.error("Event Registration error:", err);

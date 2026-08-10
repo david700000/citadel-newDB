@@ -141,7 +141,7 @@ router.patch("/:id/acknowledge", requireRole("leader"), async (req, res) => {
     // Notify all finance admins that the transaction was acknowledged
     const financeAdmins = await Admin.find({ role: "finance_admin", status: "active" });
     const churchName = process.env.CHURCH_NAME || "Citadel of Truth and Mercy Assembly";
-    const appUrl = (process.env.FRONTEND_URL || "https://citadeloftruthandmercyassembly.netlify.app").replace(/\/$/, '') + '/admin';
+    const appUrl = (process.env.FRONTEND_URL || "https://citadeloftruth.com").replace(/\/$/, '') + '/admin';
 
     for (const admin of financeAdmins) {
       try {
@@ -381,7 +381,7 @@ router.patch("/salaries/:id/acknowledge", requireRole("leader"), async (req, res
     // Notify all finance admins
     const financeAdmins = await Admin.find({ role: "finance_admin", status: "active" });
     const churchName = process.env.CHURCH_NAME || "Citadel of Truth and Mercy Assembly";
-    const appUrl = (process.env.FRONTEND_URL || "https://citadeloftruthandmercyassembly.netlify.app").replace(/\/$/, '') + '/admin';
+    const appUrl = (process.env.FRONTEND_URL || "https://citadeloftruth.com").replace(/\/$/, '') + '/admin';
 
     for (const admin of financeAdmins) {
       try {
@@ -458,7 +458,7 @@ router.post("/fund-requests", requireRole("finance_admin"), async (req, res) => 
 
     const leaders = await Admin.find({ role: "leader", status: "active" });
     const churchName = process.env.CHURCH_NAME || "Citadel of Truth and Mercy Assembly";
-    const appUrl = (process.env.FRONTEND_URL || "https://citadeloftruthandmercyassembly.netlify.app").replace(/\/$/, '') + '/admin';
+    const appUrl = (process.env.FRONTEND_URL || "https://citadeloftruth.com").replace(/\/$/, '') + '/admin';
 
     for (const leader of leaders) {
       try {
