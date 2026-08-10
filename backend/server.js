@@ -579,8 +579,8 @@ app.post('/api/contact', async (req, res) => {
 // ─── EVENT REGISTRATION: CREATE ───
 app.post('/api/register-event', async (req, res) => {
     const { name, email, phone, eventTitle, customFields } = req.body;
-    if (!name || !email || !eventTitle) {
-        return res.status(400).json({ error: 'Name, email, and event title are required' });
+    if (!name || !email || !eventTitle || !phone) {
+        return res.status(400).json({ error: 'Name, email, phone number, and event title are required' });
     }
     try {
         // Check for duplicate registration for this event
@@ -594,33 +594,30 @@ app.post('/api/register-event', async (req, res) => {
             return res.status(400).json({ error: 'This email or phone number is already registered for this event.' });
         }
 
-        // Generate a short unique registration number (e.g., PIC26-A3X9)
-        const generateRegNo = () => {
-            const prefix = eventTitle.substring(0, 3).toUpperCase();
-            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-            let randomStr = '';
-            for (let i = 0; i < 5; i++) {
-                randomStr += chars.charAt(Math.floor(Math.random() * chars.length));
-            }
-            return `${prefix}-${randomStr}`;
-        };
-
-        let registrationNumber = generateRegNo();
-        let isUnique = false;
-        let attempts = 0;
-
-        while (!isUnique && attempts < 5) {
-            const existingReg = await EventRegistration.findOne({ registrationNumber, eventTitle });
-            if (!existingReg) {
-                isUnique = true;
-            } else {
-                registrationNumber = generateRegNo();
-                attempts++;
-            }
-        }
+        let registrationNumber = phone.replace(/[^0-9+]/g, ''); // Use clean phone number as ID
 
         // Save to database (including any dynamic form fields from CMS)
         const reg = await EventRegistration.create({ name, email, phone, eventTitle, registrationNumber, customFields: customFields || {} });
+
+        // Send confirmation email
+        try {
+            const siteDoc = await SiteData.findOne();
+            let emailContent = siteDoc?.global?.registrationEmailContent || "Thank you for registering for {eventTitle}, {name}! Your mobile number ({phone}) is your registration number. Please present it at the entrance.";
+            
+            // Inject variables
+            emailContent = emailContent.replace(/{name}/g, name)
+                                       .replace(/{eventTitle}/g, eventTitle)
+                                       .replace(/{phone}/g, phone);
+
+            await sendMail({
+                to: email,
+                subject: `Registration Confirmed - ${eventTitle}`,
+                text: emailContent
+            });
+        } catch (mailErr) {
+            console.error('Failed to send registration confirmation email:', mailErr);
+            // We don't fail the registration if email fails, just log it.
+        }
 
         res.json({ success: true, message: 'Successfully registered for the event!', data: reg });
     } catch (err) {
@@ -638,16 +635,30 @@ app.post('/api/mark-event-attendance', async (req, res) => {
     
     try {
         const reg = await EventRegistration.findOne({ 
-            registrationNumber: { $regex: new RegExp(`^${registrationNumber}$`, 'i') } 
+            registrationNumber: { $regex: new RegExp(`^${registrationNumber.replace(/[^0-9+]/g, '')}$`, 'i') } 
         });
 
         if (!reg) {
             return res.status(404).json({ error: 'Ticket not found. Invalid registration number.' });
         }
 
-        // Allow multiple scans but track timestamps
+        const siteDoc = await SiteData.findOne();
+        const activeDay = siteDoc?.global?.activeAttendanceDay || 'Day 1';
+
+        if (activeDay === 'None') {
+            return res.status(400).json({ error: 'Attendance tracking is currently closed.' });
+        }
+
+        // Check if already attended for the active day
+        const alreadyAttendedToday = reg.attendanceRecords.some(record => record.startsWith(activeDay));
+        if (alreadyAttendedToday) {
+            return res.status(400).json({ error: `Already checked in for ${activeDay}.` });
+        }
+
+        // Mark attendance
         reg.attended = true;
-        reg.attendanceRecords.push(new Date().toISOString());
+        const recordEntry = `${activeDay} - ${new Date().toISOString()}`;
+        reg.attendanceRecords.push(recordEntry);
         await reg.save();
 
         res.json({
@@ -656,6 +667,7 @@ app.post('/api/mark-event-attendance', async (req, res) => {
             data: {
                 name: reg.name,
                 eventTitle: reg.eventTitle,
+                activeDay: activeDay,
                 totalScans: reg.attendanceRecords.length
             }
         });

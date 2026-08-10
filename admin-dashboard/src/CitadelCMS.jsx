@@ -1777,7 +1777,7 @@ const CMSWebsiteContent = ({ state, toast }) => {
             />
           </div>
 
-          <div>
+          <div style={{ borderBottom: "1px solid #e5e7eb", paddingBottom: 20, marginBottom: 20 }}>
             <h4 style={{ margin: "0 0 8px", fontSize: 14 }}>Pastor Section Image</h4>
             {data.global?.pastorImage && <img src={data.global.pastorImage} alt="" style={{ height: 100, objectFit: "cover", width: "100%", borderRadius: 8, marginBottom: 12, display: "block" }} />}
             <input type="file" accept="image/*" onChange={e => handleUpload(e.target.files[0], "global", null, "pastorImage")} style={{ marginBottom: 8, display: "block" }} />
@@ -1787,6 +1787,36 @@ const CMSWebsiteContent = ({ state, toast }) => {
               onChange={v => setData(prev => ({ ...prev, global: { ...prev.global, pastorImage: v } }))}
               small
             />
+          </div>
+
+          <div style={{ borderBottom: "1px solid #e5e7eb", paddingBottom: 20, marginBottom: 20 }}>
+            <h4 style={{ margin: "0 0 8px", fontSize: 14 }}>Registration Confirmation Email</h4>
+            <p style={{ fontSize: 12, color: "#6b7280", marginBottom: 8 }}>Available variables: {"{name}"}, {"{eventTitle}"}, {"{phone}"}</p>
+            <textarea
+              style={{ width: "100%", padding: "10px", borderRadius: "8px", border: "1px solid #e5e7eb", minHeight: "100px", fontFamily: "'DM Sans', sans-serif" }}
+              value={data.global?.registrationEmailContent || ""}
+              onChange={e => setData(prev => ({ ...prev, global: { ...prev.global, registrationEmailContent: e.target.value } }))}
+              placeholder="Thank you for registering for {eventTitle}, {name}! Your mobile number ({phone}) is your registration number. Please present it at the entrance."
+            />
+          </div>
+
+          <div>
+            <h4 style={{ margin: "0 0 8px", fontSize: 14 }}>Active Attendance Day</h4>
+            <p style={{ fontSize: 12, color: "#6b7280", marginBottom: 12 }}>Select which day is currently active for ticket scanning.</p>
+            <div style={{ display: "flex", gap: 16 }}>
+              {["Day 1", "Day 2", "Day 3", "None"].map(day => (
+                <label key={day} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 14, cursor: "pointer" }}>
+                  <input
+                    type="radio"
+                    name="activeAttendanceDay"
+                    value={day}
+                    checked={(data.global?.activeAttendanceDay || "Day 1") === day}
+                    onChange={e => setData(prev => ({ ...prev, global: { ...prev.global, activeAttendanceDay: e.target.value } }))}
+                  />
+                  {day}
+                </label>
+              ))}
+            </div>
           </div>
         </div>
       )}

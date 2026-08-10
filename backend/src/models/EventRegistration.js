@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const EventRegistrationSchema = new mongoose.Schema({
     name: { type: String, required: true },
     email: { type: String, required: true },
-    phone: { type: String },
+    phone: { type: String, required: true },
     eventTitle: { type: String, required: true },
     registrationNumber: { type: String }, // unique ID for attendance tracking
     attended: { type: Boolean, default: false },
