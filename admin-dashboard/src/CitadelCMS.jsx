@@ -3857,7 +3857,7 @@ const CMSForms = ({ state, dispatch, toast }) => {
   const canAddField = formType !== "event_design" && formType !== "event_fields";
 
   // Auto-seed default fields when an event form is opened for the first time (no fields yet)
-  const seedingRef = React.useRef({});
+  const seedingRef = useRef({});
   const autoSeedDefaults = async (eventFormType) => {
     if (seedingRef.current[eventFormType]) return; // already seeded this session
     seedingRef.current[eventFormType] = true;
