@@ -96,6 +96,7 @@ function isAllowedOrigin(origin) {
     if (/^https?:\/\/([a-z0-9-]+\.)?citadel\.local(:\d+)?$/.test(origin)) return true;
     if (/^https:\/\/[a-z0-9-]+\.netlify\.app$/.test(origin)) return true;
     if (/^https:\/\/[a-z0-9-]+\.onrender\.com$/.test(origin)) return true;
+    if (/^https:\/\/([a-z0-9-]+\.)?citadeloftruth\.com$/.test(origin)) return true;
     if (process.env.FRONTEND_URL) {
         const allowed = process.env.FRONTEND_URL.replace(/\/$/, '');
         if (origin === allowed) return true;
