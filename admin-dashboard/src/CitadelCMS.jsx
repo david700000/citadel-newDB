@@ -1,4 +1,46 @@
-import { useState, useEffect, useRef, Fragment } from "react";
+import { useState, useEffect, useRef, Fragment, Component } from "react";
+
+// ─── ERROR BOUNDARY ──────────────────────────────────────────────────────────
+class PageErrorBoundary extends Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error, info) {
+    console.error("[PageErrorBoundary] Caught error:", error, info);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{
+          margin: 32, padding: 28, borderRadius: 14, background: "#fef2f2",
+          border: "1.5px solid #fecaca", fontFamily: "'DM Sans', sans-serif"
+        }}>
+          <h3 style={{ margin: "0 0 10px", color: "#991b1b", fontSize: 18, fontWeight: 700 }}>
+            ⚠️ This page crashed
+          </h3>
+          <p style={{ margin: "0 0 8px", color: "#7f1d1d", fontSize: 14 }}>
+            {this.state.error?.message || "An unexpected error occurred."}
+          </p>
+          <button
+            onClick={() => this.setState({ hasError: false, error: null })}
+            style={{
+              marginTop: 12, padding: "8px 18px", borderRadius: 8,
+              background: "#0B1F3B", color: "#fff", border: "none",
+              fontWeight: 600, fontSize: 13, cursor: "pointer"
+            }}
+          >
+            Try Again
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 import { requestForToken, onMessageListener } from "./firebase-config";
 import API_URLS from "./api";
 import churchLogo from "./assets/logo.jpg";
@@ -125,6 +167,10 @@ const Input = ({ id, label, value, onChange, type = "text", placeholder, require
     if (type === "email" && !isValidEmail(value)) validationError = "Enter a valid email address (e.g. john@example.com)";
     if (type === "tel" && !isValidPhone(value)) validationError = "Enter a valid phone number (e.g. +2348012345678)";
   }
+  if (type === "date") {
+    return <DateInput label={label} value={value} onChange={onChange} required={required} placeholder={placeholder} small={small} {...rest} />;
+  }
+
   return (
     <div style={{ marginBottom: small ? 12 : 16 }}>
       {label && <label style={{ display: "block", fontFamily: "'DM Sans', sans-serif", fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 6 }}>{label}{required && <span style={{ color: "#ef4444" }}> *</span>}</label>}
@@ -147,7 +193,6 @@ const Input = ({ id, label, value, onChange, type = "text", placeholder, require
           placeholder={placeholder}
           style={{
             ...inputStyle,
-            ...(type === "date" ? dateInputStyle : {}),
             ...(validationError ? { borderColor: "#ef4444", background: "#fff5f5" } : {}),
           }}
           {...rest}
@@ -177,8 +222,45 @@ const dateInputStyle = {
   cursor: "pointer",
 };
 
+// Reusable DD/MM/YYYY date input — value in/out as YYYY-MM-DD (ISO)
+const DateInput = ({ label, value, onChange, required, small, placeholder }) => {
+  const toDisplay = iso => {
+    if (!iso) return "";
+    const [y, m, d] = iso.split("-");
+    return y && m && d ? `${d}/${m}/${y}` : iso;
+  };
+  const [display, setDisplay] = useState(() => toDisplay(value));
+  useEffect(() => { setDisplay(toDisplay(value)); }, [value]);
+  const handleChange = e => {
+    let val = e.target.value.replace(/[^\d/]/g, "");
+    const prev = display;
+    if (val.length === 2 && prev.length === 1) val += "/";
+    if (val.length === 5 && prev.length === 4) val += "/";
+    setDisplay(val);
+    const parts = val.split("/");
+    if (parts.length === 3 && parts[2].length === 4) {
+      onChange && onChange(`${parts[2]}-${parts[1].padStart(2, "0")}-${parts[0].padStart(2, "0")}`);
+    } else if (!val) {
+      onChange && onChange("");
+    }
+  };
+  return (
+    <div style={{ marginBottom: small ? 12 : 16 }}>
+      {label && <label style={{ display: "block", fontFamily: "'DM Sans', sans-serif", fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 6 }}>{label}{required && <span style={{ color: "#ef4444" }}> *</span>}</label>}
+      <input
+        type="text"
+        placeholder={placeholder || "DD/MM/YYYY"}
+        maxLength={10}
+        value={display}
+        onChange={handleChange}
+        style={{ ...inputStyle }}
+      />
+    </div>
+  );
+};
+
 const thStyle = { padding: "12px 18px", textAlign: "left", fontSize: 12, fontWeight: 700, color: "#6b7280", fontFamily: "'DM Sans', sans-serif", borderBottom: "1px solid #e5e7eb" };
-const tdStyle = { padding: "13px 18px", fontSize: 14, color: "#111827", fontFamily: "'DM Sans', sans-serif" };
+const tdStyle = { padding: "13px 18px", fontSize: 14, color: "#111827", fontFamily: "'DM Sans', sans-serif", whiteSpace: "nowrap" };
 
 const Btn = ({ children, onClick, variant = "primary", small, disabled, type = "button", style }) => {
   const styles = {
@@ -569,10 +651,10 @@ const AttendanceDetailsModal = ({ eventLog, users, onClose, onEdit }) => {
       return;
     }
 
-    const formattedDate = new Date(eventLog.date).toLocaleDateString("en-US", {
-      year: "numeric",
+    const formattedDate = new Date(eventLog.date).toLocaleDateString("en-GB", {
+      day: "numeric",
       month: "long",
-      day: "numeric"
+      year: "numeric"
     });
 
     const presentRecords = eventLog.records.filter(r => r.status === "present");
@@ -2192,7 +2274,7 @@ const CMSEventRegistrations = ({ state, toast }) => {
           rows={tabList.map(r => [
             <div style={{ fontWeight: 700, color: "#0B1F3B", cursor: "pointer" }} onClick={() => setSelectedUser(r)}>{r.name}</div>,
             r.email,
-            r.created_at ? new Date(r.created_at).toLocaleDateString('en-GB') : "—",
+            r.created_at ? new Date(r.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }) : "—",
             (dbEvent && dbEvent.eventDays && dbEvent.eventDays.trim()) ? (
               selectedDayTab === "all" ? (
                 <span style={{ fontSize: 13, fontWeight: 600, color: "#475569" }}>
@@ -3265,7 +3347,7 @@ const CMSHome = ({ state, token, toast, setActive, setUserFilterTag }) => {
           <tr><th>Date</th><th>Type</th><th>Category</th><th>Amount (₦)</th><th>Status</th><th>Notes</th></tr>
           ${data.financialLogs.map(l => `
             <tr class="${l.voided ? 'voided' : ''}">
-              <td>${new Date(l.date).toLocaleDateString('en-GB')}</td>
+              <td>${new Date(l.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</td>
               <td>${l.type.toUpperCase()}</td>
               <td>${l.category}</td>
               <td>${l.amount.toLocaleString()}</td>
@@ -3298,7 +3380,7 @@ const CMSHome = ({ state, token, toast, setActive, setUserFilterTag }) => {
               <td>${u.email}</td>
               <td>${u.phone || '-'}</td>
               <td>${u.tag}</td>
-              <td>${new Date(u.created_at).toLocaleDateString('en-GB')}</td>
+              <td>${new Date(u.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</td>
             </tr>
           `).join('')}
         </table>
@@ -3374,7 +3456,7 @@ const CMSHome = ({ state, token, toast, setActive, setUserFilterTag }) => {
             }}>
               {u.fcm_tokens && u.fcm_tokens.length > 0 ? "● Active" : "○ Inactive"}
             </span>,
-            new Date(u.created_at).toLocaleDateString('en-GB')
+            new Date(u.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })
           ])}
         />
       </div>
@@ -4259,7 +4341,7 @@ const MediaDashboard = ({ state, dispatch, toast, admin }) => {
   ];
 
   const firstTimers = state.users.filter(u => u.tag === "first_timer");
-  const myMessages = state.messages.filter(m => m.sender === admin.id || m.sender_id === admin.id);
+  const myMessages = state.messages.filter(m => m.sender === admin?.id || m.sender_id === admin?.id);
   const reminders = state.reminders || [];
 
   const handleSend = async () => {
@@ -4460,7 +4542,7 @@ const MediaDashboard = ({ state, dispatch, toast, admin }) => {
           <Page title="First-Timers" subtitle={`${firstTimers.length} registered`}>
             <Table
               headers={["Name", "Email", "Phone", "Joined"]}
-              rows={firstTimers.map(u => [u.full_name, u.email, u.phone, new Date(u.created_at).toLocaleDateString('en-GB')])}
+              rows={firstTimers.map(u => [u.full_name, u.email, u.phone, new Date(u.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })])}
             />
           </Page>
         )}
@@ -4917,7 +4999,7 @@ const printFinancialReport = (logs, toast) => {
   monthlyLedger.forEach(m => {
     rowsHtml += `
       <tr style="background: #f8fafc;">
-        <td colspan="7" style="padding: 10px 12px; font-weight: 800; color: #0b1f3b;">
+        <td colspan="9" style="padding: 10px 12px; font-weight: 800; color: #0b1f3b;">
           ${m.month} <span style="float: right;">Opening Balance: ₦${m.openingBalance.toLocaleString()}</span>
         </td>
       </tr>
@@ -4925,28 +5007,37 @@ const printFinancialReport = (logs, toast) => {
 
     m.transactions.forEach(l => {
       const typeColor = l.type === "income" ? "#047857" : "#b91c1c";
+      const cashAmt = l.cash_amount != null ? l.cash_amount : l.amount;
+      const transferAmt = l.transfer_amount != null ? l.transfer_amount : 0;
       rowsHtml += `
         <tr style="border-bottom: 1px solid #e5e7eb;">
-          <td style="padding: 10px; font-size: 13px; color: #4b5563;">${new Date(l.date).toLocaleDateString('en-GB')}</td>
+          <td style="padding: 10px; font-size: 13px; color: #4b5563; white-space: nowrap;">${new Date(l.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</td>
           <td style="padding: 10px; font-size: 13px; font-weight: 700; color: ${typeColor}; text-transform: uppercase;">${l.type}</td>
           <td style="padding: 10px; font-size: 13px; color: #111827;">${l.category}</td>
-          <td style="padding: 10px; font-size: 13px; font-weight: 600; color: ${typeColor};">₦${l.amount.toLocaleString()}</td>
-          <td style="padding: 10px; font-size: 13px; color: #4b5563;">${l.description || "—"}</td>
-          <td style="padding: 10px; font-size: 13px; color: #4b5563;">${l.logged_by_name}</td>
-          <td style="padding: 10px; font-size: 12px; color: #6b7280;">${l.acknowledgements ? l.acknowledgements.map(a => a.leader_name).join("<br>") : ""}</td>
+          <td style="padding: 10px; font-size: 13px; color: #047857;">${cashAmt > 0 ? '₦' + cashAmt.toLocaleString() : '—'}</td>
+          <td style="padding: 10px; font-size: 13px; color: #047857;">${transferAmt > 0 ? '₦' + transferAmt.toLocaleString() : '—'}</td>
+          <td style="padding: 10px; font-size: 13px; font-weight: 700; color: ${typeColor};">₦${l.amount.toLocaleString()}</td>
+          <td style="padding: 10px; font-size: 13px; color: #4b5563;">${l.description || '—'}</td>
+          <td style="padding: 10px; font-size: 13px; color: #4b5563;">${l.logged_by_name || '—'}</td>
+          <td style="padding: 10px; font-size: 12px; color: #6b7280;">${l.acknowledgements ? l.acknowledgements.map(a => a.leader_name).join('<br>') : ''}</td>
         </tr>
       `;
     });
 
+    const mCashIncome = m.transactions.filter(l => l.type === 'income' && !l.voided).reduce((s, l) => s + (l.cash_amount != null ? l.cash_amount : l.amount), 0);
+    const mTransferIncome = m.transactions.filter(l => l.type === 'income' && !l.voided).reduce((s, l) => s + (l.transfer_amount || 0), 0);
+    const mCashExpense = m.transactions.filter(l => l.type === 'expense' && !l.voided).reduce((s, l) => s + (l.cash_amount != null ? l.cash_amount : l.amount), 0);
+    const mTransferExpense = m.transactions.filter(l => l.type === 'expense' && !l.voided).reduce((s, l) => s + (l.transfer_amount || 0), 0);
     rowsHtml += `
       <tr>
-        <td colspan="7" style="padding: 12px; font-weight: 700; font-size: 13px; border-bottom: 2px solid #0b1f3b;">
-          Monthly Totals: <span style="color: #047857;">Income: +₦${m.totalIncome.toLocaleString()}</span> | 
-          <span style="color: #b91c1c;">Expense: -₦${m.totalExpense.toLocaleString()}</span>
+        <td colspan="9" style="padding: 12px; font-weight: 700; font-size: 13px; border-bottom: 2px solid #0b1f3b; background: #f8fafc;">
+          Monthly Totals:
+          <span style="color: #047857;"> Income: +₦${m.totalIncome.toLocaleString()} (Cash: ₦${mCashIncome.toLocaleString()} | Transfer: ₦${mTransferIncome.toLocaleString()})</span> &nbsp;|
+          <span style="color: #b91c1c;"> Expense: -₦${m.totalExpense.toLocaleString()} (Cash: ₦${mCashExpense.toLocaleString()} | Transfer: ₦${mTransferExpense.toLocaleString()})</span>
           <span style="float: right; font-weight: 800; font-size: 14px;">Closing Balance: ₦${m.closingBalance.toLocaleString()}</span>
         </td>
       </tr>
-      <tr><td colspan="7" style="height: 20px;"></td></tr>
+      <tr><td colspan="9" style="height: 20px;"></td></tr>
     `;
   });
 
@@ -4972,7 +5063,7 @@ const printFinancialReport = (logs, toast) => {
       </div>
       <table>
         <thead>
-          <tr><th>Date</th><th>Type</th><th>Section</th><th>Amount</th><th>Description</th><th>Logged By</th><th>Acknowledgements</th></tr>
+          <tr><th>Date</th><th>Type</th><th>Section</th><th>Cash</th><th>Transfer</th><th>Total Amount</th><th>Description</th><th>Logged By</th><th>Acknowledgements</th></tr>
         </thead>
         <tbody>${rowsHtml}</tbody>
       </table>
@@ -5072,8 +5163,9 @@ const LeaderDashboard = ({ state, dispatch, admin, toast }) => {
   const monthlyLedger = processMonthlyLedger(logs, searchQuery);
 
   // Pending counts
-  const pendingLedgerAcks = logs.filter(l => !l.acknowledgements || !l.acknowledgements.some(ack => ack.leader_id === admin.id)).length;
-  const pendingSalaryAcks = salaries.filter(s => !s.acknowledgements || !s.acknowledgements.some(ack => ack.leader_id === admin.id)).length;
+  const adminId = admin?.id;
+  const pendingLedgerAcks = logs.filter(l => !l.acknowledgements || !l.acknowledgements.some(ack => ack.leader_id === adminId)).length;
+  const pendingSalaryAcks = salaries.filter(s => !s.acknowledgements || !s.acknowledgements.some(ack => ack.leader_id === adminId)).length;
   const pendingFundReqs = fundRequests.filter(r => r.status === "pending").length;
 
   const handleAcknowledge = async (id) => {
@@ -5409,7 +5501,7 @@ const LeaderDashboard = ({ state, dispatch, admin, toast }) => {
             <Table
               headers={["Name", "Email", "Phone", "Tag", "Department", "Joined"]}
               onRowClick={(i) => setViewUser(filteredUsers[i])}
-              rows={filteredUsers.map(u => [u.full_name, u.email, u.phone, <Badge label={u.tag} />, u.department || "—", new Date(u.created_at).toLocaleDateString('en-GB')])}
+              rows={filteredUsers.map(u => [u.full_name, u.email, u.phone, <Badge label={u.tag} />, u.department || "—", new Date(u.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })])}
             />
           </Page>
         )}
@@ -5480,7 +5572,7 @@ const LeaderDashboard = ({ state, dispatch, admin, toast }) => {
                       </tr>
                       {m.transactions.map((l) => (
                         <tr key={l.id || l._id} style={{ borderBottom: "1px solid #f3f4f6" }}>
-                          <td style={tdStyle}>{new Date(l.date).toLocaleDateString('en-GB')}</td>
+                          <td style={tdStyle}>{new Date(l.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</td>
                           <td style={tdStyle}><Badge label={l.type} /></td>
                           <td style={tdStyle}>{l.category}</td>
                           <td style={{ ...tdStyle, fontWeight: 700, color: l.type === "income" ? "#059669" : "#dc2626" }}>
@@ -5541,11 +5633,11 @@ const LeaderDashboard = ({ state, dispatch, admin, toast }) => {
                     </tr>
                   </thead>
                   <tbody>
-                    {logs.filter(l => !l.acknowledgements || !l.acknowledgements.some(ack => ack.leader_id === admin.id)).length === 0 ? (
+                    {logs.filter(l => !l.acknowledgements || !l.acknowledgements.some(ack => ack.leader_id === adminId)).length === 0 ? (
                       <tr><td colSpan={7} style={{ padding: 30, textAlign: "center", color: "#9ca3af" }}>All caught up! No ledger items pending your acknowledgement.</td></tr>
-                    ) : logs.filter(l => !l.acknowledgements || !l.acknowledgements.some(ack => ack.leader_id === admin.id)).map((l) => (
+                    ) : logs.filter(l => !l.acknowledgements || !l.acknowledgements.some(ack => ack.leader_id === adminId)).map((l) => (
                       <tr key={l.id || l._id} style={{ borderBottom: "1px solid #f3f4f6" }}>
-                        <td style={tdStyle}>{new Date(l.date).toLocaleDateString('en-GB')}</td>
+                        <td style={tdStyle}>{new Date(l.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</td>
                         <td style={tdStyle}><Badge label={l.type} /></td>
                         <td style={tdStyle}>{l.category}</td>
                         <td style={{ ...tdStyle, fontWeight: 700, color: l.type === "income" ? "#059669" : "#dc2626" }}>
@@ -5581,9 +5673,9 @@ const LeaderDashboard = ({ state, dispatch, admin, toast }) => {
                     </tr>
                   </thead>
                   <tbody>
-                    {salaries.filter(s => !s.acknowledgements || !s.acknowledgements.some(ack => ack.leader_id === admin.id)).length === 0 ? (
+                    {salaries.filter(s => !s.acknowledgements || !s.acknowledgements.some(ack => ack.leader_id === adminId)).length === 0 ? (
                       <tr><td colSpan={6} style={{ padding: 30, textAlign: "center", color: "#9ca3af" }}>All caught up! No salaries pending your acknowledgement.</td></tr>
-                    ) : salaries.filter(s => !s.acknowledgements || !s.acknowledgements.some(ack => ack.leader_id === admin.id)).map((s) => (
+                    ) : salaries.filter(s => !s.acknowledgements || !s.acknowledgements.some(ack => ack.leader_id === adminId)).map((s) => (
                       <tr key={s.id || s._id} style={{ borderBottom: "1px solid #f3f4f6" }}>
                         <td style={{ ...tdStyle, fontWeight: 600 }}>{s.staff_name}</td>
                         <td style={tdStyle}>{s.role}</td>
@@ -5622,7 +5714,7 @@ const LeaderDashboard = ({ state, dispatch, admin, toast }) => {
                       <tr><td colSpan={6} style={{ padding: 30, textAlign: "center", color: "#9ca3af" }}>All caught up! No fund requests pending approval.</td></tr>
                     ) : fundRequests.filter(r => r.status === "pending").map((r) => (
                       <tr key={r.id || r._id} style={{ borderBottom: "1px solid #f3f4f6" }}>
-                        <td style={tdStyle}>{new Date(r.createdAt).toLocaleDateString('en-GB')}</td>
+                        <td style={tdStyle}>{new Date(r.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</td>
                         <td style={tdStyle}>
                           <div style={{ fontWeight: 600, color: "#0B1F3B" }}>{r.title}</div>
                           <div style={{ fontSize: 12, color: "#6b7280" }}>{r.description}</div>
@@ -6426,20 +6518,20 @@ const FinancialDashboard = ({ state, dispatch, toast, admin }) => {
                                   const fmtBreakdown = (rec) => {
                                     if (!rec.cash_amount && !rec.transfer_amount) return null;
                                     const parts = [];
-                                    if (rec.cash_amount > 0) parts.push(`💵 ₦${rec.cash_amount.toLocaleString()}`);
-                                    if (rec.transfer_amount > 0) parts.push(`🏦 ₦${rec.transfer_amount.toLocaleString()}`);
+                                    if (rec.cash_amount > 0) parts.push(`Cash: ₦${rec.cash_amount.toLocaleString()}`);
+                                    if (rec.transfer_amount > 0) parts.push(`Transfer: ₦${rec.transfer_amount.toLocaleString()}`);
                                     return parts.join(" + ");
                                   };
                                   return (
                                     <Fragment key={lid}>
                                       {/* BEFORE row */}
                                       <tr style={{ background: "#fff7ed", borderLeft: "4px solid #f97316", borderBottom: "1px solid #fed7aa" }}>
-                                        <td style={{ ...tdStyle, color: "#9a3412", fontSize: 11 }}>{new Date(l.date).toLocaleDateString('en-GB')}</td>
+                                        <td style={{ ...tdStyle, color: "#9a3412", fontSize: 11 }}>{new Date(l.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</td>
                                         <td style={tdStyle}><Badge label={l.type} color="#d97706" /></td>
                                         <td style={{ ...tdStyle, color: "#9a3412" }}>{l.category}</td>
                                         <td style={{ ...tdStyle, fontWeight: 700, color: "#9a3412" }}>
+                                          {fmtBreakdown(l) && <span style={{ fontSize: 11, color: "#b45309", fontWeight: 400, marginRight: 6 }}>({fmtBreakdown(l)})</span>}
                                           <span style={{ textDecoration: "line-through" }}>{l.type === "income" ? "+" : "-"}₦{l.amount.toLocaleString()}</span>
-                                          {fmtBreakdown(l) && <div style={{ fontSize: 10, color: "#b45309", fontWeight: 400, marginTop: 2 }}>{fmtBreakdown(l)}</div>}
                                         </td>
                                         <td style={{ ...tdStyle, color: "#9a3412", maxWidth: 140, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{l.description || "—"}</td>
                                         <td style={{ ...tdStyle, color: "#9a3412" }}>{l.logged_by_name}</td>
@@ -6450,7 +6542,7 @@ const FinancialDashboard = ({ state, dispatch, toast, admin }) => {
                                       {/* Balance connector row */}
                                       <tr style={{ background: "#f0f9ff", borderBottom: "1px solid #bae6fd" }}>
                                         <td colSpan={8} style={{ padding: "6px 18px", fontFamily: "'DM Sans',sans-serif", fontSize: 12 }}>
-                                          <span style={{ color: "#6b7280", marginRight: 8 }}>Edited by {l.voided_by_name} • {new Date(l.voided_at).toLocaleDateString('en-GB')}</span>
+                                          <span style={{ color: "#6b7280", marginRight: 8 }}>Edited by {l.voided_by_name} • {new Date(l.voided_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
                                           <span style={{ fontWeight: 700, color: "#0369a1" }}>
                                             {(() => {
                                               const oldEffect = l.type === "income" ? l.amount : -l.amount;
@@ -6463,7 +6555,7 @@ const FinancialDashboard = ({ state, dispatch, toast, admin }) => {
                                       </tr>
                                       {/* AFTER row */}
                                       <tr style={{ background: "#f0fdf4", borderLeft: "4px solid #22c55e", borderBottom: "2px solid #bbf7d0" }}>
-                                        <td style={{ ...tdStyle, color: "#14532d", fontSize: 11 }}>{new Date(pairNew.date).toLocaleDateString('en-GB')}</td>
+                                        <td style={{ ...tdStyle, color: "#14532d", fontSize: 11 }}>{new Date(pairNew.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</td>
                                         <td style={tdStyle}><Badge label={pairNew.type} /></td>
                                         <td style={{ ...tdStyle, color: "#14532d" }}>{pairNew.category}</td>
                                         <td style={{ ...tdStyle, fontWeight: 700, color: amtColor }}>
@@ -6496,18 +6588,18 @@ const FinancialDashboard = ({ state, dispatch, toast, admin }) => {
                                 // ── Normal row (active or plain voided) ──
                                 return (
                                   <tr key={lid} style={{ borderBottom: "1px solid #f3f4f6", textDecoration: l.voided ? "line-through" : "none", color: l.voided ? "#9ca3af" : "inherit" }}>
-                                    <td style={{...tdStyle, color: l.voided ? "#9ca3af" : tdStyle.color}}>{new Date(l.date).toLocaleDateString('en-GB')}</td>
+                                    <td style={{...tdStyle, color: l.voided ? "#9ca3af" : tdStyle.color}}>{new Date(l.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</td>
                                     <td style={tdStyle}><Badge label={l.type} color={l.voided ? "#9ca3af" : undefined} /></td>
                                     <td style={{...tdStyle, color: l.voided ? "#9ca3af" : tdStyle.color}}>{l.category}</td>
                                     <td style={{ ...tdStyle, fontWeight: 700, color: l.voided ? "#9ca3af" : (l.type === "income" ? "#059669" : "#dc2626") }}>
-                                      {l.type === "income" ? "+" : "-"}₦{l.amount.toLocaleString()}
                                       {(l.cash_amount > 0 || l.transfer_amount > 0) && !l.voided && (
-                                        <div style={{ fontSize: 10, color: "#6b7280", fontWeight: 400, marginTop: 2 }}>
-                                          {l.cash_amount > 0 && `💵₦${l.cash_amount.toLocaleString()}`}
+                                        <span style={{ fontSize: 11, color: "#6b7280", fontWeight: 400, marginRight: 6 }}>
+                                          ({l.cash_amount > 0 && `Cash: ₦${l.cash_amount.toLocaleString()}`}
                                           {l.cash_amount > 0 && l.transfer_amount > 0 && " + "}
-                                          {l.transfer_amount > 0 && `🏦₦${l.transfer_amount.toLocaleString()}`}
-                                        </div>
+                                          {l.transfer_amount > 0 && `Transfer: ₦${l.transfer_amount.toLocaleString()}`})
+                                        </span>
                                       )}
+                                      {l.type === "income" ? "+" : "-"}₦{l.amount.toLocaleString()}
                                     </td>
                                     <td style={{ ...tdStyle, color: l.voided ? "#9ca3af" : tdStyle.color, maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                                       {l.voided && l.void_reason && l.void_reason !== "Edited" ? `[Voided: ${l.void_reason}] ` : ""}{l.description || "—"}
@@ -6577,10 +6669,10 @@ const FinancialDashboard = ({ state, dispatch, toast, admin }) => {
                     {/* Cash + Transfer breakdown */}
                     <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
                       <div style={{ flex: "1 1 140px" }}>
-                        <Input label="Cash Amount (₦)" value={incomeCashAmount} onChange={setIncomeCashAmount} type="text" placeholder="0.00" inputMode="decimal" />
+                        <Input label="Cash Amount (Cash)" value={incomeCashAmount} onChange={setIncomeCashAmount} type="text" placeholder="0.00" inputMode="decimal" />
                       </div>
                       <div style={{ flex: "1 1 140px" }}>
-                        <Input label="Transfer Amount (₦)" value={incomeTransferAmount} onChange={setIncomeTransferAmount} type="text" placeholder="0.00" inputMode="decimal" />
+                        <Input label="Transfer Amount (Transfer)" value={incomeTransferAmount} onChange={setIncomeTransferAmount} type="text" placeholder="0.00" inputMode="decimal" />
                       </div>
                     </div>
 
@@ -6632,10 +6724,10 @@ const FinancialDashboard = ({ state, dispatch, toast, admin }) => {
                     {/* Cash + Transfer breakdown */}
                     <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
                       <div style={{ flex: "1 1 140px" }}>
-                        <Input label="Cash Amount (₦)" value={expenseCashAmount} onChange={setExpenseCashAmount} type="text" placeholder="0.00" inputMode="decimal" />
+                        <Input label="Cash Amount (Cash)" value={expenseCashAmount} onChange={setExpenseCashAmount} type="text" placeholder="0.00" inputMode="decimal" />
                       </div>
                       <div style={{ flex: "1 1 140px" }}>
-                        <Input label="Transfer Amount (₦)" value={expenseTransferAmount} onChange={setExpenseTransferAmount} type="text" placeholder="0.00" inputMode="decimal" />
+                        <Input label="Transfer Amount (Transfer)" value={expenseTransferAmount} onChange={setExpenseTransferAmount} type="text" placeholder="0.00" inputMode="decimal" />
                       </div>
                     </div>
 
@@ -6799,7 +6891,7 @@ const FinancialDashboard = ({ state, dispatch, toast, admin }) => {
                           <tr><td colSpan={6} style={{ padding: 40, textAlign: "center", color: "#9ca3af", fontFamily: "'DM Sans',sans-serif" }}>No fund requests submitted yet.</td></tr>
                         ) : fundRequests.map(r => (
                           <tr key={r.id || r._id} style={{ borderBottom: "1px solid #f3f4f6" }}>
-                            <td style={tdStyle}>{new Date(r.createdAt).toLocaleDateString('en-GB')}</td>
+                            <td style={tdStyle}>{new Date(r.createdAt).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</td>
                             <td style={tdStyle}>
                               <div style={{ fontWeight: 700, color: "#0B1F3B", fontSize: 13 }}>{r.title}</div>
                               <div style={{ fontSize: 12, color: "#6b7280", marginTop: 2 }}>{r.description}</div>
@@ -6863,13 +6955,13 @@ const FinancialDashboard = ({ state, dispatch, toast, admin }) => {
         <div style={{ background: "#fff7ed", border: "1.5px solid #fed7aa", borderRadius: 10, padding: "12px 16px", marginBottom: 16 }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: "#9a3412", fontFamily: "'DM Sans',sans-serif", textTransform: "uppercase", letterSpacing: "0.05em", marginBottom: 8 }}>Original Record (Before)</div>
           <div style={{ display: "flex", gap: 20, flexWrap: "wrap" }}>
-            <span style={{ fontSize: 13, color: "#7c2d12", fontFamily: "'DM Sans',sans-serif" }}>📅 {new Date(editModal.date).toLocaleDateString('en-GB')}</span>
+            <span style={{ fontSize: 13, color: "#7c2d12", fontFamily: "'DM Sans',sans-serif" }}>📅 {new Date(editModal.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</span>
             <span style={{ fontSize: 13, color: "#7c2d12", fontFamily: "'DM Sans',sans-serif" }}>📂 {editModal.category}</span>
             <span style={{ fontSize: 13, fontWeight: 800, color: editModal.type === "income" ? "#059669" : "#dc2626", fontFamily: "'DM Sans',sans-serif" }}>
               {editModal.type === "income" ? "+" : "-"}₦{editModal.amount.toLocaleString()}
             </span>
-            {editModal.cash_amount > 0 && <span style={{ fontSize: 11, color: "#92400e", fontFamily: "'DM Sans',sans-serif" }}>💵 Cash: ₦{editModal.cash_amount.toLocaleString()}</span>}
-            {editModal.transfer_amount > 0 && <span style={{ fontSize: 11, color: "#92400e", fontFamily: "'DM Sans',sans-serif" }}>🏦 Transfer: ₦{editModal.transfer_amount.toLocaleString()}</span>}
+            {editModal.cash_amount > 0 && <span style={{ fontSize: 11, color: "#92400e", fontFamily: "'DM Sans',sans-serif" }}>Cash: ₦{editModal.cash_amount.toLocaleString()}</span>}
+            {editModal.transfer_amount > 0 && <span style={{ fontSize: 11, color: "#92400e", fontFamily: "'DM Sans',sans-serif" }}>Transfer: ₦{editModal.transfer_amount.toLocaleString()}</span>}
           </div>
           {editModal.description && <div style={{ fontSize: 12, color: "#9a3412", marginTop: 6, fontFamily: "'DM Sans',sans-serif", fontStyle: "italic" }}>{editModal.description}</div>}
         </div>
@@ -6898,10 +6990,10 @@ const FinancialDashboard = ({ state, dispatch, toast, admin }) => {
           {/* Cash + Transfer fields */}
           <div style={{ display: "flex", gap: 12, marginBottom: 4 }}>
             <div style={{ flex: 1 }}>
-              <Input label="Cash Amount (₦)" value={editCashAmount} onChange={setEditCashAmount} type="text" inputMode="decimal" placeholder="0.00" />
+              <Input label="Cash Amount (Cash)" value={editCashAmount} onChange={setEditCashAmount} type="text" inputMode="decimal" placeholder="0.00" />
             </div>
             <div style={{ flex: 1 }}>
-              <Input label="Transfer Amount (₦)" value={editTransferAmount} onChange={setEditTransferAmount} type="text" inputMode="decimal" placeholder="0.00" />
+              <Input label="Transfer Amount (Transfer)" value={editTransferAmount} onChange={setEditTransferAmount} type="text" inputMode="decimal" placeholder="0.00" />
             </div>
           </div>
 
@@ -6918,8 +7010,8 @@ const FinancialDashboard = ({ state, dispatch, toast, admin }) => {
               <div style={{ marginBottom: 12 }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", background: "#f0f9ff", border: "1.5px solid #7dd3fc", borderRadius: 10, padding: "10px 14px", marginBottom: 8 }}>
                   <div style={{ display: "flex", gap: 16 }}>
-                    {newCash > 0 && <span style={{ fontSize: 12, color: "#0369a1", fontFamily: "'DM Sans',sans-serif" }}>💵 ₦{newCash.toLocaleString()}</span>}
-                    {newXfer > 0 && <span style={{ fontSize: 12, color: "#0369a1", fontFamily: "'DM Sans',sans-serif" }}>🏦 ₦{newXfer.toLocaleString()}</span>}
+                    {newCash > 0 && <span style={{ fontSize: 12, color: "#0369a1", fontFamily: "'DM Sans',sans-serif" }}>Cash: ₦{newCash.toLocaleString()}</span>}
+                    {newXfer > 0 && <span style={{ fontSize: 12, color: "#0369a1", fontFamily: "'DM Sans',sans-serif" }}>Transfer: ₦{newXfer.toLocaleString()}</span>}
                   </div>
                   <span style={{ fontWeight: 800, fontSize: 14, color: "#0369a1", fontFamily: "'DM Sans',sans-serif" }}>New Total: ₦{newTotal.toLocaleString()}</span>
                 </div>
@@ -6971,6 +7063,8 @@ const CMSServiceReviews = ({ state, dispatch, toast, role }) => {
   const [serviceType, setServiceType] = useState("all");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
+  const [dateFromDisplay, setDateFromDisplay] = useState("");
+  const [dateToDisplay, setDateToDisplay] = useState("");
 
   const [selectedReview, setSelectedReview] = useState(null);
   const [deletingId, setDeletingId] = useState(null);
@@ -7073,7 +7167,7 @@ const CMSServiceReviews = ({ state, dispatch, toast, role }) => {
           const ratingColor = r.overall_average >= 8 ? "#047857" : r.overall_average >= 5 ? "#d97706" : "#b91c1c";
           return `
             <tr style="border-bottom: 1px solid #e5e7eb;">
-              <td style="padding: 10px; font-size: 13px;">${new Date(r.createdAt || r.date).toLocaleDateString('en-GB')}</td>
+              <td style="padding: 10px; font-size: 13px;">${new Date(r.createdAt || r.date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</td>
               <td style="padding: 10px; font-size: 13px;">${r.service_title || "—"}</td>
               <td style="padding: 10px; font-size: 13px; text-transform: capitalize;">${r.service_type ? r.service_type.replace(/_/g, ' ') : "—"}</td>
               <td style="padding: 10px; font-size: 13px;">${r.submitted_by_name || "—"}</td>
@@ -7199,22 +7293,50 @@ const CMSServiceReviews = ({ state, dispatch, toast, role }) => {
             />
           </div>
           <div style={{ flex: "1 1 150px" }}>
-            <Input
-              label="From Date"
-              type="date"
-              value={dateFrom}
-              onChange={v => { setDateFrom(v); setPage(1); }}
-              small
-            />
+            <div style={{ marginBottom: 12 }}>
+              <label style={{ display: "block", fontFamily: "'DM Sans', sans-serif", fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 6 }}>From Date</label>
+              <input
+                type="text"
+                placeholder="DD/MM/YYYY"
+                maxLength={10}
+                value={dateFromDisplay}
+                onChange={e => {
+                  let val = e.target.value.replace(/[^\d/]/g, '');
+                  if (val.length === 2 && dateFromDisplay.length === 1) val += '/';
+                  if (val.length === 5 && dateFromDisplay.length === 4) val += '/';
+                  setDateFromDisplay(val);
+                  const parts = val.split('/');
+                  if (parts.length === 3 && parts[2].length === 4) {
+                    const iso = `${parts[2]}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`;
+                    setDateFrom(iso); setPage(1);
+                  } else if (!val) { setDateFrom(''); setPage(1); }
+                }}
+                style={{ width: '100%', boxSizing: 'border-box', padding: '10px 14px', border: '1.5px solid #e5e7eb', borderRadius: 10, fontSize: 14, fontFamily: "'DM Sans', sans-serif", color: '#111827', background: '#fafafa', outline: 'none' }}
+              />
+            </div>
           </div>
           <div style={{ flex: "1 1 150px" }}>
-            <Input
-              label="To Date"
-              type="date"
-              value={dateTo}
-              onChange={v => { setDateTo(v); setPage(1); }}
-              small
-            />
+            <div style={{ marginBottom: 12 }}>
+              <label style={{ display: "block", fontFamily: "'DM Sans', sans-serif", fontSize: 13, fontWeight: 600, color: "#374151", marginBottom: 6 }}>To Date</label>
+              <input
+                type="text"
+                placeholder="DD/MM/YYYY"
+                maxLength={10}
+                value={dateToDisplay}
+                onChange={e => {
+                  let val = e.target.value.replace(/[^\d/]/g, '');
+                  if (val.length === 2 && dateToDisplay.length === 1) val += '/';
+                  if (val.length === 5 && dateToDisplay.length === 4) val += '/';
+                  setDateToDisplay(val);
+                  const parts = val.split('/');
+                  if (parts.length === 3 && parts[2].length === 4) {
+                    const iso = `${parts[2]}-${parts[1].padStart(2,'0')}-${parts[0].padStart(2,'0')}`;
+                    setDateTo(iso); setPage(1);
+                  } else if (!val) { setDateTo(''); setPage(1); }
+                }}
+                style={{ width: '100%', boxSizing: 'border-box', padding: '10px 14px', border: '1.5px solid #e5e7eb', borderRadius: 10, fontSize: 14, fontFamily: "'DM Sans', sans-serif", color: '#111827', background: '#fafafa', outline: 'none' }}
+              />
+            </div>
           </div>
           {(search || serviceType !== "all" || dateFrom || dateTo) && (
             <Btn
@@ -7222,8 +7344,8 @@ const CMSServiceReviews = ({ state, dispatch, toast, role }) => {
               onClick={() => {
                 setSearch("");
                 setServiceType("all");
-                setDateFrom("");
-                setDateTo("");
+                setDateFrom(""); setDateFromDisplay("");
+                setDateTo(""); setDateToDisplay("");
                 setPage(1);
               }}
               style={{ height: 40, marginBottom: 16 }}
@@ -7252,7 +7374,7 @@ const CMSServiceReviews = ({ state, dispatch, toast, role }) => {
             rows={reviews.map(r => {
               const scoreColor = getScoreColor(r.overall_average);
               const columns = [
-                new Date(r.service_date).toLocaleDateString('en-GB'),
+                new Date(r.service_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }),
                 <div style={{ fontWeight: 600, color: "#0B1F3B" }}>{r.full_name}</div>,
                 <Badge label={r.role} />,
                 serviceTypeLabel(r.service_type),
@@ -7331,7 +7453,7 @@ const CMSServiceReviews = ({ state, dispatch, toast, role }) => {
                 <div style={{ display: "flex", gap: 8, marginTop: 4, flexWrap: "wrap" }}>
                   <Badge label={selectedReview.role} />
                   <span style={{ fontSize: 12, color: "#6b7280", fontFamily: "'DM Sans', sans-serif" }}>
-                    Service: <strong>{serviceTypeLabel(selectedReview.service_type)}</strong> ({new Date(selectedReview.service_date).toLocaleDateString('en-GB')})
+                    Service: <strong>{serviceTypeLabel(selectedReview.service_type)}</strong> ({new Date(selectedReview.service_date).toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })})
                   </span>
                 </div>
               </div>
@@ -7834,14 +7956,10 @@ const ServiceReviewFormPage = ({ onBack, inline = false, onSuccess = null }) => 
             <div className="sr-details-grid">
               <div>
                 <label style={{ display: "block", fontSize: 12, fontWeight: 600, color: "#374151", marginBottom: 5 }}>Service Date <span style={{ color: "#ef4444" }}>*</span></label>
-                <input
-                  type="date" value={form.service_date}
-                  onChange={e => setField("service_date", e.target.value)}
-                  style={{
-                    width: "100%", height: 40, padding: "0 12px", border: "1.5px solid #e5e7eb",
-                    borderRadius: 8, fontSize: 13, fontFamily: "'DM Sans', sans-serif",
-                    outline: "none", background: "#fafafa", boxSizing: "border-box", cursor: "pointer"
-                  }}
+                <DateInput
+                  value={form.service_date}
+                  onChange={v => setField("service_date", v)}
+                  required
                 />
               </div>
               <div>
@@ -8624,12 +8742,14 @@ export default function App() {
     <>
       <style>{styles}</style>
 
-      {session.type === "cms" && <CMSDashboard state={state} dispatch={dispatch} toast={showToast} />}
-      {session.type === "admin" && session.admin.role === "media_admin" && <MediaDashboard state={state} dispatch={dispatch} toast={showToast} admin={session.admin} />}
-      {session.type === "admin" && session.admin.role === "usher_admin" && <UsherDashboard state={state} dispatch={dispatch} toast={showToast} admin={session.admin} />}
-      {session.type === "admin" && session.admin.role === "finance_admin" && <FinancialDashboard state={state} dispatch={dispatch} toast={showToast} admin={session.admin} />}
-      {session.type === "admin" && session.admin.role === "leader" && <LeaderDashboard state={state} dispatch={dispatch} admin={session.admin} toast={showToast} />}
-      {session.type === "admin" && session.admin.role === "quality_control" && <QualityControlDashboard state={state} dispatch={dispatch} toast={showToast} admin={session.admin} />}
+      <PageErrorBoundary key={session.type + (session.admin?.role || "")}>
+        {session.type === "cms" && <CMSDashboard state={state} dispatch={dispatch} toast={showToast} />}
+        {session.type === "admin" && session.admin?.role === "media_admin" && <MediaDashboard state={state} dispatch={dispatch} toast={showToast} admin={session.admin} />}
+        {session.type === "admin" && session.admin?.role === "usher_admin" && <UsherDashboard state={state} dispatch={dispatch} toast={showToast} admin={session.admin} />}
+        {session.type === "admin" && session.admin?.role === "finance_admin" && <FinancialDashboard state={state} dispatch={dispatch} toast={showToast} admin={session.admin} />}
+        {session.type === "admin" && session.admin?.role === "leader" && <LeaderDashboard state={state} dispatch={dispatch} admin={session.admin} toast={showToast} />}
+        {session.type === "admin" && session.admin?.role === "quality_control" && <QualityControlDashboard state={state} dispatch={dispatch} toast={showToast} admin={session.admin} />}
+      </PageErrorBoundary>
       {toast && <Toast {...toast} onClose={() => setToast(null)} />}
     </>
   );

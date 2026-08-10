@@ -686,6 +686,7 @@ app.use("/reminders", remindersRouter);
 app.use("/attendance", attendanceRouter);
 app.use("/admins", adminsRouter);
 app.use("/form-fields", formFieldsRouter);
+app.use("/api/form-fields", formFieldsRouter); // public alias for programs page
 app.use("/settings", settingsRouter);
 app.use("/financial", financialRouter);
 app.use("/reports", reportsRouter);
