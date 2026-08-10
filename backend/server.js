@@ -629,6 +629,42 @@ app.post('/api/register-event', async (req, res) => {
     }
 });
 
+// ─── EVENT REGISTRATION: MARK ATTENDANCE ───
+app.post('/api/mark-event-attendance', async (req, res) => {
+    const { registrationNumber } = req.body;
+    if (!registrationNumber) {
+        return res.status(400).json({ error: 'Registration number is required' });
+    }
+    
+    try {
+        const reg = await EventRegistration.findOne({ 
+            registrationNumber: { $regex: new RegExp(`^${registrationNumber}$`, 'i') } 
+        });
+
+        if (!reg) {
+            return res.status(404).json({ error: 'Ticket not found. Invalid registration number.' });
+        }
+
+        // Allow multiple scans but track timestamps
+        reg.attended = true;
+        reg.attendanceRecords.push(new Date().toISOString());
+        await reg.save();
+
+        res.json({
+            success: true,
+            message: 'Attendance marked successfully!',
+            data: {
+                name: reg.name,
+                eventTitle: reg.eventTitle,
+                totalScans: reg.attendanceRecords.length
+            }
+        });
+    } catch (err) {
+        console.error('Mark attendance error:', err);
+        res.status(500).json({ error: 'Failed to mark attendance.' });
+    }
+});
+
 // ─── EVENT REGISTRATIONS: LIST ───
 app.get('/api/event-registrations', authenticateToken, async (req, res) => {
     try {
