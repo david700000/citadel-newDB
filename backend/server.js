@@ -609,7 +609,7 @@ app.post('/api/register-event', async (req, res) => {
 
             // Build the custom message or use a default
             let bodyMessage = customText
-                ? customText
+                ? String(customText)
                     .replace(/{name}/g, name)
                     .replace(/{eventTitle}/g, eventTitle)
                     .replace(/{phone}/g, phone)
