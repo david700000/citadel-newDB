@@ -217,11 +217,11 @@ router.patch("/event-registrations/:id/attendance", requireAuth, async (req, res
         if (!reg) return res.status(404).json({ error: "Registration not found" });
 
         if (day) {
-            const index = reg.attendanceRecords.indexOf(day);
+            const index = reg.attendanceRecords.findIndex(r => r.startsWith(day));
             if (index > -1) {
                 reg.attendanceRecords.splice(index, 1);
             } else {
-                reg.attendanceRecords.push(day);
+                reg.attendanceRecords.push(`${day} - ${new Date().toISOString()}`);
             }
             reg.attended = reg.attendanceRecords.length > 0;
         } else {

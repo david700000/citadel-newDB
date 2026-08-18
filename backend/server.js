@@ -844,11 +844,11 @@ app.patch('/api/event-registrations/:id/attendance', authenticateToken, async (r
 
         if (day) {
             // Multi-day tracking: toggle specific day
-            const index = reg.attendanceRecords.indexOf(day);
+            const index = reg.attendanceRecords.findIndex(r => r.startsWith(day));
             if (index > -1) {
                 reg.attendanceRecords.splice(index, 1);
             } else {
-                reg.attendanceRecords.push(day);
+                reg.attendanceRecords.push(`${day} - ${new Date().toISOString()}`);
             }
             // If they attended at least one day, mark overall attended as true
             reg.attended = reg.attendanceRecords.length > 0;
