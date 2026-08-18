@@ -74,7 +74,8 @@ export default function CMSTemplates({ state, toast }) {
   };
 
   if (editing !== null) {
-    return <TemplateEditor templateData={editing === 'new' ? null : editing} onSave={save} onCancel={() => setEditing(null)} uploadFile={upload} />;
+    const dataWithToken = editing === 'new' ? { _token: state.session.token } : { ...editing, _token: state.session.token };
+    return <TemplateEditor templateData={dataWithToken} onSave={save} onCancel={() => setEditing(null)} uploadFile={upload} />;
   }
 
   return (
