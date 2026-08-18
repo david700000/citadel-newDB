@@ -425,10 +425,35 @@ app.post('/api/data', authenticateToken, async (req, res) => {
 
 // ─── UPLOADS ───
 if (process.env.CLOUDINARY_URL) cloudinary.config({ cloudinary_url: process.env.CLOUDINARY_URL });
-const storage = new CloudinaryStorage({ cloudinary, params: { folder: 'citadel', resource_type: 'auto' } });
+
+// Standard storage — high quality for general images
+const storage = new CloudinaryStorage({
+    cloudinary,
+    params: { folder: 'citadel', resource_type: 'auto', quality: 100 }
+});
+
+// Lossless storage — for template frame graphics (PNG with no compression)
+const storageFrameLossless = new CloudinaryStorage({
+    cloudinary,
+    params: {
+        folder: 'citadel/frames',
+        resource_type: 'image',
+        format: 'png',
+        quality: 100,
+        flags: 'lossless',
+    }
+});
+
 const upload = multer({ storage });
+const uploadFrame = multer({ storage: storageFrameLossless });
 
 app.post('/api/upload', authenticateToken, upload.single('image'), (req, res) => {
+    if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
+    res.json({ url: req.file.path });
+});
+
+// Lossless PNG upload for template frame graphics
+app.post('/api/upload-template-graphic', authenticateToken, uploadFrame.single('image'), (req, res) => {
     if (!req.file) return res.status(400).json({ error: 'No file uploaded' });
     res.json({ url: req.file.path });
 });

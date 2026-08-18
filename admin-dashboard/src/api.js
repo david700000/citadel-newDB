@@ -60,6 +60,7 @@ export const API_URLS = {
   // Templates
   TEMPLATES_ADMIN: `${BASE_URL}/api/admin/templates`,
   TEMPLATES_PUBLIC: `${BASE_URL}/api/templates`,
+  TEMPLATES_GRAPHIC_UPLOAD: `${BASE_URL}/api/upload-template-graphic`,
 };
 
 export default API_URLS;
