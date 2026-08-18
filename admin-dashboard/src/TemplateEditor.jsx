@@ -1,299 +1,271 @@
-import React, { useState, useEffect, useRef } from 'react';
-import * as fabric from 'fabric';
+import React, { useState } from 'react';
 
+// ── STYLES ────────────────────────────────────────────────────────────────────
+const S = {
+  page:     { display: 'flex', minHeight: '100vh', background: '#f8fafc', fontFamily: "'DM Sans', sans-serif" },
+  sidebar:  { width: 340, borderRight: '1px solid #e2e8f0', background: 'white', display: 'flex', flexDirection: 'column', overflowY: 'auto' },
+  sideTop:  { padding: '20px 24px', borderBottom: '1px solid #e2e8f0' },
+  sideTitle:{ fontSize: 17, fontWeight: 700, color: '#0f172a', margin: 0 },
+  sideSub:  { fontSize: 12, color: '#94a3b8', marginTop: 3 },
+  sideBody: { padding: '20px 24px', flex: 1, display: 'flex', flexDirection: 'column', gap: 20 },
+  sideFooter:{ padding: '16px 24px', borderTop: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', gap: 10 },
+  section:  { display: 'flex', flexDirection: 'column', gap: 12 },
+  label:    { fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.07em', display: 'block', marginBottom: 4 },
+  input:    { width: '100%', padding: '9px 12px', border: '1px solid #e2e8f0', borderRadius: 7, fontSize: 14, color: '#0f172a', background: '#f8fafc', outline: 'none', fontFamily: 'inherit' },
+  row:      { display: 'flex', gap: 10 },
+  divider:  { height: 1, background: '#f1f5f9', margin: '4px 0' },
+  sectionHead: { fontSize: 13, fontWeight: 700, color: '#0f172a', display: 'flex', alignItems: 'center', justifyContent: 'space-between' },
+  addFieldBtn: { fontSize: 12, fontWeight: 600, color: '#0B1F3B', background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: 6, padding: '5px 12px', cursor: 'pointer' },
+  fieldCard:   { background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 8, padding: '12px 14px', display: 'flex', flexDirection: 'column', gap: 10 },
+  fieldRow:    { display: 'flex', gap: 8 },
+  removeBtn:   { fontSize: 11, color: '#e11d48', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600, alignSelf: 'flex-end' },
+  saveBtn:     (disabled) => ({ padding: '12px', background: disabled ? '#94a3b8' : '#0B1F3B', color: 'white', border: 'none', borderRadius: 8, fontSize: 14, fontWeight: 700, cursor: disabled ? 'not-allowed' : 'pointer', width: '100%' }),
+  cancelBtn:   { padding: '10px', background: 'white', color: '#64748b', border: '1px solid #e2e8f0', borderRadius: 8, fontSize: 14, fontWeight: 600, cursor: 'pointer', width: '100%' },
+  preview:  { flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', padding: '32px 40px', gap: 20 },
+  previewLabel: { fontSize: 12, color: '#94a3b8', textAlign: 'center', marginTop: 8 },
+  imgFrame: { boxShadow: '0 8px 32px rgba(0,0,0,0.12)', borderRadius: 4, overflow: 'hidden', background: '#e2e8f0', position: 'relative' },
+  uploadBox: { border: '2px dashed #cbd5e1', borderRadius: 8, padding: '20px', textAlign: 'center', cursor: 'pointer', background: '#f8fafc', color: '#94a3b8', fontSize: 13 },
+  uploadBoxActive: { borderColor: '#0B1F3B', color: '#0B1F3B', background: '#f0f4ff' },
+  checkRow: { display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#334155', cursor: 'pointer' },
+};
+
+function Field({ label, children }) {
+  return (
+    <div>
+      <span style={S.label}>{label}</span>
+      {children}
+    </div>
+  );
+}
+
+function NumInput({ value, onChange, placeholder }) {
+  return (
+    <input
+      type="number" style={S.input} value={value} placeholder={placeholder}
+      onChange={e => onChange(Number(e.target.value))}
+    />
+  );
+}
+
+// ── DEFAULT TEXT FIELD SHAPE ──────────────────────────────────────────────────
+const newTextField = () => ({
+  type: 'text',
+  fieldName: 'Name',
+  text: '',
+  left: 540, top: 900,
+  fontSize: 52,
+  fontFamily: 'DM Sans',
+  fontWeight: 'bold',
+  fill: '#ffffff',
+  textAlign: 'center',
+  editableByUser: true,
+  angle: 0,
+});
+
+// ── COMPONENT ─────────────────────────────────────────────────────────────────
 export default function TemplateEditor({ templateData, onSave, onCancel, uploadFile }) {
-    const canvasRef      = useRef(null);
-    const fabricCanvas   = useRef(null);
-    const [saving, setSaving]           = useState(false);
-    const [name, setName]               = useState(templateData?.name || 'New Template');
-    const [description, setDescription] = useState(templateData?.description || '');
-    const [isActive, setIsActive]       = useState(templateData?.isActive ?? true);
-    const [canvasWidth]                 = useState(templateData?.canvasWidth || 1080);
-    const [canvasHeight]                = useState(templateData?.canvasHeight || 1080);
-    const [backgroundUrl, setBackgroundUrl] = useState(templateData?.backgroundUrl || '');
-    const [selectedObj, setSelectedObj] = useState(null);
+  const existing = templateData || {};
 
-    // ── INIT CANVAS ────────────────────────────────────────────────────────────
-    useEffect(() => {
-        if (!canvasRef.current) return;
+  const [name, setName]               = useState(existing.name || '');
+  const [description, setDescription] = useState(existing.description || '');
+  const [isActive, setIsActive]       = useState(existing.isActive ?? true);
+  const [canvasW, setCanvasW]         = useState(existing.canvasWidth  || 1080);
+  const [canvasH, setCanvasH]         = useState(existing.canvasHeight || 1080);
+  const [bgUrl, setBgUrl]             = useState(existing.backgroundUrl || '');
+  const [bgUploading, setBgUploading] = useState(false);
+  const [saving, setSaving]           = useState(false);
 
-        const fc = new fabric.Canvas(canvasRef.current, {
-            width: canvasWidth,
-            height: canvasHeight,
-            backgroundColor: '#e5e7eb',
-            preserveObjectStacking: true,
-        });
-        fabricCanvas.current = fc;
+  // Photo placeholder
+  const existingPh = existing.elements?.find(e => e.type === 'placeholder') || {};
+  const [ph, setPh] = useState({
+    left:   existingPh.left   || 540,
+    top:    existingPh.top    || 540,
+    radius: existingPh.radius || 400,
+    shape:  existingPh.shape  || 'circle',
+  });
 
-        fc.on('selection:created', e => setSelectedObj(e.selected[0]));
-        fc.on('selection:updated', e => setSelectedObj(e.selected[0]));
-        fc.on('selection:cleared', () => setSelectedObj(null));
+  // Text fields (user-editable)
+  const existingTexts = existing.elements?.filter(e => e.type === 'text') || [];
+  const [textFields, setTextFields] = useState(existingTexts.length ? existingTexts : [newTextField()]);
 
-        // Load existing elements if editing
-        if (templateData?.backgroundUrl) {
-            loadBackground(fc, templateData.backgroundUrl, canvasWidth, canvasHeight);
-        }
-        if (templateData?.elements) {
-            templateData.elements.forEach(el => restoreElement(fc, el));
-        }
+  // ── BACKGROUND UPLOAD ──────────────────────────────────────────────────────
+  const handleBgUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    setBgUploading(true);
+    const url = await uploadFile(file);
+    if (url) setBgUrl(url);
+    setBgUploading(false);
+  };
 
-        return () => fc.dispose();
-    }, []);
+  // ── TEXT FIELDS ────────────────────────────────────────────────────────────
+  const updateTextField = (i, key, val) => {
+    setTextFields(prev => prev.map((f, idx) => idx === i ? { ...f, [key]: val } : f));
+  };
+  const addTextField   = () => setTextFields(prev => [...prev, newTextField()]);
+  const removeTextField = (i) => setTextFields(prev => prev.filter((_, idx) => idx !== i));
 
-    function loadBackground(fc, url, cw, ch) {
-        fabric.Image.fromURL(url, img => {
-            if (!img || img.width === 0) return;
-            fc.setBackgroundImage(img, fc.renderAll.bind(fc), {
-                crossOrigin: 'Anonymous',
-                scaleX: cw / img.width,
-                scaleY: ch / img.height,
-            });
-        }, { crossOrigin: 'Anonymous' });
-    }
+  // ── SAVE ───────────────────────────────────────────────────────────────────
+  const handleSave = async () => {
+    if (!name.trim()) return alert('Please enter a template name.');
+    setSaving(true);
+    const elements = [
+      { type: 'placeholder', shape: ph.shape, left: ph.left, top: ph.top, radius: ph.radius },
+      ...textFields.map(f => ({ ...f, type: 'text' })),
+    ];
+    await onSave({ name: name.trim(), description, isActive, canvasWidth: canvasW, canvasHeight: canvasH, backgroundUrl: bgUrl, elements });
+    setSaving(false);
+  };
 
-    function restoreElement(fc, el) {
-        if (el.type === 'placeholder') {
-            const obj = new fabric.Circle({
-                radius: el.radius || 400,
-                fill: 'rgba(79,142,247,0.25)',
-                stroke: '#4f8ef7',
-                strokeWidth: 3,
-                strokeDashArray: [10, 6],
-                left: el.left || 0,
-                top:  el.top  || 0,
-                originX: 'center',
-                originY: 'center',
-                customType: 'placeholder',
-                placeholderShape: el.shape || 'circle',
-            });
-            fc.add(obj);
-        } else if (el.type === 'text') {
-            const obj = new fabric.Text(el.text || '', {
-                left: el.left || 0,
-                top:  el.top  || 0,
-                fontSize: el.fontSize || 40,
-                fontFamily: el.fontFamily || 'sans-serif',
-                fill: el.fill || '#ffffff',
-                fontWeight: el.fontWeight || 'normal',
-                customType: 'text',
-                editableByUser: el.editableByUser || false,
-                fieldName: el.fieldName || '',
-            });
-            fc.add(obj);
-        }
-        fc.renderAll();
-    }
+  // ── RENDER ─────────────────────────────────────────────────────────────────
+  return (
+    <div style={S.page}>
 
-    // ── BACKGROUND UPLOAD ──────────────────────────────────────────────────────
-    const handleBgUpload = async (e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-        const url = await uploadFile(file);
-        if (!url) return;
-        setBackgroundUrl(url);
-        loadBackground(fabricCanvas.current, url, canvasWidth, canvasHeight);
-    };
-
-    // ── ADD ELEMENTS ───────────────────────────────────────────────────────────
-    const addPhotoPlaceholder = () => {
-        const circle = new fabric.Circle({
-            radius: 400,
-            fill: 'rgba(79,142,247,0.25)',
-            stroke: '#4f8ef7',
-            strokeWidth: 3,
-            strokeDashArray: [10, 6],
-            left: canvasWidth / 2,
-            top:  canvasHeight / 2,
-            originX: 'center',
-            originY: 'center',
-            customType: 'placeholder',
-            placeholderShape: 'circle',
-        });
-        fabricCanvas.current.add(circle);
-        fabricCanvas.current.setActiveObject(circle);
-        fabricCanvas.current.renderAll();
-    };
-
-    const addTextField = () => {
-        const txt = new fabric.Text('Your Name', {
-            left: canvasWidth / 2,
-            top:  canvasHeight * 0.8,
-            originX: 'center',
-            originY: 'center',
-            fontSize: 60,
-            fontFamily: 'sans-serif',
-            fill: '#ffffff',
-            customType: 'text',
-            editableByUser: true,
-            fieldName: 'Name',
-        });
-        fabricCanvas.current.add(txt);
-        fabricCanvas.current.setActiveObject(txt);
-        fabricCanvas.current.renderAll();
-    };
-
-    const deleteSelected = () => {
-        const obj = fabricCanvas.current.getActiveObject();
-        if (obj) { fabricCanvas.current.remove(obj); setSelectedObj(null); }
-    };
-
-    const bringForward = () => { fabricCanvas.current.getActiveObject()?.bringForward(); fabricCanvas.current.renderAll(); };
-    const sendBackward = () => { fabricCanvas.current.getActiveObject()?.sendBackwards(); fabricCanvas.current.renderAll(); };
-
-    // ── UPDATE SELECTED OBJECT PROPERTIES ─────────────────────────────────────
-    const updateProp = (key, val) => {
-        const obj = fabricCanvas.current.getActiveObject();
-        if (!obj) return;
-        obj.set(key, val);
-        fabricCanvas.current.renderAll();
-        setSelectedObj({ ...obj }); // Trigger re-render
-    };
-
-    // ── SAVE ───────────────────────────────────────────────────────────────────
-    const handleSave = async () => {
-        setSaving(true);
-        const elements = fabricCanvas.current.getObjects().map(obj => {
-            const base = {
-                type:   obj.customType || obj.type,
-                left:   Math.round(obj.left),
-                top:    Math.round(obj.top),
-                angle:  obj.angle || 0,
-                scaleX: obj.scaleX || 1,
-                scaleY: obj.scaleY || 1,
-            };
-            if (base.type === 'placeholder') {
-                base.shape  = obj.placeholderShape || 'circle';
-                base.radius = Math.round((obj.radius || 400) * (obj.scaleX || 1));
-                base.width  = Math.round((obj.width  || 400) * (obj.scaleX || 1));
-                base.height = Math.round((obj.height || 400) * (obj.scaleY || 1));
-            }
-            if (base.type === 'text') {
-                base.text           = obj.text || '';
-                base.fontSize       = obj.fontSize || 40;
-                base.fontFamily     = obj.fontFamily || 'sans-serif';
-                base.fontWeight     = obj.fontWeight || 'normal';
-                base.fill           = obj.fill || '#ffffff';
-                base.textAlign      = obj.textAlign || 'left';
-                base.editableByUser = obj.editableByUser || false;
-                base.fieldName      = obj.fieldName || '';
-            }
-            return base;
-        });
-
-        await onSave({ name, description, isActive, canvasWidth, canvasHeight, backgroundUrl, elements });
-        setSaving(false);
-    };
-
-    // ─── RENDER ────────────────────────────────────────────────────────────────
-    const editorStyle = {
-        display: 'flex', height: '100vh', overflow: 'hidden',
-        fontFamily: "'DM Sans', sans-serif", background: '#f8fafc',
-    };
-    const sidebarStyle = {
-        width: 280, padding: 16, background: '#0B1F3B', color: '#f0f4ff',
-        overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 10,
-    };
-    const inputStyle = {
-        width: '100%', padding: '8px 10px', borderRadius: 8,
-        border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.07)',
-        color: '#f0f4ff', fontFamily: 'inherit', fontSize: 13,
-    };
-    const btnStyle = (bg) => ({
-        padding: '9px 12px', borderRadius: 8, border: 'none',
-        background: bg, color: 'white', cursor: 'pointer',
-        fontWeight: 600, fontSize: 13, width: '100%',
-    });
-    const sectionLabel = { fontSize: 11, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4, marginTop: 8 };
-
-    return (
-        <div style={editorStyle}>
-            {/* SIDEBAR */}
-            <div style={sidebarStyle}>
-                <div style={{ fontSize: 14, fontWeight: 700, marginBottom: 4 }}>Template Editor</div>
-
-                <div style={sectionLabel}>Template Name</div>
-                <input style={inputStyle} value={name} onChange={e => setName(e.target.value)} placeholder="Template name" />
-
-                <div style={sectionLabel}>Description</div>
-                <input style={inputStyle} value={description} onChange={e => setDescription(e.target.value)} placeholder="Optional description" />
-
-                <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, cursor: 'pointer' }}>
-                    <input type="checkbox" checked={isActive} onChange={e => setIsActive(e.target.checked)} />
-                    Active (visible to users)
-                </label>
-
-                <div style={sectionLabel}>Background Image</div>
-                {backgroundUrl && <img src={backgroundUrl} alt="bg" style={{ width: '100%', borderRadius: 6, maxHeight: 90, objectFit: 'cover' }} />}
-                <label style={{ ...btnStyle('#1e3a8a'), textAlign: 'center', display: 'block', cursor: 'pointer' }}>
-                    {backgroundUrl ? 'Replace Graphic' : 'Upload Background PNG'}
-                    <input type="file" accept="image/*" onChange={handleBgUpload} style={{ display: 'none' }} />
-                </label>
-
-                <div style={sectionLabel}>Add Elements</div>
-                <button style={btnStyle('#3b82f6')} onClick={addPhotoPlaceholder}>📍 Add Photo Placeholder</button>
-                <button style={btnStyle('#059669')} onClick={addTextField}>T Add Text Field</button>
-
-                {selectedObj && (
-                    <>
-                        <div style={sectionLabel}>Selected Element</div>
-                        <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 8, padding: 10, fontSize: 12 }}>
-                            {selectedObj.customType === 'text' && (
-                                <>
-                                    <div style={{ marginBottom: 6 }}>
-                                        <label style={{ display: 'block', color: '#94a3b8', marginBottom: 3 }}>Text</label>
-                                        <input style={inputStyle} defaultValue={selectedObj.text}
-                                            onChange={e => updateProp('text', e.target.value)} />
-                                    </div>
-                                    <div style={{ marginBottom: 6 }}>
-                                        <label style={{ display: 'block', color: '#94a3b8', marginBottom: 3 }}>Font Size</label>
-                                        <input type="number" style={inputStyle} defaultValue={selectedObj.fontSize}
-                                            onChange={e => updateProp('fontSize', parseInt(e.target.value))} />
-                                    </div>
-                                    <div style={{ marginBottom: 6 }}>
-                                        <label style={{ display: 'block', color: '#94a3b8', marginBottom: 3 }}>Color</label>
-                                        <input type="color" defaultValue={selectedObj.fill || '#ffffff'}
-                                            onChange={e => updateProp('fill', e.target.value)} />
-                                    </div>
-                                    <div style={{ marginBottom: 6 }}>
-                                        <label style={{ display: 'block', color: '#94a3b8', marginBottom: 3 }}>Field Name (for users)</label>
-                                        <input style={inputStyle} defaultValue={selectedObj.fieldName || ''}
-                                            onChange={e => updateProp('fieldName', e.target.value)} />
-                                    </div>
-                                    <label style={{ display: 'flex', alignItems: 'center', gap: 6, cursor: 'pointer' }}>
-                                        <input type="checkbox" defaultChecked={selectedObj.editableByUser}
-                                            onChange={e => updateProp('editableByUser', e.target.checked)} />
-                                        User-editable field
-                                    </label>
-                                </>
-                            )}
-                            {selectedObj.customType === 'placeholder' && (
-                                <div style={{ color: '#94a3b8' }}>
-                                    📍 Photo Placeholder — drag to reposition, scale to resize
-                                </div>
-                            )}
-                        </div>
-                        <div style={{ display: 'flex', gap: 6 }}>
-                            <button style={{ ...btnStyle('#374151'), flex: 1 }} onClick={bringForward}>↑ Forward</button>
-                            <button style={{ ...btnStyle('#374151'), flex: 1 }} onClick={sendBackward}>↓ Back</button>
-                        </div>
-                        <button style={btnStyle('#dc2626')} onClick={deleteSelected}>🗑 Delete Element</button>
-                    </>
-                )}
-
-                <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    <button style={btnStyle(saving ? '#374151' : '#2563eb')} onClick={handleSave} disabled={saving}>
-                        {saving ? 'Saving...' : '💾 Save Template'}
-                    </button>
-                    <button style={btnStyle('#374151')} onClick={onCancel}>Cancel</button>
-                </div>
-            </div>
-
-            {/* CANVAS AREA */}
-            <div style={{ flex: 1, overflow: 'auto', background: '#e2e8f0', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', padding: 24 }}>
-                <div style={{ boxShadow: '0 10px 40px rgba(0,0,0,0.2)', borderRadius: 4 }}>
-                    <canvas ref={canvasRef} />
-                </div>
-            </div>
+      {/* ── LEFT SIDEBAR: FORM ── */}
+      <div style={S.sidebar}>
+        <div style={S.sideTop}>
+          <h2 style={S.sideTitle}>{existing._id ? 'Edit Template' : 'New Template'}</h2>
+          <p style={S.sideSub}>Configure what users see on the /graphics page</p>
         </div>
-    );
+
+        <div style={S.sideBody}>
+
+          {/* BASICS */}
+          <div style={S.section}>
+            <Field label="Template Name">
+              <input style={S.input} value={name} onChange={e => setName(e.target.value)} placeholder="e.g. PIC 2026" />
+            </Field>
+            <Field label="Description">
+              <input style={S.input} value={description} onChange={e => setDescription(e.target.value)} placeholder="Short description shown to users" />
+            </Field>
+            <label style={S.checkRow}>
+              <input type="checkbox" checked={isActive} onChange={e => setIsActive(e.target.checked)} />
+              Active — visible on the /graphics page
+            </label>
+          </div>
+
+          <div style={S.divider} />
+
+          {/* CANVAS SIZE */}
+          <div style={S.section}>
+            <div style={S.sectionHead}>Canvas Size</div>
+            <div style={S.row}>
+              <Field label="Width (px)"><NumInput value={canvasW} onChange={setCanvasW} placeholder="1080" /></Field>
+              <Field label="Height (px)"><NumInput value={canvasH} onChange={setCanvasH} placeholder="1080" /></Field>
+            </div>
+          </div>
+
+          <div style={S.divider} />
+
+          {/* BACKGROUND / FRAME GRAPHIC */}
+          <div style={S.section}>
+            <div style={S.sectionHead}>Frame Graphic</div>
+            <p style={{ fontSize: 12, color: '#94a3b8', margin: 0 }}>Upload your PNG graphic. The user's photo goes behind it.</p>
+            {bgUrl
+              ? <div style={{ position: 'relative' }}>
+                  <img src={bgUrl} alt="frame" style={{ width: '100%', borderRadius: 6, maxHeight: 120, objectFit: 'cover', border: '1px solid #e2e8f0' }} />
+                  <label style={{ ...S.input, display: 'block', marginTop: 8, textAlign: 'center', cursor: 'pointer', color: '#64748b' }}>
+                    Replace graphic
+                    <input type="file" accept="image/*" onChange={handleBgUpload} style={{ display: 'none' }} />
+                  </label>
+                </div>
+              : <label style={{ ...S.uploadBox, ...(bgUploading ? S.uploadBoxActive : {}) }}>
+                  {bgUploading ? 'Uploading…' : 'Click to upload graphic (PNG recommended)'}
+                  <input type="file" accept="image/*" onChange={handleBgUpload} style={{ display: 'none' }} />
+                </label>
+            }
+          </div>
+
+          <div style={S.divider} />
+
+          {/* PHOTO PLACEHOLDER */}
+          <div style={S.section}>
+            <div style={S.sectionHead}>Photo Placeholder</div>
+            <p style={{ fontSize: 12, color: '#94a3b8', margin: 0 }}>Defines where the user's photo appears on the graphic.</p>
+            <div style={S.row}>
+              <Field label="Center X (left)"><NumInput value={ph.left} onChange={v => setPh(p => ({ ...p, left: v }))} /></Field>
+              <Field label="Center Y (top)"><NumInput value={ph.top}  onChange={v => setPh(p => ({ ...p, top: v }))} /></Field>
+            </div>
+            <Field label="Radius (px)">
+              <NumInput value={ph.radius} onChange={v => setPh(p => ({ ...p, radius: v }))} placeholder="400" />
+            </Field>
+          </div>
+
+          <div style={S.divider} />
+
+          {/* TEXT FIELDS */}
+          <div style={S.section}>
+            <div style={S.sectionHead}>
+              Text Fields
+              <button style={S.addFieldBtn} onClick={addTextField}>+ Add Field</button>
+            </div>
+            <p style={{ fontSize: 12, color: '#94a3b8', margin: 0 }}>Fields shown to users to type into (e.g. their name).</p>
+
+            {textFields.map((f, i) => (
+              <div key={i} style={S.fieldCard}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: '#334155' }}>Field {i + 1}</span>
+                  {textFields.length > 1 && <button style={S.removeBtn} onClick={() => removeTextField(i)}>Remove</button>}
+                </div>
+
+                <div style={S.fieldRow}>
+                  <Field label="Field Label">
+                    <input style={S.input} value={f.fieldName} placeholder="e.g. Your Name"
+                      onChange={e => updateTextField(i, 'fieldName', e.target.value)} />
+                  </Field>
+                </div>
+
+                <div style={S.fieldRow}>
+                  <Field label="X (left)"><NumInput value={f.left} onChange={v => updateTextField(i, 'left', v)} /></Field>
+                  <Field label="Y (top)"><NumInput value={f.top}  onChange={v => updateTextField(i, 'top', v)} /></Field>
+                </div>
+
+                <div style={S.fieldRow}>
+                  <Field label="Font Size"><NumInput value={f.fontSize} onChange={v => updateTextField(i, 'fontSize', v)} /></Field>
+                  <Field label="Color">
+                    <input type="color" value={f.fill} onChange={e => updateTextField(i, 'fill', e.target.value)}
+                      style={{ width: '100%', height: 36, padding: '2px 4px', border: '1px solid #e2e8f0', borderRadius: 7, cursor: 'pointer', background: '#f8fafc' }} />
+                  </Field>
+                </div>
+
+                <label style={S.checkRow}>
+                  <input type="checkbox" checked={f.editableByUser} onChange={e => updateTextField(i, 'editableByUser', e.target.checked)} />
+                  User can edit this field
+                </label>
+              </div>
+            ))}
+          </div>
+
+        </div>
+
+        {/* FOOTER BUTTONS */}
+        <div style={S.sideFooter}>
+          <button style={S.saveBtn(saving)} onClick={handleSave} disabled={saving}>
+            {saving ? 'Saving…' : 'Save Template'}
+          </button>
+          <button style={S.cancelBtn} onClick={onCancel}>Cancel</button>
+        </div>
+      </div>
+
+      {/* ── RIGHT: LIVE PREVIEW ── */}
+      <div style={S.preview}>
+        <div style={{ fontSize: 13, fontWeight: 600, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
+          Preview
+        </div>
+        {bgUrl ? (
+          <div style={{ ...S.imgFrame, width: Math.min(canvasW, 460), height: Math.min(canvasH, 460) * (canvasH / canvasW > 1 ? 1 : canvasH / canvasW) }}>
+            <img src={bgUrl} alt="Template preview" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+          </div>
+        ) : (
+          <div style={{ width: 340, height: 340, background: '#f1f5f9', borderRadius: 4, border: '1px dashed #cbd5e1', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8', fontSize: 13 }}>
+            Upload a graphic to preview it here
+          </div>
+        )}
+        <div style={{ maxWidth: 360, fontSize: 13, color: '#64748b', lineHeight: 1.6, textAlign: 'center' }}>
+          <strong style={{ color: '#0f172a' }}>How it works:</strong> The graphic above is the frame. The user's photo goes <em>behind</em> it, visible through the transparent circle at position ({ph.left}, {ph.top}) with radius {ph.radius}px.
+        </div>
+      </div>
+
+    </div>
+  );
 }

@@ -2,152 +2,112 @@ import React, { useState, useEffect } from 'react';
 import TemplateEditor from './TemplateEditor';
 import API_URLS from './api';
 
+const S = {
+  page:    { padding: '28px 32px', maxWidth: 960, margin: '0 auto', fontFamily: "'DM Sans', sans-serif" },
+  header:  { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28 },
+  h1:      { fontSize: 20, fontWeight: 700, color: '#0f172a', margin: 0 },
+  sub:     { fontSize: 13, color: '#64748b', marginTop: 3 },
+  addBtn:  { padding: '10px 20px', background: '#0B1F3B', color: 'white', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 14, fontWeight: 600 },
+  grid:    { display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 20 },
+  card:    { background: 'white', border: '1px solid #e2e8f0', borderRadius: 10, overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' },
+  thumb:   { height: 180, background: '#f1f5f9', backgroundSize: 'cover', backgroundPosition: 'center' },
+  cardBody:{ padding: '14px 16px' },
+  cardName:{ fontSize: 15, fontWeight: 700, color: '#0f172a', margin: '0 0 4px 0' },
+  cardDesc:{ fontSize: 13, color: '#64748b', margin: '0 0 12px 0' },
+  cardRow: { display: 'flex', gap: 8 },
+  editBtn: { flex: 1, padding: '8px 0', background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: 6, cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#0f172a' },
+  delBtn:  { padding: '8px 14px', background: '#fff1f2', border: '1px solid #fecdd3', borderRadius: 6, cursor: 'pointer', fontSize: 13, fontWeight: 600, color: '#e11d48' },
+  empty:   { gridColumn: '1 / -1', textAlign: 'center', padding: '52px 0', color: '#94a3b8', fontSize: 14 },
+  activeDot: (active) => ({ width: 8, height: 8, borderRadius: '50%', background: active ? '#22c55e' : '#e2e8f0', display: 'inline-block', marginRight: 6 }),
+};
+
 export default function CMSTemplates({ state, toast }) {
   const [templates, setTemplates] = useState([]);
-  const [editingTemplate, setEditingTemplate] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const [editing, setEditing]     = useState(null);
+  const [loading, setLoading]     = useState(true);
 
-  const fetchTemplates = async () => {
+  const fetch_ = async (url, opts) => fetch(url, { ...opts, headers: { 'Authorization': `Bearer ${state.session.token}`, ...(opts?.headers || {}) } });
+
+  const load = async () => {
     setLoading(true);
     try {
-      const res = await fetch(API_URLS.TEMPLATES_ADMIN, {
-        headers: { 'Authorization': `Bearer ${state.session.token}` }
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setTemplates(data);
-      }
-    } catch (err) {
-      toast("Failed to load templates", "error");
-    } finally {
-      setLoading(false);
-    }
+      const res = await fetch_(API_URLS.TEMPLATES_ADMIN);
+      if (res.ok) setTemplates(await res.json());
+    } catch { toast('Failed to load templates', 'error'); }
+    finally { setLoading(false); }
   };
 
-  useEffect(() => {
-    fetchTemplates();
-  }, []);
+  useEffect(() => { load(); }, []);
 
-  const handleSave = async (templateData) => {
+  const save = async (data) => {
+    const url = editing?._id ? `${API_URLS.TEMPLATES_ADMIN}/${editing._id}` : API_URLS.TEMPLATES_ADMIN;
     try {
-      const url = editingTemplate?._id 
-        ? `${API_URLS.TEMPLATES_ADMIN}/${editingTemplate._id}` 
-        : API_URLS.TEMPLATES_ADMIN;
-      const method = editingTemplate?._id ? 'PUT' : 'POST';
-      
-      const res = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${state.session.token}`
-        },
-        body: JSON.stringify(templateData)
+      const res = await fetch_(url, {
+        method: editing?._id ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
       });
-      
-      if (res.ok) {
-        toast("Template saved successfully!", "success");
-        setEditingTemplate(null);
-        fetchTemplates();
-      } else {
-        toast("Failed to save template", "error");
-      }
-    } catch (err) {
-      toast("Failed to save template", "error");
-    }
+      if (res.ok) { toast('Template saved', 'success'); setEditing(null); load(); }
+      else toast('Save failed', 'error');
+    } catch { toast('Save failed', 'error'); }
   };
 
-  const uploadFile = async (file) => {
-    const formData = new FormData();
-    formData.append('image', file);
+  const upload = async (file) => {
+    const fd = new FormData();
+    fd.append('image', file);
     try {
-      const res = await fetch(API_URLS.UPLOAD, {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${state.session.token}` },
-        body: formData
-      });
-      const data = await res.json();
-      if (res.ok) return data.url;
-      toast(data.error || "Upload failed", "error");
-      return null;
-    } catch (e) {
-      toast("Upload failed", "error");
-      return null;
-    }
+      const res = await fetch_(API_URLS.UPLOAD, { method: 'POST', body: fd });
+      const d = await res.json();
+      if (res.ok) return d.url;
+      toast(d.error || 'Upload failed', 'error');
+    } catch { toast('Upload failed', 'error'); }
+    return null;
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this template?")) return;
+  const del = async (id) => {
+    if (!window.confirm('Delete this template?')) return;
     try {
-      const res = await fetch(`${API_URLS.TEMPLATES_ADMIN}/${id}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${state.session.token}` }
-      });
-      if (res.ok) {
-        toast("Template deleted", "success");
-        fetchTemplates();
-      } else {
-        toast("Delete failed", "error");
-      }
-    } catch (err) {
-      toast("Delete failed", "error");
-    }
+      const res = await fetch_(`${API_URLS.TEMPLATES_ADMIN}/${id}`, { method: 'DELETE' });
+      if (res.ok) { toast('Deleted', 'success'); load(); }
+      else toast('Delete failed', 'error');
+    } catch { toast('Delete failed', 'error'); }
   };
 
-  if (editingTemplate !== null) {
-    return (
-      <TemplateEditor 
-        templateData={editingTemplate === 'new' ? null : editingTemplate} 
-        onSave={handleSave} 
-        onCancel={() => setEditingTemplate(null)} 
-        uploadFile={uploadFile}
-      />
-    );
+  if (editing !== null) {
+    return <TemplateEditor templateData={editing === 'new' ? null : editing} onSave={save} onCancel={() => setEditing(null)} uploadFile={upload} />;
   }
 
   return (
-    <div className="page-container" style={{ padding: 24, maxWidth: 1200, margin: '0 auto' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 }}>
-        <h2>Social Media Templates</h2>
-        <button 
-          onClick={() => setEditingTemplate('new')}
-          style={{ padding: '10px 20px', background: '#3b82f6', color: 'white', borderRadius: '8px', border: 'none', cursor: 'pointer' }}
-        >
-          + Create New Template
-        </button>
+    <div style={S.page}>
+      <div style={S.header}>
+        <div>
+          <h1 style={S.h1}>DP Templates</h1>
+          <p style={S.sub}>Configure the graphic frame and text fields users will see on the /graphics page.</p>
+        </div>
+        <button style={S.addBtn} onClick={() => setEditing('new')}>+ New Template</button>
       </div>
 
       {loading ? (
-        <p>Loading templates...</p>
+        <p style={{ color: '#94a3b8', fontSize: 14 }}>Loading…</p>
       ) : (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' }}>
-          {templates.map(tpl => (
-            <div key={tpl._id} style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '12px', overflow: 'hidden' }}>
-              <div style={{ height: '200px', background: '#f3f4f6', backgroundImage: `url(${tpl.backgroundUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
-              <div style={{ padding: '16px' }}>
-                <h3 style={{ margin: '0 0 8px 0' }}>{tpl.name}</h3>
-                <p style={{ margin: '0 0 16px 0', color: '#6b7280', fontSize: '14px' }}>{tpl.description || 'No description'}</p>
-                <div style={{ display: 'flex', gap: '10px' }}>
-                  <button 
-                    onClick={() => setEditingTemplate(tpl)}
-                    style={{ flex: 1, padding: '8px', background: '#e5e7eb', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
-                  >
-                    Edit
-                  </button>
-                  <button 
-                    onClick={() => handleDelete(tpl._id)}
-                    style={{ padding: '8px 12px', background: '#fee2e2', color: '#ef4444', border: 'none', borderRadius: '6px', cursor: 'pointer' }}
-                  >
-                    Delete
-                  </button>
+        <div style={S.grid}>
+          {templates.map(t => (
+            <div key={t._id} style={S.card}>
+              <div style={{ ...S.thumb, backgroundImage: t.backgroundUrl ? `url(${t.backgroundUrl})` : 'none' }} />
+              <div style={S.cardBody}>
+                <p style={S.cardName}>
+                  <span style={S.activeDot(t.isActive)} />
+                  {t.name}
+                </p>
+                <p style={S.cardDesc}>{t.description || 'No description'}</p>
+                <div style={S.cardRow}>
+                  <button style={S.editBtn} onClick={() => setEditing(t)}>Edit</button>
+                  <button style={S.delBtn}  onClick={() => del(t._id)}>Delete</button>
                 </div>
               </div>
             </div>
           ))}
-          {templates.length === 0 && (
-            <div style={{ gridColumn: '1 / -1', textAlign: 'center', padding: '40px', background: 'white', borderRadius: '12px' }}>
-              No templates found. Create one to get started!
-            </div>
-          )}
+          {templates.length === 0 && <div style={S.empty}>No templates yet. Click "New Template" to create one.</div>}
         </div>
       )}
     </div>
