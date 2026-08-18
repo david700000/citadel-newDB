@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "citadel-church-website": "file:..",
+    "fabric": "^7.4.0",
     "firebase": "^12.13.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"

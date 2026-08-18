@@ -56,6 +56,10 @@ export const API_URLS = {
   // Event Registrations
   EVENT_REGISTRATIONS: `${BASE_URL}/api/event-registrations`,
   EVENT_REGISTRATIONS_STATS: `${BASE_URL}/api/event-registrations/stats`,
+
+  // Templates
+  TEMPLATES_ADMIN: `${BASE_URL}/api/admin/templates`,
+  TEMPLATES_PUBLIC: `${BASE_URL}/api/templates`,
 };
 
 export default API_URLS;

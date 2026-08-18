@@ -874,6 +874,7 @@ const financialRouter = require("./src/routes/financial");
 const reportsRouter = require("./src/routes/reports");
 const databaseRouter = require("./src/routes/database");
 const serviceReviewsRouter = require("./src/routes/serviceReviews");
+const templatesRouter = require("./src/routes/templates")(authenticateToken);
 
 app.use("/auth", authRouter);
 app.use("/users", usersRouter);
@@ -888,6 +889,7 @@ app.use("/financial", financialRouter);
 app.use("/reports", reportsRouter);
 app.use("/database", databaseRouter);
 app.use("/service-reviews", serviceReviewsRouter);
+app.use("/api", templatesRouter); // This will handle /api/templates and /api/admin/templates
 
 // ─── CMS SCHEDULERS ───
 const { initScheduler } = require("./src/jobs/reminderScheduler");

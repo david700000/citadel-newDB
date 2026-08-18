@@ -44,6 +44,8 @@ class PageErrorBoundary extends Component {
 import { requestForToken, onMessageListener } from "./firebase-config";
 import API_URLS from "./api";
 import churchLogo from "./assets/logo.jpg";
+import TemplateEditor from "./TemplateEditor";
+import CMSTemplates from "./CMSTemplates";
 
 const INITIAL_STATE = {
   users: [],
@@ -2748,6 +2750,7 @@ const CMSDashboard = ({ state, dispatch, toast }) => {
     { key: "event_regs", label: "Program Registrations", icon: "attendance" },
     { key: "users", label: "Users", icon: "users" },
     { key: "forms", label: "Form Builder", icon: "forms" },
+    { key: "templates", label: "Templates", icon: "church" },
     { key: "admins", label: "Admins", icon: "admins" },
     { key: "attendance", label: "Attendance", icon: "attendance" },
     { key: "messages", label: "Messages", icon: "messages" },
@@ -2762,6 +2765,7 @@ const CMSDashboard = ({ state, dispatch, toast }) => {
       <main style={{ marginLeft: 240, flex: 1, minHeight: "100vh" }}>
         {active === "dashboard" && <CMSHome state={state} token={state.session.token} toast={toast} setActive={setActive} setUserFilterTag={setUserFilterTag} />}
         {active === "website_content" && <CMSWebsiteContent state={state} toast={toast} />}
+        {active === "templates" && <CMSTemplates state={state} toast={toast} />}
         {active === "event_regs" && <CMSEventRegistrations state={state} toast={toast} />}
         {active === "users" && <CMSUsers state={state} dispatch={dispatch} toast={toast} initialFilter={userFilterTag} />}
         {active === "add_user" && <UsherAddUser state={state} dispatch={dispatch} toast={toast} />}
