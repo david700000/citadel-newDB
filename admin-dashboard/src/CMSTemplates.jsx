@@ -122,7 +122,7 @@ export default function CMSTemplates({ state, toast }) {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: '20px' }}>
           {templates.map(tpl => (
             <div key={tpl._id} style={{ background: 'white', border: '1px solid #e5e7eb', borderRadius: '12px', overflow: 'hidden' }}>
-              <div style={{ height: '200px', background: '#f3f4f6', backgroundImage: \`url(\${tpl.backgroundUrl})\`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
+              <div style={{ height: '200px', background: '#f3f4f6', backgroundImage: `url(${tpl.backgroundUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
               <div style={{ padding: '16px' }}>
                 <h3 style={{ margin: '0 0 8px 0' }}>{tpl.name}</h3>
                 <p style={{ margin: '0 0 16px 0', color: '#6b7280', fontSize: '14px' }}>{tpl.description || 'No description'}</p>
