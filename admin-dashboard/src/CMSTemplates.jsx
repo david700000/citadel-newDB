@@ -3,8 +3,8 @@ import TemplateEditor from './TemplateEditor';
 import API_URLS from './api';
 
 const S = {
-  page:    { padding: '28px 32px', maxWidth: 960, margin: '0 auto', fontFamily: "'DM Sans', sans-serif" },
-  header:  { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 28 },
+  page:    { padding: '28px 5%', maxWidth: 960, margin: '0 auto', fontFamily: "'DM Sans', sans-serif" },
+  header:  { display: 'flex', flexWrap: 'wrap', gap: 16, justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 28 },
   h1:      { fontSize: 20, fontWeight: 700, color: '#0f172a', margin: 0 },
   sub:     { fontSize: 13, color: '#64748b', marginTop: 3 },
   addBtn:  { padding: '10px 20px', background: '#0B1F3B', color: 'white', borderRadius: 8, border: 'none', cursor: 'pointer', fontSize: 14, fontWeight: 600 },

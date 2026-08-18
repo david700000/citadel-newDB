@@ -3,9 +3,8 @@ import API_URLS from './api';
 
 // ── STYLES ────────────────────────────────────────────────────────────────────
 const css = {
-  wrap:      { display: 'flex', minHeight: '100vh', background: '#f8fafc', fontFamily: 'inherit' },
-  // Left panel – form
-  form:      { width: 360, flexShrink: 0, display: 'flex', flexDirection: 'column', background: '#fff', borderRight: '1px solid #e2e8f0', overflowY: 'auto' },
+  wrap:      { fontFamily: "'DM Sans', sans-serif" },
+  form:      { display: 'flex', flexDirection: 'column', background: '#fff', overflowY: 'auto' },
   formHead:  { padding: '22px 24px 16px', borderBottom: '1px solid #f1f5f9' },
   formTitle: { fontSize: 16, fontWeight: 700, color: '#0f172a', margin: 0 },
   formSub:   { fontSize: 12, color: '#94a3b8', marginTop: 2 },
@@ -108,10 +107,20 @@ export default function TemplateEditor({ templateData, onSave, onCancel, uploadF
   const previewH = Math.round(previewW * canvasH / canvasW);
 
   return (
-    <div style={css.wrap}>
+    <div className="te-wrap" style={css.wrap}>
+      <style>{`
+        .te-wrap { display: flex; min-height: 100vh; background: #f8fafc; }
+        .te-form { width: 360px; flex-shrink: 0; border-right: 1px solid #e2e8f0; }
+        .te-preview { flex: 1; }
+        @media (max-width: 800px) {
+          .te-wrap { flex-direction: column-reverse; }
+          .te-form { width: 100%; border-right: none; border-top: 1px solid #e2e8f0; height: auto; }
+          .te-preview { padding: 24px 16px !important; }
+        }
+      `}</style>
 
       {/* ── FORM PANEL ── */}
-      <div style={css.form}>
+      <div className="te-form" style={css.form}>
         <div style={css.formHead}>
           <h3 style={css.formTitle}>{ex._id ? 'Edit Template' : 'New Template'}</h3>
           <p style={css.formSub}>Everything here drives the /graphics page directly</p>
@@ -225,7 +234,7 @@ export default function TemplateEditor({ templateData, onSave, onCancel, uploadF
       </div>
 
       {/* ── PREVIEW PANEL ── */}
-      <div style={css.preview}>
+      <div className="te-preview" style={css.preview}>
         <div style={css.previewTag}>Live Preview</div>
 
         {bgUrl ? (
