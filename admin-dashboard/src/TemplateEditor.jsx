@@ -58,7 +58,7 @@ export default function TemplateEditor({ templateData, onSave, onCancel, uploadF
   const [bgUrl, setBgUrl]             = useState(ex.backgroundUrl || '');
   const [bgUploading, setBgUploading] = useState(false);
   const [ph, setPh] = useState({ left: exPh.left||540, top: exPh.top||540, radius: exPh.radius||400, shape: exPh.shape||'circle' });
-  const [fields, setFields]           = useState(exTxts.length ? exTxts : [emptyField()]);
+  const [fields, setFields]           = useState(exTxts.length ? exTxts : []);
   const [saving, setSaving]           = useState(false);
 
   // ── Upload background using lossless endpoint ──────────────────────────────
