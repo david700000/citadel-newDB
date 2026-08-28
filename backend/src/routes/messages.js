@@ -26,10 +26,57 @@ router.post("/bulk", requireRole("media_admin"), async (req, res) => {
       users = await User.find(query).select('id full_name email phone fcm_tokens');
     } else {
       // Fetch registrations for the specified event
-      const { attendanceFilter } = req.body; // 'all', 'perfect', 'partial', 'absent'
+      const { attendanceFilter } = req.body; // 'all', 'perfect', 'partial', 'absent', 'attended:X', 'absent:X'
       const EventRegistration = require("../models/EventRegistration");
-      let regs = await EventRegistration.find({ eventTitle: target_group }).select('name email phone attendanceRecords');
+      const Attendance = require("../models/Attendance");
       
+      const regs = await EventRegistration.find({ eventTitle: target_group }).select('name email phone attendanceRecords');
+      const attendances = await Attendance.find({ event_name: target_group, status: 'present' }).populate('user_id', 'full_name email phone fcm_tokens');
+      
+      const unifiedMap = new Map(); // email -> UserData
+      
+      // 1. Process External Event Registrations
+      for (const r of regs) {
+        if (!r.email) continue;
+        const normalizedDays = (r.attendanceRecords || []).map(record => {
+           // record looks like "Day 1 - 2026-08..."
+           return record.split(' - ')[0].trim().toLowerCase();
+        });
+        unifiedMap.set(r.email.toLowerCase(), {
+          full_name: r.name,
+          email: r.email,
+          phone: r.phone,
+          fcm_tokens: [],
+          attendedDays: new Set(normalizedDays)
+        });
+      }
+      
+      // 2. Process Internal Attendances
+      for (const a of attendances) {
+        if (!a.user_id || !a.user_id.email) continue;
+        const emailKey = a.user_id.email.toLowerCase();
+        
+        // For internal attendance, we just use the ISO date string as the "day" representation if they don't have explicit days
+        // Or we map the date to the string representation. Let's just store the date string:
+        const dayString = new Date(a.date).toISOString().split('T')[0]; 
+        
+        if (unifiedMap.has(emailKey)) {
+          unifiedMap.get(emailKey).attendedDays.add(dayString);
+          if (a.user_id.fcm_tokens) unifiedMap.get(emailKey).fcm_tokens = a.user_id.fcm_tokens;
+        } else {
+          unifiedMap.set(emailKey, {
+            full_name: a.user_id.full_name,
+            email: a.user_id.email,
+            phone: a.user_id.phone,
+            fcm_tokens: a.user_id.fcm_tokens || [],
+            attendedDays: new Set([dayString])
+          });
+        }
+      }
+
+      let allUsers = Array.from(unifiedMap.values());
+      
+      // 3. Filter the unified list based on attendanceFilter
       if (attendanceFilter && attendanceFilter !== 'all') {
         const mongoose = require('mongoose');
         const SiteData = mongoose.model('SiteData');
@@ -37,28 +84,29 @@ router.post("/bulk", requireRole("media_admin"), async (req, res) => {
         const eventDef = siteDoc?.events?.find(e => e.title === target_group);
         const daysCount = eventDef && eventDef.eventDays ? eventDef.eventDays.split(',').length : 1;
 
-        regs = regs.filter(r => {
-          const count = r.attendanceRecords ? r.attendanceRecords.length : 0;
+        allUsers = allUsers.filter(u => {
+          const count = u.attendedDays.size;
           if (attendanceFilter === 'perfect') return count >= daysCount;
           if (attendanceFilter === 'partial') return count > 0 && count < daysCount;
           if (attendanceFilter === 'absent') return count === 0;
+          
           if (attendanceFilter.startsWith('attended:')) {
-            const day = attendanceFilter.split(':')[1];
-            return r.attendanceRecords && r.attendanceRecords.includes(day);
+            const day = attendanceFilter.split(':')[1].trim().toLowerCase();
+            return Array.from(u.attendedDays).some(rec => rec.startsWith(day));
           }
           if (attendanceFilter.startsWith('absent:')) {
-            const day = attendanceFilter.split(':')[1];
-            return !r.attendanceRecords || !r.attendanceRecords.includes(day);
+            const day = attendanceFilter.split(':')[1].trim().toLowerCase();
+            return !Array.from(u.attendedDays).some(rec => rec.startsWith(day));
           }
           return true;
         });
       }
 
-      users = regs.map(r => ({
-        full_name: r.name,
-        email: r.email,
-        phone: r.phone,
-        fcm_tokens: []
+      users = allUsers.map(u => ({
+        full_name: u.full_name,
+        email: u.email,
+        phone: u.phone,
+        fcm_tokens: u.fcm_tokens
       }));
     }
 

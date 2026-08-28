@@ -2965,6 +2965,7 @@ const CMSSettings = ({ token, toast }) => {
 
   const [selfieFrameUrl, setSelfieFrameUrl] = useState("");
   const [uploadingFrame, setUploadingFrame] = useState(false);
+  const [selfieShareMessage, setSelfieShareMessage] = useState("🙌 I'm live at PIC 2026! It's a powerful move of God. Watch the service live & join us at citadeloftruth.com ✨");
 
   useEffect(() => {
     const loadFrameSetting = async () => {
@@ -2994,6 +2995,7 @@ const CMSSettings = ({ token, toast }) => {
           if (data.service_checkin_enabled !== undefined) {
             setServiceCheckinEnabled(data.service_checkin_enabled);
           }
+          if (data.selfie_share_message) setSelfieShareMessage(data.selfie_share_message);
           if (data.auto_logout_minutes) setAutoLogoutMinutes(String(data.auto_logout_minutes));
         }
       } catch (err) {
@@ -3180,14 +3182,21 @@ const CMSSettings = ({ token, toast }) => {
 
   const handleSaveCheckinStatus = async () => {
     try {
-      await fetch(API_URLS.SETTINGS, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
-        body: JSON.stringify({ key: "service_checkin_enabled", value: serviceCheckinEnabled })
-      });
-      toast("Check-in status saved!", "success");
+      await Promise.all([
+        fetch(API_URLS.SETTINGS, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+          body: JSON.stringify({ key: "service_checkin_enabled", value: serviceCheckinEnabled })
+        }),
+        fetch(API_URLS.SETTINGS, {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+          body: JSON.stringify({ key: "selfie_share_message", value: selfieShareMessage })
+        })
+      ]);
+      toast("Check-in settings saved!", "success");
     } catch (err) {
-      toast("Failed to save check-in status", "error");
+      toast("Failed to save check-in settings", "error");
     }
   };
 
@@ -3245,7 +3254,7 @@ const CMSSettings = ({ token, toast }) => {
           <h3 style={{ margin: 0, fontSize: 16, fontWeight: 700, color: "#111827", fontFamily: "'DM Sans', sans-serif" }}>Selfie Frame Configuration</h3>
         </div>
         <p style={{ margin: "0 0 16px 0", color: "#6b7280", fontSize: 13, fontFamily: "'DM Sans', sans-serif", lineHeight: 1.5 }}>
-          Upload a transparent PNG frame overlay (4:3 aspect ratio recommended, e.g. 1440x1080px). Users taking a selfie will be framed by this design automatically.
+          Upload a PNG image to use as a <strong>bottom watermark/banner</strong> on selfie photos. It will be placed at the bottom of each captured photo, scaled to full width. Use a <strong>wide landscape PNG</strong> (e.g. 1080×300px) with a transparent background for best results.
         </p>
 
         <div style={{ padding: "12px 16px", background: "#f8fafc", borderRadius: 10, border: "1px solid #e2e8f0", marginBottom: 20 }}>
@@ -3265,12 +3274,14 @@ const CMSSettings = ({ token, toast }) => {
 
         <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           {selfieFrameUrl ? (
-            <div style={{ position: "relative", width: "100%", maxWidth: 240, aspectRatio: "4/3", border: "1px dashed #cbd5e1", borderRadius: 10, overflow: "hidden", background: "#f8fafc", display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <div style={{ position: "relative", width: "100%", maxWidth: 160, aspectRatio: "9/16", border: "1px dashed #cbd5e1", borderRadius: 10, overflow: "hidden", background: "linear-gradient(135deg,#f1f5f9,#e2e8f0)", display: "flex", alignItems: "center", justifyContent: "center" }}>
               <img src={selfieFrameUrl} alt="Current Frame" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
             </div>
           ) : (
-            <div style={{ width: "100%", maxWidth: 240, aspectRatio: "4/3", border: "1px dashed #cbd5e1", borderRadius: 10, background: "#f8fafc", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", color: "#94a3b8", fontSize: 13, fontFamily: "'DM Sans', sans-serif" }}>
+            <div style={{ width: "100%", maxWidth: 160, aspectRatio: "9/16", border: "2px dashed #cbd5e1", borderRadius: 10, background: "#f8fafc", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 8, color: "#94a3b8", fontSize: 12, fontFamily: "'DM Sans', sans-serif", textAlign: "center", padding: 12 }}>
+              <span style={{ fontSize: 28 }}>📱</span>
               <span>No frame uploaded</span>
+              <span style={{ fontSize: 11, color: "#cbd5e1" }}>Portrait 9:16 recommended</span>
             </div>
           )}
 
@@ -3281,7 +3292,19 @@ const CMSSettings = ({ token, toast }) => {
             <input type="file" accept="image/png" onChange={handleFrameUpload} disabled={uploadingFrame} style={{ display: "none" }} />
           </label>
         </div>
-        
+
+        {/* Share Message */}
+        <div style={{ marginTop: 20 }}>
+          <label style={{ display: "block", fontFamily: "'DM Sans', sans-serif", fontSize: 13, fontWeight: 700, color: "#374151", marginBottom: 6, textTransform: "uppercase", letterSpacing: "0.05em" }}>📣 Share Message</label>
+          <p style={{ margin: "0 0 8px 0", color: "#6b7280", fontSize: 12, fontFamily: "'DM Sans', sans-serif", lineHeight: 1.5 }}>This text appears when attendees share their photo. Keep it short and inspiring!</p>
+          <textarea
+            value={selfieShareMessage}
+            onChange={e => setSelfieShareMessage(e.target.value)}
+            rows={3}
+            style={{ width: "100%", boxSizing: "border-box", padding: "10px 14px", border: "1.5px solid #e5e7eb", borderRadius: 10, fontSize: 14, fontFamily: "'DM Sans', sans-serif", resize: "vertical", outline: "none", lineHeight: 1.6 }}
+          />
+        </div>
+
         <div style={{ marginTop: 20 }}>
           <Btn onClick={handleSaveCheckinStatus} variant="primary" style={{ background: "#7c3aed" }}>
             Save Check-in Settings
